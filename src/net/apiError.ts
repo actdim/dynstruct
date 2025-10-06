@@ -1,5 +1,5 @@
 import { IRequestState, IResponseState, getResponseResult } from "@/net/request";
-import * as HttpStatus from "http-status";
+import HttpStatus from "http-status";
 
 // UNKNOWN/UNRECOGNIZED
 export const API_ERROR_INTERNAL_ERROR = "API_ERROR_INTERNAL_ERROR";
