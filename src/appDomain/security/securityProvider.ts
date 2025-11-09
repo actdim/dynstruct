@@ -154,8 +154,9 @@ export class SecurityProvider<TUserInfo = any> {
             channel: "APP-CONFIG-GET"
         });
         this.domainConfig = msg.payload.security;
-        const prefixer = getValuePrefixer<typeof storageKeys>(this.domainConfig.id);
+        const prefixer = getValuePrefixer<typeof storageKeys>(`${this.domainConfig.id}/`);
         this.storageKeys = prefixer(storageKeys);
+        await this.restoreDataAsync();
     }
 
     async restoreDataAsync() {
@@ -187,9 +188,9 @@ export class SecurityProvider<TUserInfo = any> {
         this.userCredentials = value
             ? JSON.parse(value)
             : {
-                  username: undefined,
-                  password: undefined
-              };
+                username: undefined,
+                password: undefined
+            };
 
         value = (
             await this.msgBus.dispatchAsync({

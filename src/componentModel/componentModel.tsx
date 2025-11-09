@@ -1,40 +1,36 @@
+import { PropsWithChildren, useEffect, useLayoutEffect, FC, ReactNode } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import {
-    AllHTMLAttributes,
-    PropsWithChildren,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-    FC,
-    ReactNode,
-    CSSProperties
-} from "react";
-import { v4 as uuidv4 } from "uuid";
-import { $CG_IN, $CG_OUT, MsgBus, MsgBusProviderParams, MsgBusStruct, MsgBusSubscriberParams } from "@actdim/msgmesh/msgBusCore";
-import { MaybePromise, SafeKey, Skip } from "@actdim/utico/typeCore";
-import { observer } from "mobx-react-lite";
-import { observable, observe, runInAction } from "mobx";
-import { useLazyRef } from "@/reactHooks";
+    $CG_IN,
+    $CG_OUT,
+    MsgBus,
+    MsgBusProviderParams,
+    MsgBusStruct,
+    MsgBusSubscriberParams,
+} from '@actdim/msgmesh/msgBusCore';
+import { MaybePromise, SafeKey, Skip } from '@actdim/utico/typeCore';
+import { observer } from 'mobx-react-lite';
+import { observable, runInAction } from 'mobx';
+import { useLazyRef } from '@/reactHooks';
 
 export type MsgBusChannelGroupProviderParams<
     TStruct extends MsgBusStruct = MsgBusStruct,
     TChannel extends keyof TStruct = keyof TStruct,
-    TGroup extends keyof TStruct[TChannel] = typeof $CG_IN // keyof TStruct[TChannel]
-> = Skip<MsgBusProviderParams<TStruct, TChannel, TGroup>, "channel" | "group">;
+    TGroup extends keyof TStruct[TChannel] = typeof $CG_IN, // keyof TStruct[TChannel]
+> = Skip<MsgBusProviderParams<TStruct, TChannel, TGroup>, 'channel' | 'group'>;
 
 export type MsgBusChannelGroupSubscriberParams<
     TStruct extends MsgBusStruct = MsgBusStruct,
     TChannel extends keyof TStruct = keyof TStruct,
-    TGroup extends keyof TStruct[TChannel] = typeof $CG_IN // keyof TStruct[TChannel]
-> = Skip<MsgBusSubscriberParams<TStruct, TChannel, TGroup>, "channel" | "group">;
+    TGroup extends keyof TStruct[TChannel] = typeof $CG_IN, // keyof TStruct[TChannel]
+> = Skip<MsgBusSubscriberParams<TStruct, TChannel, TGroup>, 'channel' | 'group'>;
 
 // MsgBusScope
 export type MsgBusBrokerScope<
     TStruct extends MsgBusStruct /*= MsgBusStruct*/,
     TKeysToProvide extends keyof TStruct = keyof TStruct,
     TKeysToSubscribe extends keyof TStruct = keyof TStruct,
-    TKeysToPublish extends keyof TStruct = keyof TStruct
+    TKeysToPublish extends keyof TStruct = keyof TStruct,
 > = {
     provide?: TKeysToProvide;
     // consume
@@ -61,7 +57,7 @@ export type ComponentRefStruct = {
 export type ComponentStructBase<
     TMsgBusStruct extends MsgBusStruct = MsgBusStruct,
     TPropStruct extends ComponentPropStruct = ComponentPropStruct,
-    TMsgScope extends MsgBusBrokerScope<TMsgBusStruct> = MsgBusBrokerScope<TMsgBusStruct>
+    TMsgScope extends MsgBusBrokerScope<TMsgBusStruct> = MsgBusBrokerScope<TMsgBusStruct>,
 > = {
     props?: TPropStruct;
     methods?: ComponentMethodStruct;
@@ -72,26 +68,32 @@ export type ComponentStructBase<
 // ComponentShape
 export type ComponentStruct<
     TMsgBusStruct extends MsgBusStruct = MsgBusStruct,
-    T extends ComponentStructBase<TMsgBusStruct> = ComponentStructBase<TMsgBusStruct>
+    T extends ComponentStructBase<TMsgBusStruct> = ComponentStructBase<TMsgBusStruct>,
 > = T & {
     msgBus: TMsgBusStruct;
 };
 
-export type MsgBusBroker<TStructToProvide extends MsgBusStruct = MsgBusStruct, TStructToSubscribe extends MsgBusStruct = MsgBusStruct> = {
+export type MsgBusBroker<
+    TStructToProvide extends MsgBusStruct = MsgBusStruct,
+    TStructToSubscribe extends MsgBusStruct = MsgBusStruct,
+> = {
     // providers
     provide?: {
         [TChannel in keyof TStructToProvide]: {
-            [TGroup in keyof Skip<TStructToProvide[TChannel], typeof $CG_OUT>]?: MsgBusChannelGroupProviderParams<
-                TStructToProvide,
-                TChannel,
-                TGroup
-            >;
+            [TGroup in keyof Skip<
+                TStructToProvide[TChannel],
+                typeof $CG_OUT
+            >]?: MsgBusChannelGroupProviderParams<TStructToProvide, TChannel, TGroup>;
         };
     };
     // subscribers
     subscribe?: {
         [TChannel in keyof TStructToSubscribe]: {
-            [TGroup in keyof TStructToSubscribe[TChannel]]?: MsgBusChannelGroupSubscriberParams<TStructToSubscribe, TChannel, TGroup>;
+            [TGroup in keyof TStructToSubscribe[TChannel]]?: MsgBusChannelGroupSubscriberParams<
+                TStructToSubscribe,
+                TChannel,
+                TGroup
+            >;
         };
     };
 };
@@ -116,7 +118,7 @@ type Validator<T> = {
 };
 
 export const symbols = {
-    $isBinding: Symbol("$isBinding")
+    $isBinding: Symbol('$isBinding'),
 };
 
 export interface IBinding<T = any, TFrom = any> {
@@ -138,7 +140,12 @@ class Binding<T = any, TFrom = any> implements IBinding<any, any> {
     readonly converter: ValueConverter<T, TFrom>;
     readonly validator: Validator<T>;
     readonly readOnly: boolean;
-    constructor(get: () => T, set?: (value: T) => void, converter?: ValueConverter<T, TFrom>, validator?: Validator<T>) {
+    constructor(
+        get: () => T,
+        set?: (value: T) => void,
+        converter?: ValueConverter<T, TFrom>,
+        validator?: Validator<T>
+    ) {
         this.get = get;
         this.set = set;
         this.converter = converter;
@@ -180,13 +187,17 @@ export type ComponentPropParams<TPropStruct extends ComponentPropStruct> = {
 // const $ON_PROP_CHANGING = "onPropChanging";
 // const $ON_PROP_CHANGE = "onPropChange";
 
-const $ON_GET = "onGet";
+const $ON_GET = 'onGet';
 // const $ON_BEFORE_SET = "onBeforeSet";
-const $ON_CHANGING = "onChanging";
-const $ON_CHANGE = "onChange";
+const $ON_CHANGING = 'onChanging';
+const $ON_CHANGE = 'onChange';
 // const $ON_SET = "onSet";
 
-type PropValueChangingHandler<TProp = PropKey> = (prop: TProp, oldValue: any, newValue: any) => boolean;
+type PropValueChangingHandler<TProp = PropKey> = (
+    prop: TProp,
+    oldValue: any,
+    newValue: any
+) => boolean;
 type PropValueChangeHandler<TProp = PropKey> = (prop: TProp, value: any) => void;
 
 // BeforeValueSetHandler
@@ -195,8 +206,8 @@ type ValueChangingHandler<T = any> = (oldValue: T, newValue: T) => boolean;
 type ValueChangeHandler<T = any> = (value: T) => void;
 
 type ComponentEvents<TStruct extends ComponentStruct = ComponentStruct> = {
-    onPropChanging?: PropValueChangingHandler<keyof TStruct["props"]>;
-    onPropChange?: PropValueChangeHandler<keyof TStruct["props"]>;
+    onPropChanging?: PropValueChangingHandler<keyof TStruct['props']>;
+    onPropChange?: PropValueChangeHandler<keyof TStruct['props']>;
     onInit?: (model: ComponentModel<TStruct>) => void;
     onLayout?: (model: ComponentModel<TStruct>) => void;
     onReady?: (model: ComponentModel<TStruct>) => void;
@@ -204,11 +215,15 @@ type ComponentEvents<TStruct extends ComponentStruct = ComponentStruct> = {
     onDestroy?: (model: ComponentModel<TStruct>) => void; // onDispose/onCleanup
     onError?: (model: ComponentModel<TStruct>, error: any) => void;
 } & {
-    [P in keyof TStruct["props"] as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct["props"][P];
+    [P in keyof TStruct['props'] as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
 } & {
-    [P in keyof TStruct["props"] as `${typeof $ON_CHANGING}${Capitalize<P & string>}`]?: ValueChangingHandler<TStruct["props"]>;
+    [P in keyof TStruct['props'] as `${typeof $ON_CHANGING}${Capitalize<P & string>}`]?: ValueChangingHandler<
+        TStruct['props']
+    >;
 } & {
-    [P in keyof TStruct["props"] as `${typeof $ON_CHANGE}${Capitalize<P & string>}`]?: ValueChangeHandler<TStruct["props"]>;
+    [P in keyof TStruct['props'] as `${typeof $ON_CHANGE}${Capitalize<P & string>}`]?: ValueChangeHandler<
+        TStruct['props']
+    >;
 };
 
 // AllHTMLAttributes<JSX.Element>
@@ -229,22 +244,22 @@ type PublicKeys<T> = {
 }[keyof T];
 
 export type Component<TStruct extends ComponentStruct> = {
-    props?: TStruct["props"];
-    methods?: TStruct["methods"];
-    children?: ComponentChildren<TStruct["children"]>;
+    props?: TStruct['props'];
+    methods?: TStruct['methods'];
+    children?: ComponentChildren<TStruct['children']>;
     events?: ComponentEvents<TStruct>;
     // msgs?
     msgBroker?: MsgBusBroker<
-        Pick<TStruct["msgBus"], SafeKey<TStruct["msgBus"], TStruct["msgScope"]["provide"]>>,
-        Pick<TStruct["msgBus"], SafeKey<TStruct["msgBus"], TStruct["msgScope"]["subscribe"]>>
+        Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>>,
+        Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>>
     >;
     msgBus?: MsgBus<
         // TStruct["msgBus"]
         Pick<
-            TStruct["msgBus"],
-            | SafeKey<TStruct["msgBus"], TStruct["msgScope"]["provide"]>
-            | SafeKey<TStruct["msgBus"], TStruct["msgScope"]["subscribe"]>
-            | SafeKey<TStruct["msgBus"], TStruct["msgScope"]["publish"]>
+            TStruct['msgBus'],
+            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>
+            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>
+            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['publish']>
         >
     >;
     view?: ComponentViewFn;
@@ -256,39 +271,39 @@ type ComponentChildren<TRefStruct extends ComponentRefStruct> = {
             ? (params: TParams) => ComponentModel<T>
             : never
         : TRefStruct[P] extends ComponentStruct
-        ? ComponentModel<TRefStruct[P]>
-        : never;
+          ? ComponentModel<TRefStruct[P]>
+          : never;
 };
 
 type ComponentModelChildren<TRefStruct extends ComponentRefStruct> = {
-    [P in keyof TRefStruct as TRefStruct[P] extends Function ? `${Capitalize<P & string>}` : P]: TRefStruct[P] extends (
-        params: infer TParams
-    ) => infer T
+    [P in keyof TRefStruct as TRefStruct[P] extends Function
+        ? `${Capitalize<P & string>}`
+        : P]: TRefStruct[P] extends (params: infer TParams) => infer T
         ? T extends ComponentStruct
             ? FC<ComponentParams<T> & TParams>
             : never
         : TRefStruct[P] extends ComponentStruct
-        ? ComponentModel<TRefStruct[P]>
-        : never;
+          ? ComponentModel<TRefStruct[P]>
+          : never;
 };
 
 export type ComponentModelBase<TStruct extends ComponentStruct = ComponentStruct> = {
     readonly msgBus?: MsgBus<
         // TStruct["msgBus"]
         Pick<
-            TStruct["msgBus"],
-            | SafeKey<TStruct["msgBus"], TStruct["msgScope"]["provide"]>
-            | SafeKey<TStruct["msgBus"], TStruct["msgScope"]["subscribe"]>
-            | SafeKey<TStruct["msgBus"], TStruct["msgScope"]["publish"]>
+            TStruct['msgBus'],
+            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>
+            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>
+            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['publish']>
         >
     >;
 
     readonly View: ComponentViewFn;
 };
 
-export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct["props"] &
-    TStruct["methods"] &
-    ComponentModelChildren<TStruct["children"]> &
+export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
+    TStruct['methods'] &
+    ComponentModelChildren<TStruct['children']> &
     ComponentModelBase<TStruct>;
 
 // style: CSSProperties;
@@ -306,12 +321,16 @@ type ProxyEventHandlers = {
 } & Record<PropKey, PropEventHandlers>;
 
 // ComponentConfig
-export type ComponentParams<TStruct extends ComponentStruct = ComponentStruct> = ComponentPropParams<TStruct["props"]> &
-    ComponentEvents<TStruct>; // & PropsWithChildren
+export type ComponentParams<TStruct extends ComponentStruct = ComponentStruct> =
+    ComponentPropParams<TStruct['props']> & ComponentEvents<TStruct>; // & PropsWithChildren
 
 const blankView = () => null;
 
-function createProxy(state: any, bindings: Map<PropKey, IBinding>, proxyEventHandlers: ProxyEventHandlers) {
+function createProxy(
+    state: any,
+    bindings: Map<PropKey, IBinding>,
+    proxyEventHandlers: ProxyEventHandlers
+) {
     const onPropChanging = proxyEventHandlers.onPropChanging;
     const onPropChange = proxyEventHandlers.onPropChange;
     return new Proxy(state, {
@@ -364,7 +383,7 @@ function createProxy(state: any, bindings: Map<PropKey, IBinding>, proxyEventHan
             }
 
             return result;
-        }
+        },
     });
 }
 
@@ -394,7 +413,7 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
     const view = component.view;
 
     const ViewFC = observer((props: ComponentViewProps) => {
-        if (typeof view === "function") {
+        if (typeof view === 'function') {
             return view(props);
         }
         return <>{props.children}</>;
@@ -406,11 +425,11 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
         // view: component.view,
         // View: ViewerFC,
         View: ViewFC,
-        msgBus: msgBus
+        msgBus: msgBus,
     };
     if (component.children) {
         for (const [key, value] of Object.entries(component.children)) {
-            if (typeof value == "function") {
+            if (typeof value == 'function') {
                 // observer
                 const ChildViewFC: ComponentViewFn = (props) => {
                     const model = value(props) as ComponentModel;
@@ -435,7 +454,7 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
                     msgBus.provide({
                         ...provider,
                         channel: channel,
-                        group: group
+                        group: group,
                     });
                 }
             }
@@ -447,7 +466,7 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
                     msgBus.on({
                         ...subscriber,
                         channel: channel,
-                        group: group
+                        group: group,
                     });
                 }
             }
@@ -478,11 +497,11 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
         }
     }
 
-    annotationMap["View" satisfies keyof ComponentModelBase<TStruct>] = false;
-    annotationMap["msgBus" satisfies keyof ComponentModelBase<TStruct>] = false;
+    annotationMap['View' satisfies keyof ComponentModelBase<TStruct>] = false;
+    annotationMap['msgBus' satisfies keyof ComponentModelBase<TStruct>] = false;
     // annotationMap["view" satisfies keyof Component<TStruct>] = false;
 
-    const proxyEventHandlers: Pick<ProxyEventHandlers, "onPropChanging" | "onPropChange"> = {
+    const proxyEventHandlers: Pick<ProxyEventHandlers, 'onPropChanging' | 'onPropChange'> = {
         onPropChanging:
             params?.onPropChanging || component.events?.onPropChanging
                 ? (prop, oldValue, newValue) => {
@@ -506,7 +525,7 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
                       params.onPropChange?.(String(prop), value);
                       component.events.onPropChange?.(String(prop), value);
                   }
-                : undefined
+                : undefined,
     };
 
     function resolveOnGetEventHandler(prop: string) {
@@ -545,7 +564,7 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
             proxyEventHandlers[prop] = {
                 onGet: resolveOnGetEventHandler(prop),
                 onChanging: resolveOnChangingEventHandler(prop),
-                onChange: resolveOnChangeEventHandler(prop)
+                onChange: resolveOnChangeEventHandler(prop),
             };
         }
     }

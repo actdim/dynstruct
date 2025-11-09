@@ -154,7 +154,7 @@ export class ClientBase {
                 if (request.useAuth) {
                     await this.addAuthorizationAsync(request);
                 }
-                return this.executeRequestInternalAsync(request);
+                return await this.executeRequestInternalAsync(request);
             } catch (err) {
                 if (err instanceof ApiError) {
                     if (attempt > 0) {
@@ -212,15 +212,6 @@ export class ClientBase {
             requestParams.id = uuid();
         }
 
-        let request = {
-            ...requestParams,
-            status: "queued",
-            response: undefined,
-            result: undefined
-        } as IRequestState;
-
-        this.requestStateMap.set(requestParams.id, request);
-
         if (!(requestParams.headers instanceof Headers)) {
             requestParams.headers = new Headers(requestParams.headers);
         }
@@ -233,6 +224,15 @@ export class ClientBase {
                 requestParams.body = "";
             }
         }
+
+        let request = {
+            ...requestParams,
+            status: "queued",
+            response: undefined,
+            result: undefined
+        } as IRequestState;
+
+        this.requestStateMap.set(requestParams.id, request);
 
         await this.executeRequestAsync(request);
         return request.result;

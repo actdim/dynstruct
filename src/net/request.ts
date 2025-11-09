@@ -2,6 +2,7 @@
 
 import httpStatus from "http-status";
 import { AsyncFunc, AwaitedReturnType, Func, MaybeExtends } from "@actdim/utico/typeCore";
+import { ApiError } from "./apiError";
 
 export type IFetcher = {
     fetch(url: RequestInfo | URL, init?: RequestInit): Promise<Response>;
@@ -80,7 +81,7 @@ export const getResponseArrayBuffer = (response: Response) => response.arrayBuff
 // https://stackoverflow.com/questions/64781995/how-to-get-mime-type-of-an-array-buffer-object
 export async function getResponseResult(response: IResponseState, request: IRequestState): Promise<any> {
     // const headers: { [key: string]: string } = {};
-    let mimeType =
+    let contentType =
         request.contentType ||
         (request.headers && request.headers instanceof Headers ? request.headers.get("content-type") : request.headers["Content-Type"]);
     if (response.headers) {
@@ -90,37 +91,41 @@ export async function getResponseResult(response: IResponseState, request: IRequ
         // if (response.headers.forEach) {
         //     response.headers.forEach((v, k) => headers[k] = v);
         // }
-        mimeType = response.headers instanceof Headers ? response.headers.get("content-type") : response.headers["content-type"];
+        contentType = response.headers instanceof Headers ? response.headers.get("content-type") : response.headers["content-type"];
     }
     let result: any = undefined;
     if (!response.resolved) {
         response.resolved = {};
     }
     const resolved = response.resolved;
-    mimeType = (mimeType || "").toLowerCase();
-    if (response.status === httpStatus.OK || response.status === httpStatus.NO_CONTENT) {
-        if (mimeType.startsWith("text/")) {
-            result = await response.text();
-        } else if (mimeType.startsWith("image/")) {
-            result = await response.blob();
-        } else {
-            if (mimeType.startsWith("application/json")) {
-                result = await response.json();
-                resolved.json = result;
-            } else if (mimeType.startsWith("octet-stream")) {
-                result = await response.blob();
-                resolved.blob = result;
-            } else {
-                throw new Error(`Unsupported mime type: ${mimeType}`);
-            }
-        }
+    contentType = (contentType || "").toLowerCase();
+    if (contentType.startsWith("text/")) {
+        result = await response.text();
+    } else if (contentType.startsWith("image/")) {
+        result = await response.blob();
     } else {
-        const json = await response.json();
-        resolved.json = json;
-        // const text = await response.text();
-        // text === "" ? null : JSON.parse(text);
-        // unexpected response
-        throw new Error(`Response status: ${response.status}`);
+        if (contentType.startsWith("application/json")) {
+            result = await response.json();
+            resolved.json = result;
+        } else if (contentType.startsWith("octet-stream")) {
+            result = await response.blob();
+            resolved.blob = result;
+        } else {
+            try {
+                resolved.json = await response.clone().json();
+            } catch {
+                try {
+                    resolved.text = await response.text();
+                } catch {
+                }
+            }
+            // unexpected response
+            // throw new Error(`Unsupported content type: ${contentType}`);
+        }
+    }
+    if (!(response.status === httpStatus.OK || response.status === httpStatus.NO_CONTENT)) {
+        // JSON.stringify(resolved)
+        throw ApiError.create(response, request);
     }
 
     request.result = result;

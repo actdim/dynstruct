@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 
 export const $NAV_GOTO = "APP-NAV-GOTO";
 export const $NAV_GET_CONTEXT = "APP-NAV-CONTEXT";
+export const $NAV_READ_HISTORY = "APP-NAV-READ-HISTORY";
 // TOAST
 export const $NOTICE = "APP-NOTICE";
 export const $CONFIG_GET = "APP-CONFIG-GET";
@@ -88,6 +89,8 @@ export type NavContext = {
     navType?: NavAction;
 };
 
+export type NavHistory = Array<NavContext>;
+
 // OperationContext?
 export type AppError<TModule = Module> = {
     module: TModule;
@@ -134,6 +137,10 @@ export type BaseAppBusStruct = BaseApiBusStruct &
             };
             [$NAV_GET_CONTEXT]: {
                 in: void;
+                out: NavContext;
+            };
+            [$NAV_READ_HISTORY]: {
+                in: number;
                 out: NavContext;
             };
             [$FETCH]: {

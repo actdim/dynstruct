@@ -183,39 +183,33 @@ export class DisposableComponent implements IDisposable {
     }
 }
 
-export class DisposableModel extends DisposableComponent {
-    @observable.ref
-    public isBusy: boolean = true; // isLoading
+// export class Model extends DisposableComponent {
+    
+//     public isBusy: boolean = true; // isLoading
 
-    protected async withBusyAsync<T>(asyncAction: () => Promise<T>) {
-        transaction(() => {
-            this.isBusy = true;
-        });
-        try {
-            return await asyncAction();
-        } finally {
-            transaction(() => {
-                this.isBusy = false;
-            });
-        }
-    }
+//     protected async withBusyAsync<T>(asyncAction: () => Promise<T>) {
+//         transaction(() => {
+//             this.isBusy = true;
+//         });
+//         try {
+//             return await asyncAction();
+//         } finally {
+//             transaction(() => {
+//                 this.isBusy = false;
+//             });
+//         }
+//     }
 
-    protected withBusy<T>(action: () => T) {
-        transaction(() => {
-            this.isBusy = true;
-        });
-        try {
-            return action();
-        } finally {
-            transaction(() => {
-                this.isBusy = false;
-            });
-        }
-    }
-
-    // createViewModel = <T = any>(model: T, options?: IViewModelOptions<T>): T & IRootViewModel<T> => {
-    //     const vm = createViewModel(model, options);
-    //     this.registerFinalizer(vm.$().dispose);
-    //     return vm;
-    // };
-}
+//     protected withBusy<T>(action: () => T) {
+//         transaction(() => {
+//             this.isBusy = true;
+//         });
+//         try {
+//             return action();
+//         } finally {
+//             transaction(() => {
+//                 this.isBusy = false;
+//             });
+//         }
+//     }
+// }
