@@ -43,7 +43,7 @@ export default defineConfig({
         dts({
             outDir: "dist",
             entryRoot: "src",
-            include: ["src/**/*.ts"],
+            include: ["src/**/*.ts", "src/**/*.tsx"],
             rollupTypes: false,
             insertTypesEntry: false
         }),

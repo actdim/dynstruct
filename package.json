@@ -1,6 +1,6 @@
 {
     "name": "@actdim/dynstruct",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "A type-safe component system for large-scale apps: explicit dependencies, message bus communication, and structure-first, declarative design",
     "author": "Pavel Borodaev",
     "license": "Proprietary",
@@ -77,8 +77,8 @@
         "react-dom": "^19.2.0",
         "react-router": "^7.9.3",
         "react-router-dom": "^7.9.4",
-        "@actdim/utico": "^1.0.0",
-        "@actdim/msgmesh": "^1.0.0",
+        "@actdim/utico": "^1.0.2",
+        "@actdim/msgmesh": "^1.0.2",
         "rxjs": "^7.8.2",
         "dexie": "^4.2.0",
         "moment": "^2.30.1",
