@@ -3,7 +3,8 @@ import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityBusSt
 import { ReactNode } from "react";
 
 export const $NAV_GOTO = "APP-NAV-GOTO";
-export const $NAV_GET_CONTEXT = "APP-NAV-CONTEXT";
+export const $NAV_GET_CONTEXT = "APP-NAV-GET-CONTEXT";
+export const $NAV_CONTEXT_CHANGED = "APP-NAV-CONTEXT-CHANGED";
 export const $NAV_READ_HISTORY = "APP-NAV-READ-HISTORY";
 // TOAST
 export const $NOTICE = "APP-NOTICE";
@@ -81,6 +82,13 @@ export type NavRoute<TParams extends NavRouteParams = NavRouteParams> = {
 
 export type NavRoutes = Record<string, NavRoute>;
 
+type NavRouteStruct<TNavRoutes extends NavRoutes> = {
+  [K in keyof TNavRoutes]: {
+    route: K;
+    params?: TNavRoutes[K]["defaultParams"];
+  };
+}[keyof TNavRoutes];
+
 export type NavContext = {
     // route?: NavRoute;
     location?: NavLocation;
@@ -116,7 +124,7 @@ export type BaseApiBusStruct = BaseSecurityBusStruct &
     }>;
 
 // BaseAppMsgBusStruct
-export type BaseAppBusStruct = BaseApiBusStruct &
+export type BaseAppBusStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApiBusStruct &
     MsgBusStructFactory<
         {
             [$NOTICE]: {
@@ -133,11 +141,16 @@ export type BaseAppBusStruct = BaseApiBusStruct &
             };
             [$NAV_GOTO]: {
                 in: string | number;
+                ex: NavRouteStruct<TNavRoutes>;
                 out: void;
             };
             [$NAV_GET_CONTEXT]: {
                 in: void;
                 out: NavContext;
+            };
+            [$NAV_CONTEXT_CHANGED]: {
+                in: NavContext;
+                out: void;
             };
             [$NAV_READ_HISTORY]: {
                 in: number;

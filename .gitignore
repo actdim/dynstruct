@@ -132,3 +132,5 @@ dist
 .continue/
 .venv/
 package-lock.json
+*storybook.log
+storybook-static

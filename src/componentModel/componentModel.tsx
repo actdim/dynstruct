@@ -1,5 +1,5 @@
+import React from 'react';
 import { PropsWithChildren, useEffect, useLayoutEffect, FC, ReactNode } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import {
     $CG_IN,
     $CG_OUT,
@@ -12,6 +12,7 @@ import { MaybePromise, SafeKey, Skip } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
 import { observable, runInAction } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
+import { getGlobalFlags } from '@/globals';
 
 export type MsgBusChannelGroupProviderParams<
     TStruct extends MsgBusStruct = MsgBusStruct,
@@ -79,7 +80,7 @@ export type MsgBusBroker<
 > = {
     // providers
     provide?: {
-        [TChannel in keyof TStructToProvide]: {
+        [TChannel in keyof TStructToProvide]?: {
             [TGroup in keyof Skip<
                 TStructToProvide[TChannel],
                 typeof $CG_OUT
@@ -117,10 +118,8 @@ type Validator<T> = {
     validate: (value: T) => MaybePromise<ValidationResult>;
 };
 
-export const symbols = {
-    $isBinding: Symbol('$isBinding'),
-};
-
+const $isBinding = Symbol('$isBinding');
+// const $bindings = Symbol('$bindings');
 export interface IBinding<T = any, TFrom = any> {
     // getter
     readonly get: () => T;
@@ -129,7 +128,7 @@ export interface IBinding<T = any, TFrom = any> {
     readonly converter: ValueConverter<T, TFrom>;
     readonly validator: Validator<T>;
     readonly readOnly: boolean;
-    [symbols.$isBinding]: boolean;
+    [$isBinding]: boolean;
 }
 
 class Binding<T = any, TFrom = any> implements IBinding<any, any> {
@@ -144,37 +143,37 @@ class Binding<T = any, TFrom = any> implements IBinding<any, any> {
         get: () => T,
         set?: (value: T) => void,
         converter?: ValueConverter<T, TFrom>,
-        validator?: Validator<T>
+        validator?: Validator<T>,
     ) {
         this.get = get;
         this.set = set;
         this.converter = converter;
         this.validator = validator;
         this.readOnly = !!set;
-        this[symbols.$isBinding] = true;
+        this[$isBinding] = true;
     }
-    [symbols.$isBinding]: boolean;
+    [$isBinding]: boolean;
 }
 
 export function isBinding(obj: any): obj is IBinding {
-    return obj[symbols.$isBinding] === true;
+    return obj[$isBinding] === true;
 }
 
 export function bind<T, TFrom = any>(
     get: () => T,
     set?: (value: T) => void,
     converter?: ValueConverter<T, TFrom>,
-    validator?: Validator<T>
+    validator?: Validator<T>,
 ) {
     return new Binding(get, set, converter, validator);
 }
 
-export function bindProp<T extends object, P extends keyof T>(obj: T, prop: P) {
+export function bindProp<T extends object, P extends keyof T>(target: () => T, prop: P) {
     return new Binding(
-        () => obj[prop],
+        () => target()[prop],
         (value: T[P]) => {
-            obj[prop] = value;
-        }
+            target()[prop] = value;
+        },
     );
 }
 
@@ -196,7 +195,7 @@ const $ON_CHANGE = 'onChange';
 type PropValueChangingHandler<TProp = PropKey> = (
     prop: TProp,
     oldValue: any,
-    newValue: any
+    newValue: any,
 ) => boolean;
 type PropValueChangeHandler<TProp = PropKey> = (prop: TProp, value: any) => void;
 
@@ -228,22 +227,25 @@ type ComponentEvents<TStruct extends ComponentStruct = ComponentStruct> = {
 
 // AllHTMLAttributes<JSX.Element>
 
-// type ComponentViewerProps = {
-//     render?: boolean;
-//     view?: () => ReactNode;
-// } & PropsWithChildren;
-
 type ComponentViewProps = {
     render?: boolean;
 } & PropsWithChildren;
 
-type ComponentViewFn = (props?: ComponentViewProps) => ReactNode; // JSX.Element
+// ComponentRenderImplFn
+type ComponentViewImplFn<TStruct extends ComponentStruct> = (
+    props: ComponentViewProps,
+    model?: ComponentModel<TStruct>,
+) => ReactNode; // JSX.Element
+
+// ComponentRenderFn
+type ComponentViewFn = (props: ComponentViewProps) => ReactNode; // JSX.Element
 
 type PublicKeys<T> = {
     [K in keyof T]: K extends `_${string}` ? never : K;
 }[keyof T];
 
 export type Component<TStruct extends ComponentStruct> = {
+    name?: string;
     props?: TStruct['props'];
     methods?: TStruct['methods'];
     children?: ComponentChildren<TStruct['children']>;
@@ -262,7 +264,7 @@ export type Component<TStruct extends ComponentStruct> = {
             | SafeKey<TStruct['msgBus'], TStruct['msgScope']['publish']>
         >
     >;
-    view?: ComponentViewFn;
+    view?: ComponentViewImplFn<TStruct>;
 };
 
 type ComponentChildren<TRefStruct extends ComponentRefStruct> = {
@@ -287,6 +289,11 @@ type ComponentModelChildren<TRefStruct extends ComponentRefStruct> = {
           : never;
 };
 
+export type ComponentModelContext = {
+    bindings?: Map<PropKey, IBinding>;
+    id: string;
+};
+
 export type ComponentModelBase<TStruct extends ComponentStruct = ComponentStruct> = {
     readonly msgBus?: MsgBus<
         // TStruct["msgBus"]
@@ -297,8 +304,8 @@ export type ComponentModelBase<TStruct extends ComponentStruct = ComponentStruct
             | SafeKey<TStruct['msgBus'], TStruct['msgScope']['publish']>
         >
     >;
-
     readonly View: ComponentViewFn;
+    $: ComponentModelContext;
 };
 
 export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
@@ -329,7 +336,7 @@ const blankView = () => null;
 function createProxy(
     state: any,
     bindings: Map<PropKey, IBinding>,
-    proxyEventHandlers: ProxyEventHandlers
+    proxyEventHandlers: ProxyEventHandlers,
 ) {
     const onPropChanging = proxyEventHandlers.onPropChanging;
     const onPropChange = proxyEventHandlers.onPropChange;
@@ -339,9 +346,14 @@ function createProxy(
             if (onGet) {
                 return onGet();
             }
+
             const binding = bindings.get(String(prop));
             if (binding) {
-                return binding.get();
+                let value: any = undefined;
+                // untracked(() => {
+                value = binding.get();
+                // });
+                return value;
             }
             return Reflect.get(obj, prop, receiver);
         },
@@ -368,9 +380,10 @@ function createProxy(
             });
 
             const binding = bindings.get(prop);
-
             if (binding?.set) {
+                // untracked(() => {
                 binding.set(value);
+                // });
             }
 
             const onChange = proxyEventHandlers[prop]?.onChange;
@@ -398,47 +411,120 @@ function asyncToGeneratorFlow(asyncFn: (...args: any[]) => Promise<any>) {
     };
 }
 
-// const ViewerFC = observer((props: ComponentViewerProps) => {
-//     if (typeof props.view === "function") {
-//         return props.view();
-//     }
-//     return <>{props.children}</>;
-// });
+type ComponentSourceInfo = {
+    // classId
+    structId: string;
+    count: 0;
+};
+
+const componentData = {
+    sources: new Map<string, ComponentSourceInfo>(),
+    count: 0,
+};
+
+export function toHtmlId(url: string, segmentsCount: number = 1): string {
+    const clean = url.split(/[?#]/)[0];
+    const parts = clean
+        .split('/')
+        .filter(Boolean)
+        .map((segment) => decodeURIComponent(segment));
+
+    const last = parts.slice(-segmentsCount);
+    const raw = last.join('-');
+    let id = raw
+        .normalize('NFKD')
+        .replace(/[^a-zA-Z0-9\-_:.+#]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^[^a-zA-Z]+/, '-')
+        .replace(/[+#]$/, '-');
+    return id;
+}
+
+function getCallerFileName(depth = 2): string | null {
+    const err = new Error();
+    const stack = err.stack?.split('\n');
+    if (!stack || stack.length <= depth) return null;
+
+    const match = stack[depth].match(/\((.*):\d+:\d+\)/);
+    if (match) {
+        return match[1];
+    }
+    return null;
+}
 
 function createModel<TStruct extends ComponentStruct = ComponentStruct>(
     component: Component<TStruct>,
-    params: ComponentParams<TStruct>
+    params: ComponentParams<TStruct>,
 ): ComponentModel<TStruct> {
     const msgBus = component.msgBus;
+
+    const bindings = new Map<PropKey, IBinding>();
+
     const view = component.view;
 
+    let model: ComponentModel<TStruct>;
     const ViewFC = observer((props: ComponentViewProps) => {
-        if (typeof view === 'function') {
-            return view(props);
+        try {
+            if (getGlobalFlags().debug) {
+                // render
+                console.debug(`${model.$.id}>view`);
+            }
+            if (typeof view === 'function') {
+                return view(props, model);
+            }
+            return <>{props.children}</>;
+        } catch (err) {
+            // throw err;
+            const errDetails = JSON.stringify(err);
+            return <>{errDetails}</>;
+        } finally {
         }
-        return <>{props.children}</>;
     });
 
-    let model: ComponentModel<TStruct> = {
+    let srcInfo: ComponentSourceInfo;
+    const sources = componentData.sources;
+
+    const fileName = getCallerFileName(6);
+    const srcName = toHtmlId(fileName, 2);
+
+    if (sources.has(fileName)) {
+        srcInfo = sources.get(fileName);
+        srcInfo.count++;
+    } else {
+        const structId = component.name || srcName || `Component_${componentData.count}`;
+        srcInfo = {
+            structId: structId,
+            count: 0,
+        };
+        sources.set(fileName, srcInfo);
+        componentData.count++;
+    }
+
+    const rootId = `${srcInfo.structId}#${srcInfo.count}`;
+    model = {
         ...component.props,
         ...component.methods,
         // view: component.view,
-        // View: ViewerFC,
         View: ViewFC,
         msgBus: msgBus,
+        $: {
+            bindings: bindings,
+            id: rootId,
+        },
     };
+
     if (component.children) {
         for (const [key, value] of Object.entries(component.children)) {
             if (typeof value == 'function') {
+                const view = value as (params: any) => ComponentModel;
                 // observer
-                const ChildViewFC: ComponentViewFn = (props) => {
-                    const model = value(props) as ComponentModel;
+                const ChildViewFC: ComponentViewImplFn<TStruct> = (props) => {
+                    const model = view(props);
                     return <model.View />;
                     // if (typeof model.view === "function") {
                     //     return model.view(props);
                     // }
                     // return <>{props.children}</>;
-                    // return <ViewerFC view={model.view} />;
                 };
                 Reflect.set(model, capitalize(key), ChildViewFC);
             } else {
@@ -473,7 +559,6 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
         }
     }
 
-    const bindings = new Map<PropKey, IBinding>();
     // Reflect.ownKeys
     for (const [key, value] of Object.entries(params)) {
         if (isBinding(value)) {
@@ -496,10 +581,16 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
             annotationMap[key] = false;
         }
     }
+    if (component.children) {
+        for (const key of Object.keys(component.children)) {
+            annotationMap[key] = false;
+        }
+    }
 
+    // annotationMap["view" satisfies keyof Component<TStruct>] = false;
     annotationMap['View' satisfies keyof ComponentModelBase<TStruct>] = false;
     annotationMap['msgBus' satisfies keyof ComponentModelBase<TStruct>] = false;
-    // annotationMap["view" satisfies keyof Component<TStruct>] = false;
+    annotationMap['$' satisfies keyof ComponentModelBase<TStruct>] = false;
 
     const proxyEventHandlers: Pick<ProxyEventHandlers, 'onPropChanging' | 'onPropChange'> = {
         onPropChanging:
@@ -530,7 +621,7 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
 
     function resolveOnGetEventHandler(prop: string) {
         const key = `${$ON_GET}${capitalize(prop)}`;
-        return params[key] || component.events[key];
+        return params[key] || component.events?.[key];
     }
 
     function resolveOnChangingEventHandler(prop: string) {
@@ -569,7 +660,10 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
         }
     }
 
-    model = observable(model, annotationMap);
+    model = observable(model, annotationMap, {
+        deep: true,
+    });
+    // model = useLocalObservable(() => model, annotationMap);
 
     model = createProxy(model, bindings, proxyEventHandlers);
 
@@ -586,13 +680,16 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
 
 export function useComponent<TStruct extends ComponentStruct = ComponentStruct>(
     component: Component<TStruct>,
-    params: ComponentParams<TStruct>
+    params: ComponentParams<TStruct>,
 ): ComponentModel<TStruct> {
     const ref = useLazyRef(() => createModel(component, params));
     const model = ref.current;
 
     useLayoutEffect(() => {
         try {
+            if (getGlobalFlags().debug) {
+                console.debug(`${model.$.id}>layout`);
+            }
             component.events?.onLayout?.(model);
             params?.onLayout?.(model);
         } catch (err) {
@@ -601,6 +698,9 @@ export function useComponent<TStruct extends ComponentStruct = ComponentStruct>(
         }
 
         return () => {
+            if (getGlobalFlags().debug) {
+                console.debug(`${model.$.id}>layout-destroy`);
+            }
             component.events?.onLayoutDestroy?.(model);
             params?.onLayoutDestroy?.(model);
             // ref.current?.dispose();
@@ -610,9 +710,17 @@ export function useComponent<TStruct extends ComponentStruct = ComponentStruct>(
 
     useEffect(() => {
         try {
+            if (getGlobalFlags().debug) {
+                // mount
+                console.debug(`${model.$.id}>ready`);
+            }
             component.events?.onReady?.(model);
             params?.onReady?.(model);
         } catch (err) {
+            if (getGlobalFlags().debug) {
+                // unmount
+                console.debug(`${model.$.id}>destroy`);
+            }
             component.events?.onError?.(model, err);
             params?.onError?.(model, err);
         }
@@ -627,7 +735,7 @@ export function useComponent<TStruct extends ComponentStruct = ComponentStruct>(
 
 // asFC/toFC
 export function getFC<TStruct extends ComponentStruct>(
-    factory: (params: ComponentParams<TStruct>) => ComponentModel<TStruct>
+    factory: (params: ComponentParams<TStruct>) => ComponentModel<TStruct>,
 ): FC<ComponentParams<TStruct>> {
     // observer
     const fc = (params: ComponentParams<TStruct> & PropsWithChildren) => {

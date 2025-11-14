@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import config from "./config";
+import config from "./packageConfig";
 import dts from "vite-plugin-dts";
 import tsConfigPaths from "vite-tsconfig-paths";
 import * as packageJson from "./package.json";
@@ -26,7 +26,7 @@ export default defineConfig({
                 preserveModules: true,
                 preserveModulesRoot: "src",
                 format: "esm",
-                entryFileNames: "[name].es.js" // mjs                
+                entryFileNames: "[name].es.js" // mjs
             }
         },
         sourcemap: true
@@ -43,7 +43,9 @@ export default defineConfig({
         dts({
             outDir: "dist",
             entryRoot: "src",
+            // include: ["src"],
             include: ["src/**/*.ts", "src/**/*.tsx"],
+            exclude: ["src/_stories/**/*"],
             rollupTypes: false,
             insertTypesEntry: false
         }),

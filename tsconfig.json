@@ -17,7 +17,8 @@
         "forceConsistentCasingInFileNames": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "moduleResolution": "Node",
+        // "moduleResolution": "Node",
+        "moduleResolution": "Bundler",
         // "moduleResolution": "Bundler", // no!
         // "moduleResolution": "NodeNext", // no!
         "target": "ESNext",
@@ -68,7 +69,13 @@
         // "preserveSymlinks": false
         // "preserveSymlinks": true // NO! use "npm pack" or "yalc" (not "npm link") or monorepo (pnpm, yarn workspaces, turborepo)
     },
-    "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts"],
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "tests/**/*.ts",
+        "tests/**/*.tsx",
+        "src/_stories/componentModel/ComponentModel.stories.ts"
+    ],
     "exclude": ["**/*.stories.tsx", "**/*.fixture.tsx", "dist", "node-modules"],
     "typeAcquisition": {
         "enable": true
