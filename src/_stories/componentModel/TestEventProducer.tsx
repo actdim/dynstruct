@@ -6,9 +6,7 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusStruct } from './bootstrap';
-
-// import './simpleEdit.css';
+import { AppBusChannels, AppBusStruct, appMsgBus } from './bootstrap';
 
 type Struct = ComponentStruct<
     AppBusStruct,
@@ -18,11 +16,13 @@ type Struct = ComponentStruct<
         };
         methods: {};
         // children: {};
-        msgScope: {};
+        msgScope: {
+            publish: AppBusChannels<'TEST-EVENT'>;
+        };
     }
 >;
 
-export const useSimpleEdit = (params: ComponentParams<Struct>) => {
+export const useTestEventProducer = (params: ComponentParams<Struct>) => {
     const component: Component<Struct> = {
         props: {
             value: 'foo',
@@ -39,23 +39,30 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
         children: {},
 
         view: () => {
+            
             return (
                 <>
                     <input
                         type="text"
                         onChange={(e) => {
                             model.value = e.target.value;
+                            model.msgBus.dispatch({
+                                channel: 'TEST-EVENT',
+                                payload: e.target.value,
+                            });
                         }}
                         value={model.value}
                     ></input>
                 </>
             );
         },
+        msgBus: appMsgBus
+        
     };
 
     const model = useComponent(component, params);
     return model;
 };
 
-export type SimpleEditStruct = Struct;
-export const SimpleEditFC = getFC(useSimpleEdit);
+export type TestEventProducerStruct = Struct;
+export const TestEventProducerFC = getFC(useTestEventProducer);

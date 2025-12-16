@@ -1,6 +1,9 @@
-import { $CG_ERROR, MsgBus, MsgBusStructBase, MsgBusStructFactory } from "@actdim/msgmesh/msgBusCore";
+import { $CG_ERROR, MsgBus, MsgBusStruct, MsgBusStructBase, MsgBusStructFactory } from "@actdim/msgmesh/msgBusCore";
 import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityBusStruct } from "@/appDomain/security/securityContracts";
 import { ReactNode } from "react";
+import { KeysOf } from "@actdim/utico/typeCore";
+import { ComponentRegistryContext } from "@/componentModel/contracts";
+import { useComponentContext } from "@/componentModel/componentContext";
 
 export const $NAV_GOTO = "APP-NAV-GOTO";
 export const $NAV_GET_CONTEXT = "APP-NAV-GET-CONTEXT";
@@ -83,10 +86,10 @@ export type NavRoute<TParams extends NavRouteParams = NavRouteParams> = {
 export type NavRoutes = Record<string, NavRoute>;
 
 type NavRouteStruct<TNavRoutes extends NavRoutes> = {
-  [K in keyof TNavRoutes]: {
-    route: K;
-    params?: TNavRoutes[K]["defaultParams"];
-  };
+    [K in keyof TNavRoutes]: {
+        route: K;
+        params?: TNavRoutes[K]["defaultParams"];
+    };
 }[keyof TNavRoutes];
 
 export type NavContext = {
@@ -205,6 +208,10 @@ export type BaseAppDomainConfig<
     // HATEOAS? (React Admin)
 };
 
-export type BaseAppContext<TMsgBusStruct extends BaseAppBusStruct = BaseAppBusStruct> = {
-    msgBus: MsgBus<TMsgBusStruct>;
+export type BaseAppBusChannels<TChannel extends keyof BaseAppBusStruct | Array<keyof BaseAppBusStruct>> = KeysOf<BaseAppBusStruct, TChannel>;
+
+export type BaseAppContext<TMsgBusStruct extends BaseAppBusStruct = BaseAppBusStruct> = ComponentRegistryContext<TMsgBusStruct> & {
+    // securityProvider: SecurityProvider;
 };
+
+export const useBaseAppContext = <TMsgBusStruct extends BaseAppBusStruct = BaseAppBusStruct>() => useComponentContext() as BaseAppContext<TMsgBusStruct>;

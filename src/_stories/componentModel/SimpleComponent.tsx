@@ -9,9 +9,9 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusStruct, appMsgBus } from './bootstrap';
+import { AppBusChannels, AppBusStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
-import { SimpleEditFC, SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
+import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
 import { DynamicContentStruct, useDynamicContent } from './DynamicContent';
 
 // import './simpleComponent.css';
@@ -30,13 +30,14 @@ type Struct = ComponentStruct<
             content: DynamicContentStruct<string>;
             dynEdit: (props: { value?: string }) => SimpleEditStruct;
         };
-        msgScope: {};
+
+        msgScope: {
+            provide: AppBusChannels<'APP-CONFIG-GET'>;
+        };
     }
 >;
 
 export const useSimpleComponent = (params: ComponentParams<Struct>) => {
-    // const context = useAppContext();
-
     let model: ComponentModel<Struct>;
     let component: Component<Struct> = {
         props: {
@@ -46,11 +47,11 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
 
         methods: {},
 
-        events: {
-            onReady: async () => {},
-        },
+        events: {},
 
-        msgBroker: {},
+        msgBroker: {
+            
+        },
 
         children: {
             button: useSimpleButton({
@@ -108,8 +109,6 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
                 </div>
             );
         },
-
-        msgBus: appMsgBus,
     };
 
     model = useComponent(component, params);

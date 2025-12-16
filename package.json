@@ -50,6 +50,7 @@
     },
     "sideEffects": false,
     "sideEffects?": [],
+    "packageManager": "pnpm@10.21.0",
     "scripts": {
         "test": "npx vitest --config=vitest.node.config.ts --no-cache",
         "test:w": "npx vitest --config=vitest.node.config.ts --watch",
@@ -69,7 +70,7 @@
         "build-storybook": "storybook build"
     },
     "peerDependencies": {
-        "@actdim/msgmesh": "^1.0.2",
+        "@actdim/msgmesh": "^1.0.5",
         "@actdim/utico": "^1.0.2",
         "dexie": "^4.2.0",
         "http-status": "^2.1.0",

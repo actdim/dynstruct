@@ -6,7 +6,7 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusStruct, appMsgBus } from './bootstrap';
+import { AppBusStruct } from './bootstrap';
 
 // import './simpleButton.css';
 
@@ -24,7 +24,6 @@ type Struct = ComponentStruct<
 >;
 
 export const useSimpleButton = (params: ComponentParams<Struct>) => {
-    // const context = useAppContext();
     const component: Component<Struct> = {
         props: {
             onClick: undefined,
@@ -33,23 +32,19 @@ export const useSimpleButton = (params: ComponentParams<Struct>) => {
 
         methods: {},
 
-        events: {
-            onReady: async () => {},
-        },
+        events: {},
 
         msgBroker: {},
 
         children: {},
 
-        view: () => {            
+        view: () => {
             return (
                 <>
                     <button onClick={model.onClick}>{model.content}</button>
                 </>
             );
         },
-
-        msgBus: appMsgBus,
     };
 
     const model = useComponent(component, params);

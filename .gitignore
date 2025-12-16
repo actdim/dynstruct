@@ -134,3 +134,6 @@ dist
 package-lock.json
 *storybook.log
 storybook-static
+
+*.local
+*.private

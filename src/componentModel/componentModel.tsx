@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PropsWithChildren, useEffect, useLayoutEffect, FC, ReactNode } from 'react';
 import {
     $CG_IN,
@@ -8,11 +8,12 @@ import {
     MsgBusStruct,
     MsgBusSubscriberParams,
 } from '@actdim/msgmesh/msgBusCore';
-import { MaybePromise, SafeKey, Skip } from '@actdim/utico/typeCore';
+import { MaybePromise, Mutable, SafeKey, Skip } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
 import { observable, runInAction } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
+import { ReactComponentContext, useComponentContext } from './componentContext';
 
 export type MsgBusChannelGroupProviderParams<
     TStruct extends MsgBusStruct = MsgBusStruct,
@@ -80,7 +81,7 @@ export type MsgBusBroker<
 > = {
     // providers
     provide?: {
-        [TChannel in keyof TStructToProvide]?: {
+        [TChannel in keyof TStructToProvide]: {
             [TGroup in keyof Skip<
                 TStructToProvide[TChannel],
                 typeof $CG_OUT
@@ -97,6 +98,7 @@ export type MsgBusBroker<
             >;
         };
     };
+    abortController?: AbortController;
 };
 
 type ValueConverter<TTo, TFrom> = {
@@ -118,20 +120,9 @@ type Validator<T> = {
     validate: (value: T) => MaybePromise<ValidationResult>;
 };
 
-const $isBinding = Symbol('$isBinding');
-// const $bindings = Symbol('$bindings');
-export interface IBinding<T = any, TFrom = any> {
-    // getter
-    readonly get: () => T;
-    // setter
-    readonly set: (value: T) => void;
-    readonly converter: ValueConverter<T, TFrom>;
-    readonly validator: Validator<T>;
-    readonly readOnly: boolean;
-    [$isBinding]: boolean;
-}
+const $isBinding = Symbol('$isBinding'); // brand
 
-class Binding<T = any, TFrom = any> implements IBinding<any, any> {
+class Binding<T = any, TFrom = any> {
     // getter
     readonly get: () => T;
     // setter
@@ -155,7 +146,7 @@ class Binding<T = any, TFrom = any> implements IBinding<any, any> {
     [$isBinding]: boolean;
 }
 
-export function isBinding(obj: any): obj is IBinding {
+export function isBinding(obj: any): obj is Binding {
     return obj[$isBinding] === true;
 }
 
@@ -244,6 +235,11 @@ type PublicKeys<T> = {
     [K in keyof T]: K extends `_${string}` ? never : K;
 }[keyof T];
 
+export type ComponentMsgBusBroker<TStruct extends ComponentStruct> = MsgBusBroker<
+    Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>>,
+    Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>>
+>;
+
 export type Component<TStruct extends ComponentStruct> = {
     name?: string;
     props?: TStruct['props'];
@@ -251,19 +247,8 @@ export type Component<TStruct extends ComponentStruct> = {
     children?: ComponentChildren<TStruct['children']>;
     events?: ComponentEvents<TStruct>;
     // msgs?
-    msgBroker?: MsgBusBroker<
-        Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>>,
-        Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>>
-    >;
-    msgBus?: MsgBus<
-        // TStruct["msgBus"]
-        Pick<
-            TStruct['msgBus'],
-            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>
-            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>
-            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['publish']>
-        >
-    >;
+    msgBroker?: ComponentMsgBusBroker<TStruct>;
+    msgBus?: MsgBus<TStruct['msgBus']>;
     view?: ComponentViewImplFn<TStruct>;
 };
 
@@ -290,28 +275,33 @@ type ComponentModelChildren<TRefStruct extends ComponentRefStruct> = {
 };
 
 export type ComponentModelContext = {
-    bindings?: Map<PropKey, IBinding>;
+    bindings?: Map<PropKey, Binding>;
     id: string;
+    parentId: string;
+    getHierarchyId(): string;
 };
 
+export type ComponentMsgBus<TStruct extends ComponentStruct = ComponentStruct> = Pick<
+    TStruct['msgBus'],
+    | SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>
+    | SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>
+    | SafeKey<TStruct['msgBus'], TStruct['msgScope']['publish']>
+>;
+
 export type ComponentModelBase<TStruct extends ComponentStruct = ComponentStruct> = {
-    readonly msgBus?: MsgBus<
+    msgBus: MsgBus<
         // TStruct["msgBus"]
-        Pick<
-            TStruct['msgBus'],
-            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>
-            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>
-            | SafeKey<TStruct['msgBus'], TStruct['msgScope']['publish']>
-        >
+        ComponentMsgBus<TStruct>
     >;
-    readonly View: ComponentViewFn;
-    $: ComponentModelContext;
+    msgBroker: ComponentMsgBusBroker<TStruct>;
+    View: ComponentViewFn;
+    $: Readonly<ComponentModelContext>;
 };
 
 export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
-    TStruct['methods'] &
-    ComponentModelChildren<TStruct['children']> &
-    ComponentModelBase<TStruct>;
+    Readonly<TStruct['methods']> &
+    Readonly<ComponentModelChildren<TStruct['children']>> &
+    Readonly<ComponentModelBase<TStruct>>;
 
 // style: CSSProperties;
 
@@ -335,7 +325,7 @@ const blankView = () => null;
 
 function createProxy(
     state: any,
-    bindings: Map<PropKey, IBinding>,
+    bindings: Map<PropKey, Binding>,
     proxyEventHandlers: ProxyEventHandlers,
 ) {
     const onPropChanging = proxyEventHandlers.onPropChanging;
@@ -350,9 +340,7 @@ function createProxy(
             const binding = bindings.get(String(prop));
             if (binding) {
                 let value: any = undefined;
-                // untracked(() => {
                 value = binding.get();
-                // });
                 return value;
             }
             return Reflect.get(obj, prop, receiver);
@@ -381,9 +369,7 @@ function createProxy(
 
             const binding = bindings.get(prop);
             if (binding?.set) {
-                // untracked(() => {
                 binding.set(value);
-                // });
             }
 
             const onChange = proxyEventHandlers[prop]?.onChange;
@@ -452,33 +438,160 @@ function getCallerFileName(depth = 2): string | null {
     return null;
 }
 
+function registerMsgBroker<TStruct extends ComponentStruct = ComponentStruct>(
+    msgBroker: ComponentMsgBusBroker<TStruct>,
+    msgBus: MsgBus<TStruct['msgBus']>,
+    // msgBus: ComponentMsgBus<TStruct>,
+    abortSignal: AbortSignal,
+) {
+    const providers = msgBroker?.provide;
+    if (providers) {
+        for (const [channel, providerGroups] of Object.entries(providers)) {
+            for (const [group, provider] of Object.entries(providerGroups)) {
+                msgBus.provide({
+                    ...provider,
+                    channel: channel,
+                    group: group,
+                    config: {
+                        abortSignal: abortSignal,
+                    },
+                });
+            }
+        }
+    }
+    const subscribers = msgBroker?.subscribe;
+    if (subscribers) {
+        for (const [channel, subscriberGroups] of Object.entries(subscribers)) {
+            for (const [group, subscriber] of Object.entries(subscriberGroups)) {
+                msgBus.on({
+                    ...subscriber,
+                    channel: channel,
+                    group: group,
+                    config: {
+                        abortSignal: abortSignal,
+                    },
+                });
+            }
+        }
+    }
+}
+
 function createModel<TStruct extends ComponentStruct = ComponentStruct>(
     component: Component<TStruct>,
     params: ComponentParams<TStruct>,
 ): ComponentModel<TStruct> {
-    const msgBus = component.msgBus;
-
-    const bindings = new Map<PropKey, IBinding>();
-
+    const bindings = new Map<PropKey, Binding>();
     const view = component.view;
 
     let model: ComponentModel<TStruct>;
+    let modelContext: ComponentModelContext;
+    let msgBus = component.msgBus;
+    let msgBroker = {
+        ...component.msgBroker,
+    };
+
+    if (!msgBroker.abortController) {
+        msgBroker.abortController = new AbortController();
+    }
+
     const ViewFC = observer((props: ComponentViewProps) => {
+        const id = modelContext.id;
+        const context = useComponentContext();
+        const parentId = context.currentId;
+
+        modelContext.parentId = parentId;
+
+        if (!msgBus) {
+            msgBus = context.msgBus;
+        }
+
+        const scopeContext = useMemo(
+            () => ({ ...context, currentId: id }),
+            [component, params, context],
+        );
+
+        useLayoutEffect(() => {
+            try {
+                if (getGlobalFlags().debug) {
+                    const hierarchyId = modelContext.getHierarchyId;
+                    console.debug(`${hierarchyId}>layout`);
+                }
+
+                context.register(id, parentId);
+                modelContext.getHierarchyId = () => context.getHierarchyPath();
+
+                registerMsgBroker(component.msgBroker, msgBus, msgBroker.abortController.signal);
+
+                component.events?.onLayout?.(model);
+                params?.onLayout?.(model);
+            } catch (err) {
+                component.events?.onError?.(model, err);
+                params?.onError?.(model, err);
+            }
+
+            return () => {
+                if (getGlobalFlags().debug) {
+                    const hierarchyId = modelContext.getHierarchyId;
+                    console.debug(`${hierarchyId}>layout-destroy`);
+                }
+                context.unregister(id);
+
+                msgBroker.abortController.abort();
+
+                component.events?.onLayoutDestroy?.(model);
+                params?.onLayoutDestroy?.(model);
+            };
+        }, [component, params, context]);
+
+        useEffect(() => {
+            try {
+                if (getGlobalFlags().debug) {
+                    // mount
+                    const hierarchyId = modelContext.getHierarchyId;
+                    console.debug(`${hierarchyId}>ready`);
+                }
+                component.events?.onReady?.(model);
+                params?.onReady?.(model);
+            } catch (err) {
+                if (getGlobalFlags().debug) {
+                    // unmount
+                    const hierarchyId = modelContext.getHierarchyId;
+                    console.debug(`${hierarchyId}>destroy`);
+                }
+                component.events?.onError?.(model, err);
+                params?.onError?.(model, err);
+            }
+            return () => {
+                component.events?.onDestroy?.(model);
+                params?.onDestroy?.(model);
+            };
+        }, [component, params, context]);
+
+        let content: React.ReactNode;
+        // let content: any;
         try {
             if (getGlobalFlags().debug) {
                 // render
-                console.debug(`${model.$.id}>view`);
+                const hierarchyId = modelContext.getHierarchyId;
+                console.debug(`${hierarchyId}>view`);
             }
             if (typeof view === 'function') {
-                return view(props, model);
+                content = view(props, model);
+            } else {
+                // content = props.children;
+                content = <>{props.children}</>;
             }
-            return <>{props.children}</>;
         } catch (err) {
             // throw err;
             const errDetails = JSON.stringify(err);
-            return <>{errDetails}</>;
-        } finally {
+            // msgBus.dispatch
+            content = <>{errDetails}</>;
         }
+        return (
+            <ReactComponentContext.Provider value={scopeContext}>
+                {content}
+            </ReactComponentContext.Provider>
+        );
     });
 
     let srcInfo: ComponentSourceInfo;
@@ -500,17 +613,26 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
         componentData.count++;
     }
 
-    const rootId = `${srcInfo.structId}#${srcInfo.count}`;
+    const id = `${srcInfo.structId}#${srcInfo.count}`;
+    modelContext = {
+        bindings: bindings,
+        id: id,
+        parentId: undefined,
+        getHierarchyId: () => {
+            return undefined;
+        },
+    };
+
     model = {
         ...component.props,
         ...component.methods,
         // view: component.view,
         View: ViewFC,
-        msgBus: msgBus,
-        $: {
-            bindings: bindings,
-            id: rootId,
+        get msgBus() {
+            return msgBus;
         },
+        msgBroker: msgBroker,
+        $: modelContext,
     };
 
     if (component.children) {
@@ -529,32 +651,6 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
                 Reflect.set(model, capitalize(key), ChildViewFC);
             } else {
                 Reflect.set(model, key, value);
-            }
-        }
-    }
-    if (component.msgBroker) {
-        const providers = component.msgBroker.provide;
-        if (providers) {
-            for (const [channel, providerGroups] of Object.entries(providers)) {
-                for (const [group, provider] of Object.entries(providerGroups)) {
-                    msgBus.provide({
-                        ...provider,
-                        channel: channel,
-                        group: group,
-                    });
-                }
-            }
-        }
-        const subscribers = component.msgBroker.subscribe;
-        if (subscribers) {
-            for (const [channel, subscriberGroups] of Object.entries(subscribers)) {
-                for (const [group, subscriber] of Object.entries(subscriberGroups)) {
-                    msgBus.on({
-                        ...subscriber,
-                        channel: channel,
-                        group: group,
-                    });
-                }
             }
         }
     }
@@ -683,53 +779,11 @@ export function useComponent<TStruct extends ComponentStruct = ComponentStruct>(
     params: ComponentParams<TStruct>,
 ): ComponentModel<TStruct> {
     const ref = useLazyRef(() => createModel(component, params));
-    const model = ref.current;
-
     useLayoutEffect(() => {
-        try {
-            if (getGlobalFlags().debug) {
-                console.debug(`${model.$.id}>layout`);
-            }
-            component.events?.onLayout?.(model);
-            params?.onLayout?.(model);
-        } catch (err) {
-            component.events?.onError?.(model, err);
-            params?.onError?.(model, err);
-        }
-
         return () => {
-            if (getGlobalFlags().debug) {
-                console.debug(`${model.$.id}>layout-destroy`);
-            }
-            component.events?.onLayoutDestroy?.(model);
-            params?.onLayoutDestroy?.(model);
-            // ref.current?.dispose();
             ref.current = null;
         };
-    }, []);
-
-    useEffect(() => {
-        try {
-            if (getGlobalFlags().debug) {
-                // mount
-                console.debug(`${model.$.id}>ready`);
-            }
-            component.events?.onReady?.(model);
-            params?.onReady?.(model);
-        } catch (err) {
-            if (getGlobalFlags().debug) {
-                // unmount
-                console.debug(`${model.$.id}>destroy`);
-            }
-            component.events?.onError?.(model, err);
-            params?.onError?.(model, err);
-        }
-        return () => {
-            component.events?.onDestroy?.(model);
-            params?.onDestroy?.(model);
-        };
-    }, []);
-
+    }, [component, params]);
     return ref.current;
 }
 
