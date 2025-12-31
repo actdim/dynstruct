@@ -3,33 +3,69 @@ import { PropsWithChildren, useEffect, useLayoutEffect, FC, ReactNode } from 're
 import {
     $CG_IN,
     $CG_OUT,
+    $TypeArgHeaders,
+    $TypeArgStruct,
+    Msg,
     MsgBus,
-    MsgBusProviderParams,
-    MsgBusStruct,
-    MsgBusSubscriberParams,
+    MsgProviderParams,
+    MsgStruct,
+    MsgSubscriberParams,
+    OutStruct,
 } from '@actdim/msgmesh/msgBusCore';
-import { MaybePromise, Mutable, SafeKey, Skip } from '@actdim/utico/typeCore';
+import { MaybePromise, SafeKey, Skip } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
 import { observable, runInAction } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
 import { ReactComponentContext, useComponentContext } from './componentContext';
+import { ComponentMsgHeaders, TreeNode } from './contracts';
+import { lazy } from '@actdim/utico/utils';
 
-export type MsgBusChannelGroupProviderParams<
-    TStruct extends MsgBusStruct = MsgBusStruct,
+export enum ComponentMsgFilter {
+    None = 0,
+    // AcceptFrom...
+    FromAncestors = 1 << 0,
+    FromDescendants = 1 << 1,
+}
+
+export type MsgChannelGroupProviderParams<
+    TStruct extends MsgStruct = MsgStruct,
     TChannel extends keyof TStruct = keyof TStruct,
     TGroup extends keyof TStruct[TChannel] = typeof $CG_IN, // keyof TStruct[TChannel]
-> = Skip<MsgBusProviderParams<TStruct, TChannel, TGroup>, 'channel' | 'group'>;
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+    TScope = any,
+> = Skip<
+    MsgProviderParams<TStruct, TChannel, TGroup>,
+    'channel' | 'group' | 'callback' | 'filter'
+> & {
+    // resolve
+    callback?: (
+        msgIn: Msg<TStruct, TChannel, TGroup, TMsgHeaders>,
+        headers: TMsgHeaders,
+        scope: TScope,
+    ) => MaybePromise<OutStruct<TStruct, TChannel>>;
+    filter?: (msg: Msg<TStruct, TChannel, TGroup, TMsgHeaders>, scope: TScope) => boolean;
+    componentFilter?: ComponentMsgFilter;
+};
 
-export type MsgBusChannelGroupSubscriberParams<
-    TStruct extends MsgBusStruct = MsgBusStruct,
+export type MsgChannelGroupSubscriberParams<
+    TStruct extends MsgStruct = MsgStruct,
     TChannel extends keyof TStruct = keyof TStruct,
     TGroup extends keyof TStruct[TChannel] = typeof $CG_IN, // keyof TStruct[TChannel]
-> = Skip<MsgBusSubscriberParams<TStruct, TChannel, TGroup>, 'channel' | 'group'>;
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+    TScope = any,
+> = Skip<
+    MsgSubscriberParams<TStruct, TChannel, TGroup>,
+    'channel' | 'group' | 'callback' | 'filter'
+> & {
+    callback?: (msg: Msg<TStruct, TChannel, TGroup, TMsgHeaders>, scope: TScope) => void;
+    filter?: (msg: Msg<TStruct, TChannel, TGroup, TMsgHeaders>, scope: TScope) => boolean;
+    componentFilter?: ComponentMsgFilter;
+};
 
-// MsgBusScope
-export type MsgBusBrokerScope<
-    TStruct extends MsgBusStruct /*= MsgBusStruct*/,
+// MsgScope
+export type MsgBrokerScope<
+    TStruct extends MsgStruct /*= MsgStruct*/,
     TKeysToProvide extends keyof TStruct = keyof TStruct,
     TKeysToSubscribe extends keyof TStruct = keyof TStruct,
     TKeysToPublish extends keyof TStruct = keyof TStruct,
@@ -51,15 +87,15 @@ export type ComponentMethodStruct = Record<string, Function>;
 //     [action: string]: Function;
 // };
 
-// export type ComponentRefStruct = Record<string, ComponentStruct<TMsgBusStruct, T>>;
+// export type ComponentRefStruct = Record<string, ComponentStruct<TMsgStruct, T>>;
 export type ComponentRefStruct = {
     [name: string]: ComponentStruct | ((params: any) => ComponentStruct);
 };
 
 export type ComponentStructBase<
-    TMsgBusStruct extends MsgBusStruct = MsgBusStruct,
+    TMsgStruct extends MsgStruct = MsgStruct,
     TPropStruct extends ComponentPropStruct = ComponentPropStruct,
-    TMsgScope extends MsgBusBrokerScope<TMsgBusStruct> = MsgBusBrokerScope<TMsgBusStruct>,
+    TMsgScope extends MsgBrokerScope<TMsgStruct> = MsgBrokerScope<TMsgStruct>,
 > = {
     props?: TPropStruct;
     methods?: ComponentMethodStruct;
@@ -69,15 +105,22 @@ export type ComponentStructBase<
 
 // ComponentShape
 export type ComponentStruct<
-    TMsgBusStruct extends MsgBusStruct = MsgBusStruct,
-    T extends ComponentStructBase<TMsgBusStruct> = ComponentStructBase<TMsgBusStruct>,
+    TMsgStruct extends MsgStruct = MsgStruct,
+    T extends ComponentStructBase<TMsgStruct> = ComponentStructBase<TMsgStruct>,
+    // TMsgBus extends MsgBus<MsgStruct> = MsgBus<MsgStruct>,
+    // T extends ComponentStructBase<TMsgBus[typeof $TypeArgStruct]> = ComponentStructBase<
+    //     TMsgBus[typeof $TypeArgStruct]
+    // >,
 > = T & {
-    msgBus: TMsgBusStruct;
+    msgBus: TMsgStruct;
+    // msgBus: TMsgBus;
 };
 
-export type MsgBusBroker<
-    TStructToProvide extends MsgBusStruct = MsgBusStruct,
-    TStructToSubscribe extends MsgBusStruct = MsgBusStruct,
+export type MsgBroker<
+    TStructToProvide extends MsgStruct = MsgStruct,
+    TStructToSubscribe extends MsgStruct = MsgStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+    TScope = any,
 > = {
     // providers
     provide?: {
@@ -85,16 +128,24 @@ export type MsgBusBroker<
             [TGroup in keyof Skip<
                 TStructToProvide[TChannel],
                 typeof $CG_OUT
-            >]?: MsgBusChannelGroupProviderParams<TStructToProvide, TChannel, TGroup>;
+            >]?: MsgChannelGroupProviderParams<
+                TStructToProvide,
+                TChannel,
+                TGroup,
+                TMsgHeaders,
+                TScope
+            >;
         };
     };
     // subscribers
     subscribe?: {
         [TChannel in keyof TStructToSubscribe]: {
-            [TGroup in keyof TStructToSubscribe[TChannel]]?: MsgBusChannelGroupSubscriberParams<
+            [TGroup in keyof TStructToSubscribe[TChannel]]?: MsgChannelGroupSubscriberParams<
                 TStructToSubscribe,
                 TChannel,
-                TGroup
+                TGroup,
+                TMsgHeaders,
+                TScope
             >;
         };
     };
@@ -223,10 +274,10 @@ type ComponentViewProps = {
 } & PropsWithChildren;
 
 // ComponentRenderImplFn
-type ComponentViewImplFn<TStruct extends ComponentStruct> = (
-    props: ComponentViewProps,
-    model?: ComponentModel<TStruct>,
-) => ReactNode; // JSX.Element
+type ComponentViewImplFn<
+    TStruct extends ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = (props: ComponentViewProps, model?: ComponentModel<TStruct, TMsgHeaders>) => ReactNode; // JSX.Element
 
 // ComponentRenderFn
 type ComponentViewFn = (props: ComponentViewProps) => ReactNode; // JSX.Element
@@ -235,21 +286,40 @@ type PublicKeys<T> = {
     [K in keyof T]: K extends `_${string}` ? never : K;
 }[keyof T];
 
-export type ComponentMsgBusBroker<TStruct extends ComponentStruct> = MsgBusBroker<
+export type ComponentMsgBroker<
+    TStruct extends ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = MsgBroker<
     Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>>,
-    Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>>
+    Pick<TStruct['msgBus'], SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>>,
+    // Pick<
+    //     TStruct['msgBus'][typeof $TypeArgStruct],
+    //     SafeKey<TStruct['msgBus'][typeof $TypeArgStruct], TStruct['msgScope']['provide']>
+    // >,
+    // Pick<
+    //     TStruct['msgBus'][typeof $TypeArgStruct],
+    //     SafeKey<TStruct['msgBus'][typeof $TypeArgStruct], TStruct['msgScope']['subscribe']>
+    // >,
+    // TStruct['msgBus'][typeof $TypeArgHeaders],
+    TMsgHeaders,
+    // ComponentModel<TStruct, TStruct['msgBus'][typeof $TypeArgHeaders]>
+    ComponentModel<TStruct, TMsgHeaders>
 >;
 
-export type Component<TStruct extends ComponentStruct> = {
+export type Component<
+    TStruct extends ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = {
     name?: string;
     props?: TStruct['props'];
     methods?: TStruct['methods'];
     children?: ComponentChildren<TStruct['children']>;
     events?: ComponentEvents<TStruct>;
     // msgs?
-    msgBroker?: ComponentMsgBusBroker<TStruct>;
-    msgBus?: MsgBus<TStruct['msgBus']>;
-    view?: ComponentViewImplFn<TStruct>;
+    msgBroker?: ComponentMsgBroker<TStruct, TMsgHeaders>;
+    msgBus?: MsgBus<TStruct['msgBus'], TMsgHeaders>;
+    // msgBus?: TStruct['msgBus'];
+    view?: ComponentViewImplFn<TStruct, TMsgHeaders>;
 };
 
 type ComponentChildren<TRefStruct extends ComponentRefStruct> = {
@@ -278,30 +348,49 @@ export type ComponentModelContext = {
     bindings?: Map<PropKey, Binding>;
     id: string;
     parentId: string;
+    // getHierarchyPath?
     getHierarchyId(): string;
+    getParent: () => string | undefined;
+    getChildren: () => string[];
+    getChainUp: () => string[];
+    getChainDown: () => string[];
+    getNodeMap: () => Map<string, TreeNode>;
 };
 
-export type ComponentMsgBus<TStruct extends ComponentStruct = ComponentStruct> = Pick<
+export type ComponentMsgStruct<TStruct extends ComponentStruct = ComponentStruct> = Pick<
     TStruct['msgBus'],
     | SafeKey<TStruct['msgBus'], TStruct['msgScope']['provide']>
     | SafeKey<TStruct['msgBus'], TStruct['msgScope']['subscribe']>
     | SafeKey<TStruct['msgBus'], TStruct['msgScope']['publish']>
+    // TStruct['msgBus'][typeof $TypeArgStruct],
+    // | SafeKey<TStruct['msgBus'][typeof $TypeArgStruct], TStruct['msgScope']['provide']>
+    // | SafeKey<TStruct['msgBus'][typeof $TypeArgStruct], TStruct['msgScope']['subscribe']>
+    // | SafeKey<TStruct['msgBus'][typeof $TypeArgStruct], TStruct['msgScope']['publish']>
 >;
 
-export type ComponentModelBase<TStruct extends ComponentStruct = ComponentStruct> = {
+export type ComponentModelBase<
+    TStruct extends ComponentStruct = ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = {
     msgBus: MsgBus<
         // TStruct["msgBus"]
-        ComponentMsgBus<TStruct>
+        // TStruct["msgBus"][typeof $TypeArgStruct],
+        ComponentMsgStruct<TStruct>,
+        // TStruct['msgBus'][typeof $TypeArgHeaders]
+        TMsgHeaders
     >;
-    msgBroker: ComponentMsgBusBroker<TStruct>;
+    msgBroker: ComponentMsgBroker<TStruct>;
     View: ComponentViewFn;
     $: Readonly<ComponentModelContext>;
 };
 
-export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
+export type ComponentModel<
+    TStruct extends ComponentStruct = ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = TStruct['props'] &
     Readonly<TStruct['methods']> &
     Readonly<ComponentModelChildren<TStruct['children']>> &
-    Readonly<ComponentModelBase<TStruct>>;
+    Readonly<ComponentModelBase<TStruct, TMsgHeaders>>;
 
 // style: CSSProperties;
 
@@ -439,41 +528,129 @@ function getCallerFileName(depth = 2): string | null {
 }
 
 function registerMsgBroker<TStruct extends ComponentStruct = ComponentStruct>(
-    msgBroker: ComponentMsgBusBroker<TStruct>,
-    msgBus: MsgBus<TStruct['msgBus']>,
-    // msgBus: ComponentMsgBus<TStruct>,
-    abortSignal: AbortSignal,
+    model: ComponentModel<TStruct>,
 ) {
-    const providers = msgBroker?.provide;
+    const providers = model?.msgBroker.provide;
     if (providers) {
         for (const [channel, providerGroups] of Object.entries(providers)) {
-            for (const [group, provider] of Object.entries(providerGroups)) {
-                msgBus.provide({
-                    ...provider,
+            for (const [g, p] of Object.entries(providerGroups)) {
+                const provider = p as MsgChannelGroupProviderParams;
+                const callback = provider.callback;
+                if (callback) {
+                    provider.callback = (msg, headers) => {
+                        return callback(msg, headers, model);
+                    };
+                }
+                const filter = provider.filter;
+                const componentFilter = provider.componentFilter || ComponentMsgFilter.None;
+                const msgFilter = (msg) => {
+                    let result = true;
+                    if (componentFilter & ComponentMsgFilter.FromAncestors) {
+                        const ancestorIds = model.$.getChainUp();
+                        result = ancestorIds.indexOf(msg.headers?.sourceId) >= 0;
+                    }
+                    if (result && componentFilter & ComponentMsgFilter.FromDescendants) {
+                        const ancestorIds = model.$.getChainDown();
+                        result = ancestorIds.indexOf(msg.headers?.sourceId) >= 0;
+                    }
+                    if (result && filter) {
+                        result = filter(msg, model);
+                    }
+                    return result;
+                };
+                provider.filter = msgFilter;
+
+                model.msgBus.provide({
+                    ...p,
                     channel: channel,
-                    group: group,
+                    group: g,
                     config: {
-                        abortSignal: abortSignal,
+                        abortSignal: model.msgBroker.abortController.signal,
                     },
                 });
             }
         }
     }
-    const subscribers = msgBroker?.subscribe;
+    const subscribers = model?.msgBroker?.subscribe;
     if (subscribers) {
         for (const [channel, subscriberGroups] of Object.entries(subscribers)) {
-            for (const [group, subscriber] of Object.entries(subscriberGroups)) {
-                msgBus.on({
-                    ...subscriber,
+            for (const [g, s] of Object.entries(subscriberGroups)) {
+                const subscriber = s as MsgChannelGroupSubscriberParams;
+                const callback = subscriber.callback;
+                if (callback) {
+                    subscriber.callback = (msg) => {
+                        return callback(msg, model);
+                    };
+                }
+                const filter = subscriber.filter;
+                const componentFilter = subscriber.componentFilter || ComponentMsgFilter.None;
+                const msgFilter = (msg) => {
+                    let result = true;
+                    if (componentFilter & ComponentMsgFilter.FromAncestors) {
+                        const ancestorIds = model.$.getChainUp();
+                        result = ancestorIds.indexOf(msg.headers?.sourceId) >= 0;
+                    }
+                    if (result && componentFilter & ComponentMsgFilter.FromDescendants) {
+                        const ancestorIds = model.$.getChainDown();
+                        result = ancestorIds.indexOf(msg.headers?.sourceId) >= 0;
+                    }
+                    if (result && filter) {
+                        result = filter(msg, model);
+                    }
+                    return result;
+                };
+                subscriber.filter = msgFilter;
+
+                model.msgBus.on({
+                    ...s,
                     channel: channel,
-                    group: group,
+                    group: g,
                     config: {
-                        abortSignal: abortSignal,
+                        abortSignal: model.msgBroker.abortController.signal,
                     },
                 });
             }
         }
     }
+}
+
+function getComponentMsgBus<TStruct extends ComponentStruct = ComponentStruct>(
+    msgBus: MsgBus<TStruct['msgBus']>,
+    modelContext: ComponentModelContext,
+) {
+    // ComponentModel<TStruct>['msgBus']
+    const updateParams = (params: { headers?: ComponentMsgHeaders }) => {
+        if (!params.headers) {
+            params.headers = {};
+        }
+        if (params.headers.sourceId == undefined) {
+            params.headers.sourceId = modelContext.id;
+        }
+    };
+    return {
+        config: msgBus.config,
+        on: (params) => {
+            return msgBus.on(params);
+        },
+        onceAsync: (params) => {
+            return msgBus.onceAsync(params);
+        },
+        stream: (params) => {
+            return msgBus.stream(params);
+        },
+        provide: (params) => {
+            updateParams(params);
+            return msgBus.provide(params);
+        },
+        dispatch: (params) => {
+            updateParams(params);
+            return msgBus.dispatch(params);
+        },
+        dispatchAsync: (params) => {
+            updateParams(params);
+            return msgBus.dispatchAsync(params);
+        },
+    } as MsgBus<TStruct['msgBus']>;
 }
 
 function createModel<TStruct extends ComponentStruct = ComponentStruct>(
@@ -484,8 +661,15 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
     const view = component.view;
 
     let model: ComponentModel<TStruct>;
+
     let modelContext: ComponentModelContext;
+
     let msgBus = component.msgBus;
+
+    const componentMsgBus = lazy(() => {
+        return getComponentMsgBus(msgBus, modelContext) as ComponentModel<TStruct>['msgBus'];
+    });
+
     let msgBroker = {
         ...component.msgBroker,
     };
@@ -518,9 +702,16 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
                 }
 
                 context.register(id, parentId);
-                modelContext.getHierarchyId = () => context.getHierarchyPath();
 
-                registerMsgBroker(component.msgBroker, msgBus, msgBroker.abortController.signal);
+                modelContext.getHierarchyId = () => context.getHierarchyPath(id);
+
+                modelContext.getChainDown = () => context.getChainDown(id);
+                modelContext.getChainUp = () => context.getChainUp(id);
+                modelContext.getChildren = () => context.getChildren(id);
+                modelContext.getParent = () => context.getParent(id);
+                modelContext.getNodeMap = () => context.getNodeMap();
+
+                registerMsgBroker(model);
 
                 component.events?.onLayout?.(model);
                 params?.onLayout?.(model);
@@ -618,9 +809,12 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
         bindings: bindings,
         id: id,
         parentId: undefined,
-        getHierarchyId: () => {
-            return undefined;
-        },
+        getHierarchyId: () => undefined,
+        getChainDown: () => undefined,
+        getChainUp: () => undefined,
+        getChildren: () => undefined,
+        getParent: () => undefined,
+        getNodeMap: () => undefined,
     };
 
     model = {
@@ -629,7 +823,7 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
         // view: component.view,
         View: ViewFC,
         get msgBus() {
-            return msgBus;
+            return componentMsgBus();
         },
         msgBroker: msgBroker,
         $: modelContext,
@@ -774,10 +968,10 @@ function createModel<TStruct extends ComponentStruct = ComponentStruct>(
     return model;
 }
 
-export function useComponent<TStruct extends ComponentStruct = ComponentStruct>(
-    component: Component<TStruct>,
-    params: ComponentParams<TStruct>,
-): ComponentModel<TStruct> {
+export function useComponent<
+    TStruct extends ComponentStruct = ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(component: Component<TStruct, TMsgHeaders>, params: ComponentParams<TStruct>) {
     const ref = useLazyRef(() => createModel(component, params));
     useLayoutEffect(() => {
         return () => {

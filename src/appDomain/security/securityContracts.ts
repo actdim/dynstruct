@@ -1,4 +1,4 @@
-import { MsgBus, MsgBusStruct, MsgBusStructBase } from "@actdim/msgmesh/msgBusCore";
+import { MsgBus, MsgStruct, MsgStructBase } from "@actdim/msgmesh/msgBusCore";
 import { RequireExtends, Skip } from "@actdim/utico/typeCore";
 // abstract
 export enum AccessLevel {
@@ -37,8 +37,8 @@ export type SecurityTokens = {
     refreshToken?: string;
 };
 
-// Base(App)Security(Msg)BusStruct
-export type BaseSecurityBusStruct = RequireExtends<
+// Base(App)SecurityMsgStruct
+export type BaseSecurityMsgStruct = RequireExtends<
     {
         [$SIGNIN]: {
             in: UserCredentials;
@@ -80,8 +80,8 @@ export type BaseSecurityBusStruct = RequireExtends<
             in: void;
             out: BaseSecurityDomainConfig;
         };        
-    } & MsgBusStructBase,
-    MsgBusStruct
+    } & MsgStructBase,
+    MsgStruct
 >;
 
 export type ISecurable = {

@@ -2,7 +2,7 @@ import { v4 as uuid } from "uuid";
 import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
 import { ApiError } from "./apiError";
-import { BaseAppBusStruct, BaseAppContext } from "@/appDomain/appContracts";
+import { BaseAppMsgStruct, BaseAppContext } from "@/appDomain/appContracts";
 import { MsgBus } from "@actdim/msgmesh/msgBusCore";
 
 // MLWEB-2172
@@ -35,7 +35,7 @@ export class ClientBase {
 
     private fetcher: IFetcher;
 
-    private msgBus: MsgBus<BaseAppBusStruct>;
+    private msgBus: MsgBus<BaseAppMsgStruct>;
 
     private accessToken: string;
 

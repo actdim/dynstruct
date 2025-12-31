@@ -6,12 +6,12 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusStruct } from './bootstrap';
+import { AppBusChannels, AppMsgStruct, AppMsgBus } from './bootstrap';
 
 // import './simpleButton.css';
 
 type Struct = ComponentStruct<
-    AppBusStruct,
+    AppMsgStruct,
     {
         props: {
             onClick: () => void;
@@ -19,7 +19,8 @@ type Struct = ComponentStruct<
         };
         methods: {};
         // children: {};
-        msgScope: {};
+        msgScope: {
+        };
     }
 >;
 
@@ -38,10 +39,10 @@ export const useSimpleButton = (params: ComponentParams<Struct>) => {
 
         children: {},
 
-        view: () => {
+        view: (_, m) => {
             return (
                 <>
-                    <button onClick={model.onClick}>{model.content}</button>
+                    <button onClick={m.onClick}>{m.content}</button>
                 </>
             );
         },

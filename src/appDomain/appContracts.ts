@@ -1,5 +1,5 @@
-import { $CG_ERROR, MsgBus, MsgBusStruct, MsgBusStructBase, MsgBusStructFactory } from "@actdim/msgmesh/msgBusCore";
-import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityBusStruct } from "@/appDomain/security/securityContracts";
+import { $CG_ERROR, MsgBus, MsgStruct, MsgStructBase, MsgStructFactory } from "@actdim/msgmesh/msgBusCore";
+import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityMsgStruct } from "@/appDomain/security/securityContracts";
 import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";
 import { ComponentRegistryContext } from "@/componentModel/contracts";
@@ -118,17 +118,17 @@ export type AppError<TModule = Module> = {
     reason?: string;
 };
 
-// Base(App)Api(Msg)BusStruct
-export type BaseApiBusStruct = BaseSecurityBusStruct &
-    MsgBusStructFactory<{
+// Base(App)ApiMsgStruct
+export type BaseApiMsgStruct = BaseSecurityMsgStruct &
+    MsgStructFactory<{
         // "GET-VERSION"?: {
         //     in: any;
         // };
     }>;
 
-// BaseAppMsgBusStruct
-export type BaseAppBusStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApiBusStruct &
-    MsgBusStructFactory<
+// BaseAppMsgStruct
+export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApiMsgStruct &
+    MsgStructFactory<
         {
             [$NOTICE]: {
                 in: {
@@ -187,7 +187,7 @@ export type BaseAppBusStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                 };
                 out: void;
             };
-        } & MsgBusStructBase
+        } & MsgStructBase
     >;
 
 export type BaseApiConfig = {
@@ -208,10 +208,10 @@ export type BaseAppDomainConfig<
     // HATEOAS? (React Admin)
 };
 
-export type BaseAppBusChannels<TChannel extends keyof BaseAppBusStruct | Array<keyof BaseAppBusStruct>> = KeysOf<BaseAppBusStruct, TChannel>;
+export type BaseAppBusChannels<TChannel extends keyof BaseAppMsgStruct | Array<keyof BaseAppMsgStruct>> = KeysOf<BaseAppMsgStruct, TChannel>;
 
-export type BaseAppContext<TMsgBusStruct extends BaseAppBusStruct = BaseAppBusStruct> = ComponentRegistryContext<TMsgBusStruct> & {
+export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> = ComponentRegistryContext<TMsgStruct> & {
     // securityProvider: SecurityProvider;
 };
 
-export const useBaseAppContext = <TMsgBusStruct extends BaseAppBusStruct = BaseAppBusStruct>() => useComponentContext() as BaseAppContext<TMsgBusStruct>;
+export const useBaseAppContext = <TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct>() => useComponentContext() as BaseAppContext<TMsgStruct>;

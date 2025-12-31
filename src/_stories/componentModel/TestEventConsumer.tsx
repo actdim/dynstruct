@@ -6,13 +6,14 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusChannels, AppBusStruct, useAppContext } from './bootstrap';
+import { AppBusChannels, AppMsgStruct } from './bootstrap';
 
 type Struct = ComponentStruct<
-    AppBusStruct,
+    AppMsgStruct,
     {
         props: {
             value: string;
+            handle: boolean;
         };
         methods: {};
         // children: {};
@@ -23,10 +24,10 @@ type Struct = ComponentStruct<
 >;
 
 export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
-    
     const component: Component<Struct> = {
         props: {
             value: 'foo',
+            handle: true,
         },
 
         methods: {},
@@ -39,8 +40,10 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
             subscribe: {
                 'TEST-EVENT': {
                     in: {
-                        callback: (msg) => {
-                            model.value = msg.payload;
+                        callback: (msg, m) => {
+                            if (m.handle) {
+                                m.value = msg.payload;
+                            }
                         },
                     },
                 },
@@ -53,9 +56,31 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
             return (
                 <>
                     <input type="text" value={model.value}></input>
-                    <button onClick={() => {
-                        m.msgBroker.abortController.abort();
-                    }}>Stop listening</button>
+                    {m.handle && (
+                        <button
+                            onClick={() => {
+                                m.handle = false;
+                            }}
+                        >
+                            Ignore events
+                        </button>
+                    )}
+                    {!m.handle && (
+                        <button
+                            onClick={() => {
+                                m.handle = true;
+                            }}
+                        >
+                            Handle events
+                        </button>
+                    )}
+                    <button
+                        onClick={() => {
+                            m.msgBroker.abortController.abort();
+                        }}
+                    >
+                        Abort subscription
+                    </button>
                 </>
             );
         },

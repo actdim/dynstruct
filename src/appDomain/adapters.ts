@@ -1,5 +1,5 @@
 import { ClientBase } from "@/net/client";
-import { MsgBus, MsgBusStruct } from "@actdim/msgmesh/msgBusCore";
+import { MsgBus, MsgStruct } from "@actdim/msgmesh/msgBusCore";
 import { Func } from "@actdim/utico/typeCore";
 
 const getMethodNames = (client: any) => {
@@ -10,17 +10,17 @@ const getMethodNames = (client: any) => {
 };
 const baseMethodNames = getMethodNames(ClientBase.prototype);
 
-export type MsgBusProviderAdapter = {
+export type MsgProviderAdapter = {
     service: any;
     // channelSelector/channelMapper
     channelResolver: (methodName: string) => string;
 };
 
 export type MsgBusAdapterConfig = {
-    providers: MsgBusProviderAdapter[]
+    providers: MsgProviderAdapter[]
 };
 
-export function registerAdapters<TMsgBusStruct extends MsgBusStruct = MsgBusStruct>(msgBus: MsgBus<TMsgBusStruct>, { providers }: MsgBusAdapterConfig) {
+export function registerAdapters<TMsgStruct extends MsgStruct = MsgStruct>(msgBus: MsgBus<TMsgStruct>, { providers }: MsgBusAdapterConfig) {
     if (providers) {
         for (const adapter of providers) {
             const { service, channelResolver } = adapter;
@@ -31,7 +31,7 @@ export function registerAdapters<TMsgBusStruct extends MsgBusStruct = MsgBusStru
                 const channel = channelResolver?.(methodName);
                 if (channel) {
                     msgBus.provide({
-                        channel: channel as keyof TMsgBusStruct,
+                        channel: channel as keyof TMsgStruct,
                         topic: '/.*/',
                         callback: (msg) => {
                             return (service[methodName] as Func)(...((msg.payload || []) as any[]));

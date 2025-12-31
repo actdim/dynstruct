@@ -12,7 +12,7 @@ import { jwtDecode } from "jwt-decode";
 import { getResponseResult, IRequestParams, IRequestState, IResponseState } from "@/net/request";
 import { ApiError } from "@/net/apiError";
 import { MsgBus } from "@actdim/msgmesh/msgBusCore";
-import { BaseAppBusStruct } from "@/appDomain/appContracts";
+import { BaseAppMsgStruct } from "@/appDomain/appContracts";
 
 const userNameClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
 
@@ -50,7 +50,7 @@ export class SecurityProvider<TUserInfo = any> {
 
     // private isExpired: boolean;
 
-    private msgBus: MsgBus<BaseAppBusStruct>;
+    private msgBus: MsgBus<BaseAppMsgStruct>;
 
     private domainConfig: BaseSecurityDomainConfig;
 
@@ -76,7 +76,7 @@ export class SecurityProvider<TUserInfo = any> {
 
     private init: Promise<any>;
 
-    constructor(msgBus: MsgBus<BaseAppBusStruct>) {
+    constructor(msgBus: MsgBus<BaseAppMsgStruct>) {
         this.msgBus = msgBus;
 
         this.init = this.updateConfigAsync();

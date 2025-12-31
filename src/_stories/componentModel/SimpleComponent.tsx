@@ -9,15 +9,15 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusChannels, AppBusStruct } from './bootstrap';
+import { AppBusChannels, AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
 import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
-import { DynamicContentStruct, useDynamicContent } from './DynamicContent';
+import { DynamicContentStruct, useDynamicContent } from '../../componentModel/DynamicContent';
 
 // import './simpleComponent.css';
 
 type Struct = ComponentStruct<
-    AppBusStruct,
+    AppMsgStruct,
     {
         props: {
             counter: number;
@@ -27,7 +27,7 @@ type Struct = ComponentStruct<
         children: {
             button: SimpleButtonStruct;
             edit: SimpleEditStruct;
-            content: DynamicContentStruct<string>;
+            content: DynamicContentStruct<string, AppMsgStruct>;
             dynEdit: (props: { value?: string }) => SimpleEditStruct;
         };
 
@@ -49,9 +49,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
 
         events: {},
 
-        msgBroker: {
-            
-        },
+        msgBroker: {},
 
         children: {
             button: useSimpleButton({
@@ -90,19 +88,19 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
                 <div id={m.$.id}>
                     <div>Counter: {m.counter}</div>
                     <div>
-                        Button: <model.button.View></model.button.View>
+                        Button: <m.button.View></m.button.View>
                     </div>
                     <div>
-                        Edit: <model.edit.View></model.edit.View>
+                        Edit: <m.edit.View></m.edit.View>
                     </div>
                     <div>
-                        Content: <model.content.View></model.content.View>
+                        Content: <m.content.View></m.content.View>
                     </div>
                     <ul>
                         {Array.from({ length: model.counter }).map((_, i) => (
                             <li>
-                                {/* value={model.text} */}
-                                <model.DynEdit key={i}></model.DynEdit>
+                                {/* value={m.text} */}
+                                <m.DynEdit key={i}></m.DynEdit>
                             </li>
                         ))}
                     </ul>

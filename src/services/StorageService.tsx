@@ -7,10 +7,10 @@ import {
     ComponentModel,
 } from '@actdim/dynstruct/componentModel/componentModel';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
-import { BaseAppBusChannels, BaseAppBusStruct, useBaseAppContext } from '@/appDomain/appContracts';
+import { BaseAppBusChannels, BaseAppMsgStruct, useBaseAppContext } from '@/appDomain/appContracts';
 
 type Struct = ComponentStruct<
-    BaseAppBusStruct,
+    BaseAppMsgStruct,
     {
         props: {
             name?: string;

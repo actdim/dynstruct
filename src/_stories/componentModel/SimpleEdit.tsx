@@ -6,12 +6,12 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusStruct } from './bootstrap';
+import { AppMsgStruct } from './bootstrap';
 
 // import './simpleEdit.css';
 
 type Struct = ComponentStruct<
-    AppBusStruct,
+    AppMsgStruct,
     {
         props: {
             value: string;
@@ -38,15 +38,15 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
 
         children: {},
 
-        view: () => {
+        view: (_, m) => {
             return (
                 <>
                     <input
                         type="text"
                         onChange={(e) => {
-                            model.value = e.target.value;
+                            m.value = e.target.value;
                         }}
-                        value={model.value}
+                        value={m.value}
                     ></input>
                 </>
             );

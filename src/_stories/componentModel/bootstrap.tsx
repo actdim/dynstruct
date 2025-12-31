@@ -1,8 +1,12 @@
-import { BaseApiBusStruct, BaseAppBusStruct, NavRoutes } from '@/appDomain/appContracts';
+import { BaseApiMsgStruct, BaseAppMsgStruct, NavRoutes } from '@/appDomain/appContracts';
 import { createNavigationRoute } from '@/appDomain/navigation';
 import { ComponentContextProvider, useComponentContext } from '@/componentModel/componentContext';
-import { BaseComponentContext, ComponentRegistryContext } from '@/componentModel/contracts';
-import { MsgBusStructFactory } from '@actdim/msgmesh/msgBusCore';
+import {
+    BaseComponentContext,
+    ComponentMsgHeaders,
+    ComponentRegistryContext,
+} from '@/componentModel/contracts';
+import { MsgBus, MsgStructFactory } from '@actdim/msgmesh/msgBusCore';
 import { createMsgBus } from '@actdim/msgmesh/msgBusFactory';
 import { KeysOf } from '@actdim/utico/typeCore';
 import React, { PropsWithChildren } from 'react';
@@ -24,31 +28,39 @@ export const appRoutes = {
 
 export type AppRoutes = typeof appRoutes;
 
-export type ApiBusStruct = BaseApiBusStruct;
+export type ApiMsgStruct = BaseApiMsgStruct;
 
-export type AppBusStruct = BaseAppBusStruct<AppRoutes> &
-    MsgBusStructFactory<{
+export type AppMsgStruct = BaseAppMsgStruct<AppRoutes> &
+    MsgStructFactory<{
         'TEST-EVENT': {
             in: string;
         };
+        'LOCAL-EVENT': {
+            in: string;
+            out: string;
+        };
     }> &
-    ApiBusStruct;
+    ApiMsgStruct;
+
+export type AppMsgHeaders = ComponentMsgHeaders;
+
+export type AppMsgBus = MsgBus<AppMsgStruct, AppMsgHeaders>;
 
 export function createAppMsgBus() {
-    const msgBus = createMsgBus<AppBusStruct>({});
+    const msgBus = createMsgBus<AppMsgStruct, AppMsgHeaders>({});
     return msgBus;
 }
 
 export const appMsgBus = createAppMsgBus();
 
-export type AppBusChannels<TChannel extends keyof AppBusStruct | Array<keyof AppBusStruct>> =
-    KeysOf<AppBusStruct, TChannel>;
+export type AppBusChannels<TChannel extends keyof AppMsgStruct | Array<keyof AppMsgStruct>> =
+    KeysOf<AppMsgStruct, TChannel>;
 
-export type AppContext = ComponentRegistryContext<AppBusStruct>;
+export type AppContext = ComponentRegistryContext<AppMsgStruct>;
 
 export const AppContextProvider = (
     props: PropsWithChildren<{
-        value?: BaseComponentContext<AppBusStruct>;
+        value?: BaseComponentContext<AppMsgStruct>;
     }>,
 ) => ComponentContextProvider(props);
 

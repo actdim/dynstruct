@@ -9,14 +9,11 @@ importers:
   .:
     dependencies:
       '@actdim/msgmesh':
-        specifier: ^1.0.5
-        version: 1.0.5(@actdim/utico@1.0.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(dexie@4.2.1)(moment@2.30.1)(rxjs@7.8.2)(uuid@13.0.0)
+        specifier: ^1.1.6
+        version: 1.1.6(@actdim/utico@1.0.5(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
       '@actdim/utico':
-        specifier: ^1.0.2
-        version: 1.0.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
-      dexie:
-        specifier: ^4.2.0
-        version: 4.2.1
+        specifier: ^1.0.5
+        version: 1.0.5(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
       http-status:
         specifier: ^2.1.0
         version: 2.1.0
@@ -32,9 +29,6 @@ importers:
       mobx-utils:
         specifier: ^6.1.1
         version: 6.1.1(mobx@6.15.0)
-      moment:
-        specifier: ^2.30.1
-        version: 2.30.1
       path-to-regexp:
         specifier: ^8.3.0
         version: 8.3.0
@@ -156,17 +150,15 @@ importers:
 
 packages:
 
-  '@actdim/msgmesh@1.0.5':
-    resolution: {integrity: sha512-DTAjYTzjbhculMJlmyhUsZebnUpBOlYiGDecvVJ6qCsHqsr/t8wtpSgi02OEcxcqLqoHmABD9zIOJSocNXjTSw==}
+  '@actdim/msgmesh@1.1.6':
+    resolution: {integrity: sha512-3uNdsXG6+lRHpldvwTyCRnQ1da3Dq6khoSH5WkWVRoXCZIft6ykugDorAN25Mnbx7578lZqjcrdsSS+okUB4/g==}
     peerDependencies:
-      '@actdim/utico': ^1.0.2
-      dexie: ^4.2.0
-      moment: ^2.30.1
+      '@actdim/utico': ^1.0.5
       rxjs: ^7.8.2
       uuid: ^13.0.0
 
-  '@actdim/utico@1.0.2':
-    resolution: {integrity: sha512-zmZ+cFump4yVPJKWmqyC+4gnnOqbqNOMMwOwjCDF2YVEoOR1xliwYn1DerFsHojHOeL++YrB6p2salli51jlJQ==}
+  '@actdim/utico@1.0.5':
+    resolution: {integrity: sha512-t20cxM4wT+iUqoJvLXtV6fQ0LXssb/i6mFxWNoyXCdx5xtGPG0kS/splVzyAHbrwtVkiBKNdUK0iX5TcrOLr/A==}
     peerDependencies:
       dexie: ^4.2.0
       moment: ^2.30.1
@@ -2866,15 +2858,13 @@ packages:
 
 snapshots:
 
-  '@actdim/msgmesh@1.0.5(@actdim/utico@1.0.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(dexie@4.2.1)(moment@2.30.1)(rxjs@7.8.2)(uuid@13.0.0)':
+  '@actdim/msgmesh@1.1.6(@actdim/utico@1.0.5(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
     dependencies:
-      '@actdim/utico': 1.0.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
-      dexie: 4.2.1
-      moment: 2.30.1
+      '@actdim/utico': 1.0.5(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
       rxjs: 7.8.2
       uuid: 13.0.0
 
-  '@actdim/utico@1.0.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)':
+  '@actdim/utico@1.0.5(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)':
     dependencies:
       dexie: 4.2.1
       moment: 2.30.1

@@ -6,7 +6,8 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusChannels, AppMsgStruct } from './bootstrap';
+import { AppBusChannels, AppMsgStruct, AppMsgBus } from './bootstrap';
+import { ComponentMsgHeaders } from '@/componentModel/contracts';
 
 type Struct = ComponentStruct<
     AppMsgStruct,
@@ -18,12 +19,13 @@ type Struct = ComponentStruct<
         // children: {};
         msgScope: {
             publish: AppBusChannels<'TEST-EVENT'>;
+            subscribe: AppBusChannels<'LOCAL-EVENT'>;
         };
     }
 >;
 
-export const useTestEventProducer = (params: ComponentParams<Struct>) => {
-    const component: Component<Struct> = {
+export const useTestChild = (params: ComponentParams<Struct>) => {
+    const component: Component<Struct, ComponentMsgHeaders & { test?: string }> = {
         props: {
             value: 'foo',
         },
@@ -46,7 +48,7 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
                         onChange={(e) => {
                             m.value = e.target.value;
                         }}
-                        value={m.value}
+                        value={model.value}
                     ></input>
                     <button
                         onClick={() => {
@@ -58,6 +60,17 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
                     >
                         Send
                     </button>
+                    <button
+                        onClick={async () => {
+                            const msg = await m.msgBus.dispatchAsync({
+                                channel: 'LOCAL-EVENT',
+                                payload: m.value,
+                            });
+                            alert(msg.payload);
+                        }}
+                    >
+                        Request
+                    </button>
                 </>
             );
         },
@@ -67,5 +80,5 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
     return model;
 };
 
-export type TestEventProducerStruct = Struct;
-export const TestEventProducerFC = getFC(useTestEventProducer);
+export type TestChildStruct = Struct;
+export const TestChildFC = getFC(useTestChild);

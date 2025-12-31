@@ -3,13 +3,7 @@
 //##############################################################################
 
 import React, { createContext, PropsWithChildren, useContext, useRef } from 'react';
-import { BaseComponentContext, ComponentRegistryContext } from './contracts';
-
-type TreeNode = {
-    id: string;
-    parentId?: string;
-    children: Set<string>;
-};
+import { BaseComponentContext, ComponentRegistryContext, TreeNode } from './contracts';
 
 export const ReactComponentContext = createContext<ComponentRegistryContext>(undefined);
 
@@ -21,27 +15,42 @@ export function ComponentContextProvider(
 ) {
     let context: React.RefObject<ComponentRegistryContext>;
     const treeRef = useRef(new Map<string, TreeNode>());
-    const idStack = useRef([]);
+    // idStack
+    const regStack = useRef([]);
+
+    const getCurrentId = () => {
+        return regStack.current[regStack.current.length - 1];
+    };
 
     const register = (id: string, parentId?: string) => {
-        if (treeRef.current.has(id)) {
-            return;
+        let node = treeRef.current.get(id);
+
+        if (!node) {
+            node = {
+                id,
+                parentId,
+                children: new Set(),
+            };
+            treeRef.current.set(id, node);
+        } else {
+            node.parentId = parentId;
         }
 
-        treeRef.current.set(id, {
-            id,
-            parentId,
-            children: new Set(),
-        });
-
         if (parentId) {
-            const parent = treeRef.current.get(parentId);
-            if (parent) {
-                parent.children.add(id);
+            let parentNode = treeRef.current.get(parentId);
+            if (!parentNode) {
+                parentNode = {
+                    id: parentId,
+                    children: new Set(),
+                };
+                treeRef.current.set(parentId, parentNode);
+            }
+            if (!parentNode.children.has(id)) {
+                parentNode.children.add(id);
             }
         }
 
-        idStack.current.push(id);
+        regStack.current.push(id);
     };
 
     const unregister = (id: string) => {
@@ -58,15 +67,18 @@ export function ComponentContextProvider(
         node.children.forEach((childId) => unregister(childId));
         treeRef.current.delete(id);
 
-        const index = idStack.current.lastIndexOf(id);
+        const index = regStack.current.lastIndexOf(id);
         if (index >= 0) {
-            idStack.current.splice(index, 1);
+            regStack.current.splice(index, 1);
         }
     };
 
-    const getParent = (id: string) => treeRef.current.get(id)?.parentId;
-    const getChildren = (id: string) =>
-        Array.from(treeRef.current.get(id)?.children ?? []) as string[];
+    const getParent = (id: string) => {
+        return treeRef.current.get(id)?.parentId;
+    };
+    const getChildren = (id: string) => {
+        return Array.from(treeRef.current.get(id)?.children ?? []) as string[];
+    };
 
     const getChainUp = (id: string): string[] => {
         const result: string[] = [];
@@ -112,7 +124,7 @@ export function ComponentContextProvider(
         return buildNode(rootId);
     };
 
-    const getSiblings = (id: string): string[] => {
+    const getSiblings = (id: string) => {
         const parent = getParent(id);
         if (!parent) {
             return [];
@@ -126,7 +138,7 @@ export function ComponentContextProvider(
 
     const getHierarchyPath = (id: string): string => {
         if (!id) {
-            id = idStack.current[idStack.current.length - 1];
+            id = getCurrentId();
         }
         const path: string[] = [];
         let current = id;
@@ -139,6 +151,9 @@ export function ComponentContextProvider(
         return path.reverse().join('/');
     };
 
+    // getNodes
+    const getNodeMap = () => treeRef.current;
+
     context = useRef({
         ...props.value,
         register,
@@ -148,6 +163,7 @@ export function ComponentContextProvider(
         getChainUp,
         getChainDown,
         getHierarchyPath,
+        getNodeMap,
     });
 
     return (

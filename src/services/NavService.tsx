@@ -17,12 +17,12 @@ import { NavContext } from '@actdim/dynstruct/appDomain/appContracts';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import {
     BaseAppBusChannels,
-    BaseAppBusStruct,
+    BaseAppMsgStruct,
     NavRoutes,    
 } from '@/appDomain/appContracts';
 
 type Struct = ComponentStruct<
-    BaseAppBusStruct,
+    BaseAppMsgStruct,
     {
         props: {
             history: NavContext[];
@@ -83,6 +83,9 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                         },
                     },
                 },
+                'APP-NAV-CONTEXT-CHANGED': {
+                    
+                }
             },
         },
         events: {
