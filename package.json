@@ -1,6 +1,6 @@
 {
     "name": "@actdim/dynstruct",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "A type-safe component system for large-scale apps: explicit dependencies, message bus communication, and structure-first, declarative design",
     "author": "Pavel Borodaev",
     "license": "Proprietary",
