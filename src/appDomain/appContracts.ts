@@ -208,7 +208,7 @@ export type BaseAppDomainConfig<
     // HATEOAS? (React Admin)
 };
 
-export type BaseAppBusChannels<TChannel extends keyof BaseAppMsgStruct | Array<keyof BaseAppMsgStruct>> = KeysOf<BaseAppMsgStruct, TChannel>;
+export type BaseAppMsgChannels<TChannel extends keyof BaseAppMsgStruct | Array<keyof BaseAppMsgStruct>> = KeysOf<BaseAppMsgStruct, TChannel>;
 
 export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> = ComponentRegistryContext<TMsgStruct> & {
     // securityProvider: SecurityProvider;

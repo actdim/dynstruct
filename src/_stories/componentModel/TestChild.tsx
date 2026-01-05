@@ -1,12 +1,14 @@
 import {
     Component,
+    ComponentDef,
+    ComponentModel,
     ComponentParams,
     ComponentStruct,
     getFC,
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusChannels, AppMsgStruct, AppMsgBus } from './bootstrap';
+import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { ComponentMsgHeaders } from '@/componentModel/contracts';
 
 type Struct = ComponentStruct<
@@ -15,22 +17,25 @@ type Struct = ComponentStruct<
         props: {
             value: string;
         };
-        methods: {};
+        actions: {};
         // children: {};
         msgScope: {
-            publish: AppBusChannels<'TEST-EVENT'>;
-            subscribe: AppBusChannels<'LOCAL-EVENT'>;
+            publish: AppMsgChannels<'TEST-EVENT'>;
+            subscribe: AppMsgChannels<'LOCAL-EVENT'>;
         };
     }
 >;
 
 export const useTestChild = (params: ComponentParams<Struct>) => {
-    const component: Component<Struct, ComponentMsgHeaders & { test?: string }> = {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const componentDef: ComponentDef<Struct, ComponentMsgHeaders & { test?: string }> = {
         props: {
             value: 'foo',
         },
 
-        methods: {},
+        actions: {},
 
         events: {
             onReady: async () => {},
@@ -40,7 +45,7 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
 
         children: {},
 
-        view: (_, m) => {
+        view: (_, c) => {
             return (
                 <>
                     <input
@@ -48,11 +53,11 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
                         onChange={(e) => {
                             m.value = e.target.value;
                         }}
-                        value={model.value}
+                        value={m.value}
                     ></input>
                     <button
                         onClick={() => {
-                            m.msgBus.dispatch({
+                            c.msgBus.dispatch({
                                 channel: 'TEST-EVENT',
                                 payload: m.value,
                             });
@@ -62,7 +67,7 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
                     </button>
                     <button
                         onClick={async () => {
-                            const msg = await m.msgBus.dispatchAsync({
+                            const msg = await c.msgBus.dispatchAsync({
                                 channel: 'LOCAL-EVENT',
                                 payload: m.value,
                             });
@@ -76,8 +81,9 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
         },
     };
 
-    const model = useComponent(component, params);
-    return model;
+    c = useComponent(componentDef, params);
+    m = c.model;
+    return c;
 };
 
 export type TestChildStruct = Struct;

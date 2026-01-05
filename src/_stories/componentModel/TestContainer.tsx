@@ -1,6 +1,8 @@
 import {
     bind,
     Component,
+    ComponentDef,
+    ComponentModel,
     ComponentMsgFilter,
     ComponentParams,
     ComponentStruct,
@@ -8,7 +10,7 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusChannels, AppMsgStruct } from './bootstrap'; // appDomain
+import { AppMsgChannels, AppMsgStruct } from './bootstrap'; // appDomain
 import { TestChildStruct, useTestChild } from './TestChild';
 import { ComponentMsgHeaders } from '@/componentModel/contracts';
 
@@ -18,24 +20,27 @@ type Struct = ComponentStruct<
         props: {
             text: string;
         };
-        methods: {};
+        actions: {};
         children: {
             child1: TestChildStruct;
             child2: TestChildStruct;
         };
         msgScope: {
-            subscribe: AppBusChannels<'TEST-EVENT'>;
-            provide: AppBusChannels<'LOCAL-EVENT'>;
+            subscribe: AppMsgChannels<'TEST-EVENT'>;
+            provide: AppMsgChannels<'LOCAL-EVENT'>;
         };
     }
 >;
 
 export const useTestContainer = (params: ComponentParams<Struct>) => {
-    const component: Component<Struct, ComponentMsgHeaders & { test: string }> = {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const componentDef: ComponentDef<Struct, ComponentMsgHeaders & { test: string }> = {
         props: {
             text: undefined,
         },
-        methods: {},
+        actions: {},
 
         events: {},
 
@@ -43,7 +48,7 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
             subscribe: {
                 'TEST-EVENT': {
                     in: {
-                        callback: (msg, m) => {
+                        callback: (msg, c) => {
                             m.text = msg.payload;
                         },
                         componentFilter: ComponentMsgFilter.FromDescendants,
@@ -53,8 +58,8 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
             provide: {
                 'LOCAL-EVENT': {
                     in: {
-                        callback: (msgIn, headers, m) => {
-                            return `Hi ${msgIn.payload} from parent ${m.$.id}!`;
+                        callback: (msgIn, headers, c) => {
+                            return `Hi ${msgIn.payload} from parent ${c.id}!`;
                         },
                         componentFilter: ComponentMsgFilter.FromDescendants,
                     },
@@ -66,25 +71,25 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
             child1: useTestChild({}),
             child2: useTestChild({
                 value: bind(
-                    () => model.text,
+                    () => m.text,
                     (v) => {
-                        model.text = v;
+                        m.text = v;
                     },
                 ),
             }),
         },
 
-        view: (_, m) => {
+        view: (_, c) => {
             return (
                 <>
-                    <div style={{ padding: '10px', margin: '10px' }}>
+                    <div>
                         <p>Text: {m.text}</p>
                         <p>
                             <div style={{ padding: '4px' }}>
-                                <m.child1.View></m.child1.View>
+                                <c.children.child1.View></c.children.child1.View>
                             </div>
                             <div style={{ padding: '4px' }}>
-                                <m.child2.View></m.child2.View>
+                                <c.children.child2.View></c.children.child2.View>
                             </div>
                         </p>
                     </div>
@@ -93,8 +98,9 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
         },
     };
 
-    const model = useComponent(component, params);
-    return model;
+    c = useComponent(componentDef, params);
+    m = c.model;
+    return c;
 };
 
 export type TestContainerStruct = Struct;

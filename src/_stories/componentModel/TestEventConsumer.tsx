@@ -1,12 +1,14 @@
 import {
     Component,
+    ComponentDef,
+    ComponentModel,
     ComponentParams,
     ComponentStruct,
     getFC,
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusChannels, AppMsgStruct } from './bootstrap';
+import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 
 type Struct = ComponentStruct<
     AppMsgStruct,
@@ -15,22 +17,25 @@ type Struct = ComponentStruct<
             value: string;
             handle: boolean;
         };
-        methods: {};
+        actions: {};
         // children: {};
         msgScope: {
-            subscribe: AppBusChannels<'TEST-EVENT'>;
+            subscribe: AppMsgChannels<'TEST-EVENT'>;
         };
     }
 >;
 
 export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
-    const component: Component<Struct> = {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
         props: {
             value: 'foo',
             handle: true,
         },
 
-        methods: {},
+        actions: {},
 
         events: {
             onReady: async () => {},
@@ -40,7 +45,7 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
             subscribe: {
                 'TEST-EVENT': {
                     in: {
-                        callback: (msg, m) => {
+                        callback: (msg, c) => {
                             if (m.handle) {
                                 m.value = msg.payload;
                             }
@@ -52,10 +57,10 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
 
         children: {},
 
-        view: (_, m) => {
+        view: (_, c) => {
             return (
                 <>
-                    <input type="text" value={model.value}></input>
+                    <input type="text" value={m.value}></input>
                     {m.handle && (
                         <button
                             onClick={() => {
@@ -76,7 +81,7 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
                     )}
                     <button
                         onClick={() => {
-                            m.msgBroker.abortController.abort();
+                            c.msgBroker?.abortController.abort();
                         }}
                     >
                         Abort subscription
@@ -86,9 +91,10 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
         },
     };
 
-    const model = useComponent(component, params);
+    c = useComponent(def, params);
+    m = c.model;
 
-    return model;
+    return c;
 };
 
 export type TestEventConsumerStruct = Struct;

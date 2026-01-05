@@ -1,5 +1,7 @@
 import {
     Component,
+    ComponentDef,
+    ComponentModel,
     ComponentParams,
     ComponentStruct,
     getFC,
@@ -16,19 +18,22 @@ type Struct = ComponentStruct<
         props: {
             value: string;
         };
-        methods: {};
+        actions: {};
         // children: {};
         msgScope: {};
     }
 >;
 
 export const useSimpleEdit = (params: ComponentParams<Struct>) => {
-    const component: Component<Struct> = {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
         props: {
             value: 'foo',
         },
 
-        methods: {},
+        actions: {},
 
         events: {
             onReady: async () => {},
@@ -38,7 +43,7 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
 
         children: {},
 
-        view: (_, m) => {
+        view: (_, c) => {
             return (
                 <>
                     <input
@@ -53,8 +58,9 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
         },
     };
 
-    const model = useComponent(component, params);
-    return model;
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
 };
 
 export type SimpleEditStruct = Struct;

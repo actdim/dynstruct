@@ -1,10 +1,4 @@
-import {
-    ComponentParams,
-    ComponentStruct,
-    getFC,
-    useComponent,
-    Component,
-} from '@actdim/dynstruct/componentModel/componentModel';
+
 import {
     To,
     useLocation,
@@ -13,13 +7,9 @@ import {
     useParams,
     useSearchParams,
 } from 'react-router-dom';
-import { NavContext } from '@actdim/dynstruct/appDomain/appContracts';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
-import {
-    BaseAppBusChannels,
-    BaseAppMsgStruct,
-    NavRoutes,    
-} from '@/appDomain/appContracts';
+import { BaseAppMsgChannels, BaseAppMsgStruct, NavContext, NavRoutes } from '@/appDomain/appContracts';
+import { getFC, useComponent, type Component, type ComponentDef, type ComponentModel, type ComponentParams, type ComponentStruct } from '@/componentModel/componentModel';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -29,7 +19,7 @@ type Struct = ComponentStruct<
             routes: NavRoutes;
         };
         msgScope: {
-            provide: BaseAppBusChannels<
+            provide: BaseAppMsgChannels<
                 | 'APP-NAV-GOTO'
                 | 'APP-NAV-GET-CONTEXT'
                 | 'APP-NAV-READ-HISTORY'
@@ -39,9 +29,12 @@ type Struct = ComponentStruct<
     }
 >;
 
-const store = new PersistentStore('history');
+// const store = new PersistentStore('history');
 
 export const useNavService = (params: ComponentParams<Struct>) => {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
     const navigate = useNavigate();
 
     const location = useLocation();
@@ -49,7 +42,7 @@ export const useNavService = (params: ComponentParams<Struct>) => {
     const nvaParams = useParams();
     const [searchParams] = useSearchParams();
 
-    const component: Component<Struct> = {
+    const def: ComponentDef<Struct> = {
         props: {
             history: [],
             routes: undefined,
@@ -65,32 +58,30 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                     ex: {
                         callback: async (msg) => {
                             const route = msg.payload.route;
-                            navigate(model.routes[route].path(msg.payload.params));
+                            navigate(m.routes[route].path(msg.payload.params));
                         },
                     },
                 },
                 'APP-NAV-GET-CONTEXT': {
                     in: {
                         callback: (msg) => {
-                            return model.history[model.history.length - 1];
+                            return m.history[m.history.length - 1];
                         },
                     },
                 },
                 'APP-NAV-READ-HISTORY': {
                     in: {
                         callback: (msg) => {
-                            return model.history[model.history.length - 1];
+                            return m.history[m.history.length - 1];
                         },
                     },
                 },
-                'APP-NAV-CONTEXT-CHANGED': {
-                    
-                }
+                'APP-NAV-CONTEXT-CHANGED': {},
             },
         },
         events: {
-            onLayout: (model) => {
-                const history = model.history;
+            onLayout: (c) => {
+                const history = m.history;
                 if (history) {
                     const ctx = {
                         location: location,
@@ -99,7 +90,7 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                         navType: navType,
                     };
                     history.push(ctx);
-                    model.msgBus.dispatch({
+                    c.msgBus.dispatch({
                         channel: 'APP-NAV-CONTEXT-CHANGED',
                         group: 'in',
                         payload: ctx,
@@ -112,12 +103,13 @@ export const useNavService = (params: ComponentParams<Struct>) => {
         },
     };
 
-    const model = useComponent(component, params);
+    c = useComponent(def, params);
+    m = c.model;
 
     // deps
     // location, navType, params, searchParams
 
-    return model;
+    return c;
 };
 
 export type NavServiceStruct = Struct;

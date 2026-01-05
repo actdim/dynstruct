@@ -2,6 +2,7 @@ import {
     bind,
     bindProp,
     Component,
+    ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
@@ -9,7 +10,7 @@ import {
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusChannels, AppMsgStruct } from './bootstrap';
+import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
 import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
 import { DynamicContentStruct, useDynamicContent } from '../../componentModel/DynamicContent';
@@ -23,7 +24,7 @@ type Struct = ComponentStruct<
             counter: number;
             text: string;
         };
-        methods: {};
+        actions: {};
         children: {
             button: SimpleButtonStruct;
             edit: SimpleEditStruct;
@@ -32,20 +33,22 @@ type Struct = ComponentStruct<
         };
 
         msgScope: {
-            provide: AppBusChannels<'APP-CONFIG-GET'>;
+            provide: AppMsgChannels<'APP-CONFIG-GET'>;
         };
     }
 >;
 
 export const useSimpleComponent = (params: ComponentParams<Struct>) => {
-    let model: ComponentModel<Struct>;
-    let component: Component<Struct> = {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
         props: {
             counter: 0,
             text: 'bar',
         },
 
-        methods: {},
+        actions: {},
 
         events: {},
 
@@ -55,52 +58,51 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
             button: useSimpleButton({
                 content: 'Add input',
                 onClick: () => {
-                    model.counter++;
+                    m.counter++;
                 },
             }),
             edit: useSimpleEdit({
                 value: bind(
-                    () => model.text,
+                    () => m.text,
                     (v) => {
-                        model.text = v;
+                        m.text = v;
                     },
                 ),
             }),
             content: useDynamicContent<string>({
-                data: bindProp(() => model, 'text'),
+                data: bindProp(() => m, 'text'),
                 render: () => {
-                    // return <>{model.text}</>;
-                    return <>{model.content.data}</>;
+                    // return <>{props.text}</>;
+                    return <>{c.children.content.model.data}</>;
                 },
             }),
             dynEdit: (params) => {
                 let editorModel = useSimpleEdit({
-                    value: bindProp(() => model, 'text'),
+                    value: bindProp(() => m, 'text'),
                     // value: params.value,
-                    onInit: (m) => {},
                 });
                 return editorModel;
             },
         },
 
-        view: (_, m) => {
+        view: (_, c) => {
             return (
-                <div id={m.$.id}>
+                <div id={c.id}>
                     <div>Counter: {m.counter}</div>
                     <div>
-                        Button: <m.button.View></m.button.View>
+                        Button: <c.children.button.View></c.children.button.View>
                     </div>
                     <div>
-                        Edit: <m.edit.View></m.edit.View>
+                        Edit: <c.children.edit.View></c.children.edit.View>
                     </div>
                     <div>
-                        Content: <m.content.View></m.content.View>
+                        Content: <c.children.content.View></c.children.content.View>
                     </div>
                     <ul>
-                        {Array.from({ length: model.counter }).map((_, i) => (
+                        {Array.from({ length: m.counter }).map((_, i) => (
                             <li>
                                 {/* value={m.text} */}
-                                <m.DynEdit key={i}></m.DynEdit>
+                                <c.children.DynEdit key={i}></c.children.DynEdit>
                             </li>
                         ))}
                     </ul>
@@ -109,8 +111,10 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
         },
     };
 
-    model = useComponent(component, params);
-    return model;
+    c = useComponent(def, params);
+    m = c.model;
+
+    return c;
 };
 
 export type SimpleComponentStruct = Struct;

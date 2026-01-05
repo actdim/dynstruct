@@ -14,18 +14,12 @@ import {
     IAutorunOptions
 } from "mobx";
 import { deepObserve, IDisposer } from "mobx-utils";
-import { observable, transaction } from "mobx";
 
 export type IObjectChange<T> = IObjectDidChange & {
     name: keyof T;
     object: T;
 };
-
-export interface IDisposable {
-    dispose: () => void;
-}
-
-export class DisposableComponent implements IDisposable {
+export class DisposableComponent implements Disposable {
     // finalizers
     protected readonly finalizers: IDisposer[];
 
@@ -157,11 +151,11 @@ export class DisposableComponent implements IDisposable {
         return action;
     }
 
-    protected registerDisposable(disposable: IDisposable) {
-        return this.registerFinalizer(disposable.dispose.bind(disposable));
+    protected registerDisposable(disposable: Disposable) {
+        return this.registerFinalizer(disposable[Symbol.dispose].bind(disposable));
     }
 
-    public dispose() {
+    [Symbol.dispose]() {
         if (this === undefined) {
             console.error('undefined "this"');
         }

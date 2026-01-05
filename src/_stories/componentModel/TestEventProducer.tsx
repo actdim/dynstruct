@@ -1,12 +1,14 @@
 import {
     Component,
+    ComponentDef,
+    ComponentModel,
     ComponentParams,
     ComponentStruct,
     getFC,
     useComponent,
 } from '@/componentModel/componentModel';
 import React from 'react';
-import { AppBusChannels, AppMsgStruct } from './bootstrap';
+import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 
 type Struct = ComponentStruct<
     AppMsgStruct,
@@ -14,21 +16,24 @@ type Struct = ComponentStruct<
         props: {
             value: string;
         };
-        methods: {};
+        actions: {};
         // children: {};
         msgScope: {
-            publish: AppBusChannels<'TEST-EVENT'>;
+            publish: AppMsgChannels<'TEST-EVENT'>;
         };
     }
 >;
 
 export const useTestEventProducer = (params: ComponentParams<Struct>) => {
-    const component: Component<Struct> = {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
         props: {
             value: 'foo',
         },
 
-        methods: {},
+        actions: {},
 
         events: {
             onReady: async () => {},
@@ -38,7 +43,7 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
 
         children: {},
 
-        view: (_, m) => {
+        view: (_, c) => {
             return (
                 <>
                     <input
@@ -50,7 +55,7 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
                     ></input>
                     <button
                         onClick={() => {
-                            m.msgBus.dispatch({
+                            c.msgBus.dispatch({
                                 channel: 'TEST-EVENT',
                                 payload: m.value,
                             });
@@ -63,8 +68,10 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
         },
     };
 
-    const model = useComponent(component, params);
-    return model;
+    c = useComponent(def, params);
+    m = c.model;
+
+    return c;
 };
 
 export type TestEventProducerStruct = Struct;

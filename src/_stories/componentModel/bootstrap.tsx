@@ -53,7 +53,7 @@ export function createAppMsgBus() {
 
 export const appMsgBus = createAppMsgBus();
 
-export type AppBusChannels<TChannel extends keyof AppMsgStruct | Array<keyof AppMsgStruct>> =
+export type AppMsgChannels<TChannel extends keyof AppMsgStruct | Array<keyof AppMsgStruct>> =
     KeysOf<AppMsgStruct, TChannel>;
 
 export type AppContext = ComponentRegistryContext<AppMsgStruct>;

@@ -1,5 +1,5 @@
 import {
-    Component,
+    ComponentDef,
     ComponentParams,
     ComponentStruct,
     useComponent,
@@ -17,7 +17,7 @@ export type DynamicContentStruct<
             data: TData;
             render: () => React.ReactNode;
         };
-        methods: {};
+        actions: {};
         children: {};
         msgScope: {};
     }
@@ -26,16 +26,16 @@ export type DynamicContentStruct<
 export function useDynamicContent<TData = any>(
     params: ComponentParams<DynamicContentStruct<TData>>,
 ) {
-    const component: Component<DynamicContentStruct<TData>> = {
+    const componentDef: ComponentDef<DynamicContentStruct<TData>> = {
         props: {
             render: undefined,
             data: undefined,
         },
-        view: (_, m) => {
-            return m.render();
+        view: (_, c) => {
+            return c.model.render();
         },
     };
 
-    const model = useComponent(component, params);
-    return model;
+    const component = useComponent(componentDef, params);
+    return component;
 }

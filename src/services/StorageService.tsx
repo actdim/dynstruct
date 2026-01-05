@@ -5,9 +5,10 @@ import {
     useComponent,
     Component,
     ComponentModel,
-} from '@actdim/dynstruct/componentModel/componentModel';
+} from '@/componentModel/componentModel';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
-import { BaseAppBusChannels, BaseAppMsgStruct, useBaseAppContext } from '@/appDomain/appContracts';
+import { BaseAppMsgChannels, BaseAppMsgStruct, useBaseAppContext } from '@/appDomain/appContracts';
+import type { ComponentDef } from '@/componentModel/componentModel';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -16,7 +17,7 @@ type Struct = ComponentStruct<
             name?: string;
         };
         msgScope: {
-            provide: BaseAppBusChannels<
+            provide: BaseAppMsgChannels<
                 'APP-KV-STORE-GET' | 'APP-KV-STORE-SET' | 'APP-KV-STORE-REMOVE'
             >;
         };
@@ -24,8 +25,12 @@ type Struct = ComponentStruct<
 >;
 
 export const useStorageService = (params: ComponentParams<Struct>) => {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
 
-    let model: ComponentModel<Struct>;
+    async function _updateStoreAsync() {
+        store = await PersistentStore.openAsync(m.name);
+    }
 
     let store: PersistentStore;
     let ready: () => void;
@@ -33,7 +38,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
         ready = res;
     });
 
-    const component: Component<Struct> = {
+    const def: ComponentDef<Struct> = {
         props: {
             name: '',
         },
@@ -75,16 +80,13 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
             onChangeName: () => {
                 _updateStoreAsync();
             },
-        },        
+        },
     };
 
-    model = useComponent(component, params);
+    c = useComponent(def, params);
+    m = c.model;
     _updateStoreAsync().then(() => ready());
-    return model;
-
-    async function _updateStoreAsync() {
-        store = await PersistentStore.openAsync(model.name);
-    }
+    return c;
 };
 
 export type StorageServiceStruct = Struct;
