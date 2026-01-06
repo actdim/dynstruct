@@ -20,8 +20,7 @@ type Struct = ComponentStruct<
         actions: {};
         // children: {};
         msgScope: {
-            publish: AppMsgChannels<'TEST-EVENT'>;
-            subscribe: AppMsgChannels<'LOCAL-EVENT'>;
+            publish: AppMsgChannels<'TEST-EVENT' | 'LOCAL-EVENT'>;
         };
     }
 >;
@@ -35,15 +34,9 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
             value: 'foo',
         },
 
-        actions: {},
-
         events: {
             onReady: async () => {},
         },
-
-        msgBroker: {},
-
-        children: {},
 
         view: (_, c) => {
             return (

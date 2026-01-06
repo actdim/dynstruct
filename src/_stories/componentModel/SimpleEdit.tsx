@@ -18,9 +18,6 @@ type Struct = ComponentStruct<
         props: {
             value: string;
         };
-        actions: {};
-        // children: {};
-        msgScope: {};
     }
 >;
 
@@ -31,17 +28,11 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
     const def: ComponentDef<Struct> = {
         props: {
             value: 'foo',
-        },
-
-        actions: {},
+        },        
 
         events: {
             onReady: async () => {},
-        },
-
-        msgBroker: {},
-
-        children: {},
+        },        
 
         view: (_, c) => {
             return (

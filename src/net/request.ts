@@ -1,7 +1,7 @@
 // Transport
 
 import httpStatus from "http-status";
-import { AsyncFunc, AwaitedReturnType, Func, MaybeExtends } from "@actdim/utico/typeCore";
+import { AsyncFunc, AwaitedReturnType, Func } from "@actdim/utico/typeCore";
 import { ApiError } from "./apiError";
 
 export type IFetcher = {
@@ -10,7 +10,7 @@ export type IFetcher = {
 
 // IParsedBody
 export type IResolvedBody = {
-    [K in keyof Body as Body[K] extends AsyncFunc ? K : never]?: AwaitedReturnType<MaybeExtends<Body[K], AsyncFunc>>;
+    [K in keyof Body]?: Body[K] extends Func ? AwaitedReturnType<Body[K]> : Body[K];
 };
 
 // https://www.iana.org/assignments/media-types/media-types.xhtml

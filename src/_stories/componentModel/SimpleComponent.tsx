@@ -24,16 +24,11 @@ type Struct = ComponentStruct<
             counter: number;
             text: string;
         };
-        actions: {};
         children: {
             button: SimpleButtonStruct;
             edit: SimpleEditStruct;
             content: DynamicContentStruct<string, AppMsgStruct>;
             dynEdit: (props: { value?: string }) => SimpleEditStruct;
-        };
-
-        msgScope: {
-            provide: AppMsgChannels<'APP-CONFIG-GET'>;
         };
     }
 >;
@@ -46,14 +41,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
         props: {
             counter: 0,
             text: 'bar',
-        },
-
-        actions: {},
-
-        events: {},
-
-        msgBroker: {},
-
+        },        
         children: {
             button: useSimpleButton({
                 content: 'Add input',

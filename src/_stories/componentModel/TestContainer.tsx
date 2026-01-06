@@ -20,7 +20,6 @@ type Struct = ComponentStruct<
         props: {
             text: string;
         };
-        actions: {};
         children: {
             child1: TestChildStruct;
             child2: TestChildStruct;
@@ -40,7 +39,6 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
         props: {
             text: undefined,
         },
-        actions: {},
 
         events: {},
 

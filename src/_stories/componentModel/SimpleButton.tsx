@@ -19,9 +19,6 @@ type Struct = ComponentStruct<
             onClick: () => void;
             content: string;
         };
-        actions: {};
-        // children: {};
-        msgScope: {};
     }
 >;
 
@@ -34,14 +31,6 @@ export const useSimpleButton = (params: ComponentParams<Struct>) => {
             onClick: undefined,
             content: undefined,
         },
-
-        actions: {},
-
-        events: {},
-
-        msgBroker: {},
-
-        children: {},
 
         view: (_, c) => {
             return (

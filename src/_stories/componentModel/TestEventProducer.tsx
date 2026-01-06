@@ -16,8 +16,7 @@ type Struct = ComponentStruct<
         props: {
             value: string;
         };
-        actions: {};
-        // children: {};
+        
         msgScope: {
             publish: AppMsgChannels<'TEST-EVENT'>;
         };
@@ -31,17 +30,11 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
     const def: ComponentDef<Struct> = {
         props: {
             value: 'foo',
-        },
-
-        actions: {},
+        },        
 
         events: {
             onReady: async () => {},
         },
-
-        msgBroker: {},
-
-        children: {},
 
         view: (_, c) => {
             return (

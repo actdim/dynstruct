@@ -66,8 +66,6 @@ type Struct = ComponentStruct<
         props: {
             dataItems: DataItem[];
         };
-        actions: {};
-        children: {};
         msgScope: {
             subscribe: ComponentMsgChannels<'API_TEST_GETDATAITEMS'>;
             publish: ComponentMsgChannels<'API_TEST_GETDATAITEMS'>;
@@ -83,14 +81,6 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
         props: {
             dataItems: [],
         },
-
-        actions: {},
-
-        events: {},
-
-        msgBroker: {},
-
-        children: {},
 
         view: (_, c) => {
             return (

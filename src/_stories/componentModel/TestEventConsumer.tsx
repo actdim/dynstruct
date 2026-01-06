@@ -17,8 +17,6 @@ type Struct = ComponentStruct<
             value: string;
             handle: boolean;
         };
-        actions: {};
-        // children: {};
         msgScope: {
             subscribe: AppMsgChannels<'TEST-EVENT'>;
         };
@@ -34,8 +32,6 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
             value: 'foo',
             handle: true,
         },
-
-        actions: {},
 
         events: {
             onReady: async () => {},
@@ -54,8 +50,6 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
                 },
             },
         },
-
-        children: {},
 
         view: (_, c) => {
             return (
