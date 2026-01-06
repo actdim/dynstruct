@@ -34,7 +34,7 @@ export const useLocalMsgStructExample = (params: ComponentParams<Struct>) => {
     const def: ComponentDef<Struct> = {
         props: {
             data: [],
-        },        
+        },
         msgBroker: {
             provide: {
                 'ADD-TODO-ITEM': {

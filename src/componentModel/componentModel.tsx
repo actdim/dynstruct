@@ -17,6 +17,7 @@ import {
     HasKeys,
     IF,
     IsEmpty,
+    KeyOf,
     MaybeKeyOf,
     MaybePromise,
     Mutable,
@@ -315,10 +316,8 @@ export type ComponentMsgBroker<
     TStruct extends ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = MsgBroker<
-    // Pick<TStruct['msg'], MaybeKeyOf<TStruct['msg'], TStruct['msgScope']['provide']>>,
-    Pick<TStruct['msg'], TStruct['msgScope']['provide']>,
-    // Pick<TStruct['msg'], MaybeKeyOf<TStruct['msg'], TStruct['msgScope']['subscribe']>>,
-    Pick<TStruct['msg'], TStruct['msgScope']['subscribe']>,
+    Pick<TStruct['msg'], MaybeKeyOf<TStruct['msg'], TStruct['msgScope']['provide']>>,
+    Pick<TStruct['msg'], MaybeKeyOf<TStruct['msg'], TStruct['msgScope']['subscribe']>>,
     TMsgHeaders,
     Component<TStruct, TMsgHeaders>
 >;
