@@ -1,8 +1,12 @@
+import { ClientBase } from "@/net/client";
+
 export type DataItem = {
     id: number;
     name: string;
 };
-export class TestApiClient implements Disposable {
+
+// extends ClientBase?
+export class TestApiClient {
     static readonly name = 'TestApiClient' as const;
     readonly name = 'TestApiClient' as const;
 
@@ -19,7 +23,7 @@ export class TestApiClient implements Disposable {
         });
     }
 
-    [Symbol.dispose]() {
-        
+    extraMethod() {
+
     }
 }

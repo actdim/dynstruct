@@ -14,6 +14,7 @@ import { MsgBus } from "@actdim/msgmesh/msgBusCore";
 export function extractApiName(name: string, suffixes: string[]): string | null {
     if (!name) {
         return name;
+        // return null; // ?
     }
     const escaped = suffixes.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     const group = escaped.join("|");
@@ -29,7 +30,9 @@ const API_SUFFIXES = ["api", "controller", "client", "fetcher"];
 // App(Api)ClientBase
 export class ClientBase {
     protected baseUrl: string;
+
     protected name: string;
+
     // private requestStates
     private requestStateMap: Map<string, IRequestState>;
 
@@ -41,7 +44,10 @@ export class ClientBase {
 
     private init: Promise<any>;
 
-    constructor(context: BaseAppContext, fetcher?: IFetcher) {
+    private apiSuffixes: string[];
+
+    constructor(context: BaseAppContext, fetcher?: IFetcher, apiSuffixes = API_SUFFIXES) {
+        this.apiSuffixes = apiSuffixes;
         this.fetcher = fetcher || window;
         this.requestStateMap = new Map<string, IRequestState>();
         this.msgBus = context.msgBus;
@@ -61,8 +67,12 @@ export class ClientBase {
             channel: "APP-CONFIG-GET"
         });
         const config = msg.payload;
-        const apiName = extractApiName(this.name, API_SUFFIXES);
+        const apiName = extractApiName(this.name, this.apiSuffixes);
         const apiEntry = Object.entries(config.apis).find((entry) => entry[0].toLowerCase() === apiName?.toLowerCase());
+        if (!apiEntry) {
+            // console.debug
+            console.warn(`API "${apiName}" is not defined in the current configuration. Using default configuration.`);
+        }
         this.baseUrl = apiEntry?.[1].url || config.baseUrl;
     }
 

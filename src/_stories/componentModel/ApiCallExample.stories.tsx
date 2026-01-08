@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
 import { AppContextProvider, appMsgBus } from './bootstrap';
-import { ApiCallExampleFC, apiChannelSelector } from './ApiCallExample';
-import { TestApiClient } from './TestApiClient';
+import { ApiCallExampleFC, msgProviderAdapters } from './ApiCallExample';
 import { ServiceProvider } from '@/services/ServiceProvider';
 
 const meta: Meta<typeof ApiCallExampleFC> = {
@@ -11,14 +10,7 @@ const meta: Meta<typeof ApiCallExampleFC> = {
     decorators: [
         (Story) => (
             <AppContextProvider value={{ msgBus: appMsgBus }}>
-                <ServiceProvider
-                    adapters={[
-                        {
-                            service: new TestApiClient(),
-                            channelSelector: apiChannelSelector,
-                        },
-                    ]}
-                ></ServiceProvider>
+                <ServiceProvider adapters={msgProviderAdapters}></ServiceProvider>
                 <Story></Story>
             </AppContextProvider>
         ),

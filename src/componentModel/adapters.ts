@@ -1,6 +1,6 @@
 import { ClientBase } from "@/net/client";
-import { MsgBus, MsgStruct } from "@actdim/msgmesh/msgBusCore";
-import { Func, RemoveSuffix } from "@actdim/utico/typeCore";
+import { MsgBus, MsgStruct, MsgStructFactory } from "@actdim/msgmesh/msgBusCore";
+import { AddPrefix, Diff, Filter, Func, KeysOf, RemoveSuffix, Skip, ToUpper } from "@actdim/utico/typeCore";
 
 const getMethodNames = (client: any) => {
     // return new Set(...)
@@ -13,7 +13,7 @@ const baseMethodNames = getMethodNames(ClientBase.prototype);
 
 // ServiceMsgDispatcher
 export type MsgProviderAdapter = {
-    service: Disposable;
+    service: any;
     // channelResolver/channelMapper
     channelSelector: (service: any, methodName: string) => string;
 };
@@ -44,13 +44,36 @@ export function registerAdapters<TMsgStruct extends MsgStruct = MsgStruct>(msgBu
     }
 }
 
-export const BASE_API_CHANNEL_PREFIX = 'API_' as const;
-type BaseApiChannelPrefix = typeof BASE_API_CHANNEL_PREFIX;
+export type BaseServiceSuffix = 'CLIENT' | 'API' | 'SERVICE' | 'FETCHER' | 'CONTROLLER' | 'LOADER' | 'REPOSITORY' | 'PROVIDER';
 
-type BaseApiClientSuffix = 'CLIENT' | 'API';
+// const suffixes = ['CLIENT', 'API', 'SERVICE'] satisfies Uppercase<BaseServiceSuffix>[];
+// runtime version: `${prefix}${removeSuffix(serviceName.toUpperCase(), suffixes)}_`
+export type ToMsgChannelPrefix<
+    TServiceName extends string,
+    Prefix extends string,
+    Suffix extends string = BaseServiceSuffix,
+> = `${Prefix}${RemoveSuffix<Uppercase<TServiceName>, Suffix>}_`;
 
-export type ToApiChannelPrefix<
-    T extends string,
-    Prefix extends string = BaseApiChannelPrefix,
-    Suffix extends string = BaseApiClientSuffix,
-> = `${Prefix}${RemoveSuffix<Uppercase<T>, Suffix>}_`;
+type ToMsgStructSource<TService, TPrefix extends string, TSkip extends keyof TService = never> = Filter<
+    ToUpper<AddPrefix<Skip<TService, TSkip>, TPrefix>>,
+    Func
+>;
+
+export type ToMsgStruct<TService, TPrefix extends string, TSkip extends keyof TService = never, TMsgStructSource = ToMsgStructSource<TService, TPrefix, TSkip>> = MsgStructFactory<{
+    [K in keyof TMsgStructSource as TMsgStructSource[K] extends Func ? (Uppercase<K extends string ? K : never>) : never]: {
+        in: TMsgStructSource[K] extends Func ? Parameters<TMsgStructSource[K]> : never;
+        out: TMsgStructSource[K] extends Func ? ReturnType<TMsgStructSource[K]> : never;
+    };
+}>;
+
+export function getMsgChannelSelector<TTPrefix extends string>(
+    services: Record<TTPrefix, any>,
+) {
+    return (service: any, methodName: string) => {
+        const entry = Object.entries(services).find((entry) => entry[1] === service);
+        if (!entry) {
+            return null;
+        }
+        return `${entry[0]}${methodName.toUpperCase()}`;
+    };
+}

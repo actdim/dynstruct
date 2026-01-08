@@ -198,13 +198,15 @@ export type BaseApiConfig = {
 // BaseApp(Domain)Config
 export type BaseAppDomainConfig<
     TSecurityDomainConfig extends BaseSecurityDomainConfig = BaseSecurityDomainConfig,
-    TApiConfig extends BaseApiConfig = BaseApiConfig
+    TApiConfig extends BaseApiConfig = BaseApiConfig,
+    TApiName extends PropertyKey = string
+// TApiName extends keyof any = string
 > = {
     id: string;
     name?: string;
     baseUrl: string;
     security: TSecurityDomainConfig;
-    apis: Record<string, TApiConfig>;
+    apis: Record<TApiName, TApiConfig>;
     // HATEOAS? (React Admin)
 };
 

@@ -1,6 +1,6 @@
 {
     "name": "@actdim/dynstruct",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "description": "A type-safe component system for large-scale apps: explicit dependencies, message bus communication, and structure-first, declarative design",
     "author": "Pavel Borodaev",
     "license": "Proprietary",
@@ -70,8 +70,8 @@
         "build-storybook": "storybook build"
     },
     "peerDependencies": {
-        "@actdim/msgmesh": "^1.2.1",
-        "@actdim/utico": "^1.1.0",
+        "@actdim/msgmesh": "^1.2.2",
+        "@actdim/utico": "^1.1.1",
         "http-status": "^2.1.0",
         "jwt-decode": "^4.0.0",
         "mobx": "^6.15.0",
