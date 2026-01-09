@@ -9,12 +9,13 @@ import {
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { BaseAppMsgChannels, BaseAppMsgStruct, useBaseAppContext } from '@/appDomain/appContracts';
 import type { ComponentDef } from '@/componentModel/componentModel';
+import { PropsWithChildren } from 'react';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
     {
-        props: {
-            name?: string;
+        props: PropsWithChildren & {
+            storeName?: string;
         };
         msgScope: {
             provide: BaseAppMsgChannels<
@@ -29,7 +30,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
     let m: ComponentModel<Struct>;
 
     async function _updateStoreAsync() {
-        store = await PersistentStore.openAsync(m.name);
+        store = await PersistentStore.openAsync(m.storeName);
     }
 
     let store: PersistentStore;
@@ -40,7 +41,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
 
     const def: ComponentDef<Struct> = {
         props: {
-            name: '',
+            storeName: '',
         },
         msgBroker: {
             provide: {
@@ -77,7 +78,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
             },
         },
         events: {
-            onChangeName: () => {
+            onChangeStoreName: () => {
                 _updateStoreAsync();
             },
         },
