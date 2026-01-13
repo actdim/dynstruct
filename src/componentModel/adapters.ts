@@ -1,5 +1,5 @@
 import { ClientBase } from "@/net/client";
-import { MsgBus, MsgStruct, MsgStructFactory } from "@actdim/msgmesh/msgBusCore";
+import { MsgBus, MsgStruct, MsgStructFactory } from "@actdim/msgmesh/contracts";
 import { AddPrefix, Diff, Filter, Func, KeysOf, RemoveSuffix, Skip, ToUpper } from "@actdim/utico/typeCore";
 
 const getMethodNames = (client: any) => {
@@ -34,7 +34,7 @@ export function registerAdapters<TMsgStruct extends MsgStruct = MsgStruct>(msgBu
                         callback: (msg) => {
                             return (service[methodName] as Func)(...((msg.payload || []) as any[]));
                         },
-                        config: {
+                        options: {
                             abortSignal: abortSignal
                         }
                     });
@@ -77,3 +77,8 @@ export function getMsgChannelSelector<TTPrefix extends string>(
         return `${entry[0]}${methodName.toUpperCase()}`;
     };
 }
+
+// TODO:
+// export type PublicKeys<T> = {
+//     [K in keyof T]: K extends `_${string}` ? never : K;
+// }[keyof T];

@@ -1,13 +1,13 @@
 import { BaseApiMsgStruct, BaseAppMsgStruct, NavRoutes } from '@/appDomain/appContracts';
 import { createNavigationRoute } from '@/appDomain/navigation';
 import { ComponentContextProvider, useComponentContext } from '@/componentModel/componentContext';
-import {
+import type {
     BaseComponentContext,
     ComponentMsgHeaders,
     ComponentRegistryContext,
 } from '@/componentModel/contracts';
-import { MsgBus, MsgStructFactory } from '@actdim/msgmesh/msgBusCore';
-import { createMsgBus } from '@actdim/msgmesh/msgBusFactory';
+import { MsgBus, MsgStructFactory } from '@actdim/msgmesh/contracts';
+import { createMsgBus } from '@actdim/msgmesh/core';
 import { KeysOf } from '@actdim/utico/typeCore';
 import React, { PropsWithChildren } from 'react';
 

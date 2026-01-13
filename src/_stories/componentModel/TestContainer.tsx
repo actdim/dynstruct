@@ -1,18 +1,17 @@
 import {
-    bind,
-    Component,
-    ComponentDef,
-    ComponentModel,
     ComponentMsgFilter,
-    ComponentParams,
-    ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+    ComponentMsgHeaders,
+    type Component,
+    type ComponentDef,
+    type ComponentModel,
+    type ComponentParams,
+    type ComponentStruct,
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap'; // appDomain
 import { TestChildStruct, useTestChild } from './TestChild';
-import { ComponentMsgHeaders } from '@/componentModel/contracts';
+import { bind } from '@/componentModel/core';
 
 type Struct = ComponentStruct<
     AppMsgStruct,

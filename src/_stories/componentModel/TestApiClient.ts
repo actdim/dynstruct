@@ -1,5 +1,3 @@
-import { ClientBase } from "@/net/client";
-
 export type DataItem = {
     id: number;
     name: string;

@@ -1,12 +1,11 @@
-import {
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgStruct } from './bootstrap'; // appDomain
 import { DataItem, TestApiClient } from './TestApiClient';
@@ -77,7 +76,7 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
                 <div>
                     <button
                         onClick={async () => {
-                            const msg = await c.msgBus.dispatchAsync({
+                            const msg = await c.msgBus.request({
                                 channel: 'API_TEST_GETDATAITEMS',
                                 payloadFn: (fn) => fn([1, 2], ['first', 'second']),
                                 // payload: [

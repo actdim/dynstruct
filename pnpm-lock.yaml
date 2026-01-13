@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@actdim/msgmesh':
-        specifier: ^1.2.2
-        version: 1.2.2(@actdim/utico@1.1.1(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
+        specifier: ^1.2.3
+        version: 1.2.3(@actdim/utico@1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
       '@actdim/utico':
-        specifier: ^1.1.1
-        version: 1.1.1(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
+        specifier: ^1.1.2
+        version: 1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
       http-status:
         specifier: ^2.1.0
         version: 2.1.0
@@ -150,15 +150,15 @@ importers:
 
 packages:
 
-  '@actdim/msgmesh@1.2.2':
-    resolution: {integrity: sha512-0PRYFm9bLNmw39vXhljCHBF+fzgEQi1LY3pSjqHN5FyL0SulGZoYjGo8Na2xbl+DFf53/+PAx5EdnLb7TIX7uw==}
+  '@actdim/msgmesh@1.2.3':
+    resolution: {integrity: sha512-YgQMb7GoueBtUwpz1EeAVAkOUL75S7p/EIgGOrIG5LMy18HPjun/G/5c9XvpWUhdtbmEN8/eauM72xG19WVU5g==}
     peerDependencies:
-      '@actdim/utico': ^1.1.1
+      '@actdim/utico': ^1.1.2
       rxjs: ^7.8.2
       uuid: ^13.0.0
 
-  '@actdim/utico@1.1.1':
-    resolution: {integrity: sha512-o7iiZwKC+JPvti5H9brMI3twGe2Lm7QBcqrqCm27bvMPdOLzgOgX4t9HhdLK3ALyKAC1quztAS44PFonib9G/w==}
+  '@actdim/utico@1.1.2':
+    resolution: {integrity: sha512-L6cFzciIjrnxuqSlLYJ8OvVumAUpUSIuDwE370BcNbgkTkUNeH9eqTMXvGQSJnN9c/s0s9z9u8/ZXt/ggdw+nw==}
     peerDependencies:
       dexie: ^4.2.0
       moment: ^2.30.1
@@ -2858,13 +2858,13 @@ packages:
 
 snapshots:
 
-  '@actdim/msgmesh@1.2.2(@actdim/utico@1.1.1(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
+  '@actdim/msgmesh@1.2.3(@actdim/utico@1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
     dependencies:
-      '@actdim/utico': 1.1.1(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
+      '@actdim/utico': 1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
       rxjs: 7.8.2
       uuid: 13.0.0
 
-  '@actdim/utico@1.1.1(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)':
+  '@actdim/utico@1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)':
     dependencies:
       dexie: 4.2.1
       moment: 2.30.1

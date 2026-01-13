@@ -1,12 +1,11 @@
-import {
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { LocalMsgChannels, LocalMsgStruct, TodoItem } from './localMsgStruct';
 
@@ -28,7 +27,7 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
     let m: ComponentModel<Struct>;
 
     async function _updateAsync() {
-        const msg = await c.msgBus.dispatchAsync({
+        const msg = await c.msgBus.request({
             channel: 'GET-TODO-ITEMS',
         });
         m.list = msg.payload;

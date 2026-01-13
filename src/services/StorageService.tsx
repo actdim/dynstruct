@@ -1,14 +1,13 @@
 import {
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
     Component,
     ComponentModel,
-} from '@/componentModel/componentModel';
+    ComponentDef,
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { BaseAppMsgChannels, BaseAppMsgStruct, useBaseAppContext } from '@/appDomain/appContracts';
-import type { ComponentDef } from '@/componentModel/componentModel';
 import { PropsWithChildren } from 'react';
 
 type Struct = ComponentStruct<
@@ -30,7 +29,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
     let m: ComponentModel<Struct>;
 
     async function _updateStoreAsync() {
-        store = await PersistentStore.openAsync(m.storeName);
+        store = await PersistentStore.open(m.storeName);
     }
 
     let store: PersistentStore;
@@ -49,7 +48,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
                     in: {
                         callback: async (msg) => {
                             await init;
-                            const item = await store.getAsync(msg.payload.key);
+                            const item = await store.get(msg.payload.key);
                             return item?.data.value;
                         },
                     },
@@ -58,7 +57,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
                     in: {
                         callback: async (msg) => {
                             await init;
-                            await store.setAsync(
+                            await store.set(
                                 {
                                     key: msg.payload.key,
                                 },
@@ -71,7 +70,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
                     in: {
                         callback: async (msg) => {
                             await init;
-                            await store.deleteAsync(msg.payload.key);
+                            await store.delete(msg.payload.key);
                         },
                     },
                 },

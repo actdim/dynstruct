@@ -1,4 +1,3 @@
-
 import {
     To,
     useLocation,
@@ -7,9 +6,20 @@ import {
     useParams,
     useSearchParams,
 } from 'react-router-dom';
-import { PersistentStore } from '@actdim/utico/store/persistentStore';
-import { BaseAppMsgChannels, BaseAppMsgStruct, NavContext, NavRoutes } from '@/appDomain/appContracts';
-import { getFC, useComponent, type Component, type ComponentDef, type ComponentModel, type ComponentParams, type ComponentStruct } from '@/componentModel/componentModel';
+import {
+    BaseAppMsgChannels,
+    BaseAppMsgStruct,
+    NavContext,
+    NavRoutes,
+} from '@/appDomain/appContracts';
+import type {
+    Component,
+    ComponentDef,
+    ComponentModel,
+    ComponentParams,
+    ComponentStruct,
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -90,7 +100,7 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                         navType: navType,
                     };
                     history.push(ctx);
-                    c.msgBus.dispatch({
+                    c.msgBus.send({
                         channel: 'APP-NAV-CONTEXT-CHANGED',
                         group: 'in',
                         payload: ctx,

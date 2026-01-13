@@ -1,4 +1,4 @@
-import { $CG_ERROR, MsgBus, MsgStruct, MsgStructBase, MsgStructFactory } from "@actdim/msgmesh/msgBusCore";
+import { MsgStructBase, MsgStructFactory } from "@actdim/msgmesh/contracts";
 import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityMsgStruct } from "@/appDomain/security/securityContracts";
 import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";

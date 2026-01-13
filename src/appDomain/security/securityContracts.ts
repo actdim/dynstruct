@@ -1,4 +1,4 @@
-import { MsgBus, MsgStruct, MsgStructBase } from "@actdim/msgmesh/msgBusCore";
+import { MsgBus, MsgStruct, MsgStructBase } from "@actdim/msgmesh/contracts";
 import { RequireExtends, Skip } from "@actdim/utico/typeCore";
 // abstract
 export enum AccessLevel {

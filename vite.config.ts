@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import config from "./packageConfig";
 import dts from "vite-plugin-dts";
+// import eslint from 'vite-plugin-eslint';
 import tsConfigPaths from "vite-tsconfig-paths";
 import * as packageJson from "./package.json";
 
@@ -39,6 +40,10 @@ export default defineConfig({
         }
     },
     plugins: [
+        // eslint({
+        //     cache: false,
+        //     failOnError: true,
+        // }),
         tsConfigPaths(),
         dts({
             outDir: "dist",

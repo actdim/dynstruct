@@ -11,7 +11,7 @@ import { getValuePrefixer } from "@actdim/utico/typeCore";
 import { jwtDecode } from "jwt-decode";
 import { getResponseResult, IRequestParams, IRequestState, IResponseState } from "@/net/request";
 import { ApiError } from "@/net/apiError";
-import { MsgBus } from "@actdim/msgmesh/msgBusCore";
+import { MsgBus } from "@actdim/msgmesh/contracts";
 import { BaseAppMsgStruct } from "@/appDomain/appContracts";
 
 const userNameClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
@@ -130,7 +130,7 @@ export class SecurityProvider<TUserInfo = any> {
             channel: "APP-SECURITY-GET-CONFIG",
             callback: async (msg) => {
                 return (
-                    await this.msgBus.dispatchAsync({
+                    await this.msgBus.request({
                         channel: "APP-CONFIG-GET"
                     })
                 ).payload?.security;
@@ -150,7 +150,7 @@ export class SecurityProvider<TUserInfo = any> {
     }
 
     private async updateConfigAsync() {
-        const msg = await this.msgBus.dispatchAsync({
+        const msg = await this.msgBus.request({
             channel: "APP-CONFIG-GET"
         });
         this.domainConfig = msg.payload.security;
@@ -161,7 +161,7 @@ export class SecurityProvider<TUserInfo = any> {
 
     async restoreDataAsync() {
         this.accessToken = (
-            await this.msgBus.dispatchAsync({
+            await this.msgBus.request({
                 channel: "APP-KV-STORE-GET",
                 payload: {
                     key: this.storageKeys.accessToken
@@ -169,7 +169,7 @@ export class SecurityProvider<TUserInfo = any> {
             })
         ).payload;
         this.refreshToken = (
-            await this.msgBus.dispatchAsync({
+            await this.msgBus.request({
                 channel: "APP-KV-STORE-GET",
                 payload: {
                     key: this.storageKeys.refreshToken
@@ -177,7 +177,7 @@ export class SecurityProvider<TUserInfo = any> {
             })
         ).payload;
         let value = (
-            await this.msgBus.dispatchAsync({
+            await this.msgBus.request({
                 channel: "APP-KV-STORE-GET",
                 payload: {
                     key: this.storageKeys.userCredentials
@@ -193,7 +193,7 @@ export class SecurityProvider<TUserInfo = any> {
             };
 
         value = (
-            await this.msgBus.dispatchAsync({
+            await this.msgBus.request({
                 channel: "APP-KV-STORE-GET",
                 payload: {
                     key: this.storageKeys.acl
@@ -204,7 +204,7 @@ export class SecurityProvider<TUserInfo = any> {
         this.acl = value ? JSON.parse(value) : {};
 
         if (this.accessToken) {
-            this.msgBus.dispatch({
+            this.msgBus.request({
                 channel: "APP-SECURITY-AUTH-SIGNIN",
                 group: "out",
                 payload: this.getContext()
@@ -229,28 +229,28 @@ export class SecurityProvider<TUserInfo = any> {
     // removeSavedData
     async clearSavedDataAsync() {
         this.accessToken = null;
-        await this.msgBus.dispatchAsync({
+        await this.msgBus.request({
             channel: "APP-KV-STORE-REMOVE",
             payload: {
                 key: this.storageKeys.accessToken
             }
         });
         this.refreshToken = null;
-        await this.msgBus.dispatchAsync({
+        await this.msgBus.request({
             channel: "APP-KV-STORE-REMOVE",
             payload: {
                 key: this.storageKeys.refreshToken
             }
         });
         this.userCredentials = null;
-        await this.msgBus.dispatchAsync({
+        await this.msgBus.request({
             channel: "APP-KV-STORE-REMOVE",
             payload: {
                 key: this.storageKeys.userCredentials
             }
         });
         this.acl = null;
-        await this.msgBus.dispatchAsync({
+        await this.msgBus.request({
             channel: "APP-KV-STORE-REMOVE",
             payload: {
                 key: this.storageKeys.acl
@@ -262,20 +262,20 @@ export class SecurityProvider<TUserInfo = any> {
         this.accessToken = null;
         this.acl = null;
 
-        const signIn = this.msgBus.onceAsync({
+        const signIn = this.msgBus.once({
             channel: "APP-SECURITY-AUTH-SIGNIN",
             group: "out"
         });
 
         const signOut = async () => {
-            await this.msgBus.onceAsync({
+            await this.msgBus.once({
                 channel: "APP-SECURITY-AUTH-SIGNOUT",
                 group: "out"
             });
             throw new Error("Auth failed: login aborted");
         };
 
-        this.msgBus.dispatch({
+        this.msgBus.send({
             channel: "APP-SECURITY-REQUEST-AUTH-SIGNIN",
             payload: {
                 callbackUrl: window.location.pathname + window.location.search
@@ -327,28 +327,28 @@ export class SecurityProvider<TUserInfo = any> {
     }
 
     async saveDataAsync() {
-        await this.msgBus.dispatchAsync({
+        await this.msgBus.request({
             channel: "APP-KV-STORE-SET",
             payload: {
                 key: this.storageKeys.accessToken,
                 value: this.accessToken || null
             }
         });
-        await this.msgBus.dispatchAsync({
+        await this.msgBus.request({
             channel: "APP-KV-STORE-SET",
             payload: {
                 key: this.storageKeys.refreshToken,
                 value: this.refreshToken || null
             }
         });
-        await this.msgBus.dispatchAsync({
+        await this.msgBus.request({
             channel: "APP-KV-STORE-SET",
             payload: {
                 key: this.storageKeys.userCredentials,
                 value: this.userCredentials ? JSON.stringify(this.userCredentials) : ""
             }
         });
-        await this.msgBus.dispatchAsync({
+        await this.msgBus.request({
             channel: "APP-KV-STORE-SET",
             payload: {
                 key: this.storageKeys.acl,

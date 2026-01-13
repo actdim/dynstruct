@@ -1,13 +1,12 @@
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
-import {
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 
 type Struct = ComponentStruct<
@@ -28,7 +27,7 @@ export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
                 <>
                     <button
                         onClick={() => {
-                            c.msgBus.dispatch({
+                            c.msgBus.send({
                                 channel: 'APP-KV-STORE-SET',
                                 payload: {
                                     key: 'test',

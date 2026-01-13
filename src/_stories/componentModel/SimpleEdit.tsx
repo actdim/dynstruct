@@ -1,12 +1,11 @@
-import {
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgStruct } from './bootstrap';
 
@@ -28,11 +27,11 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
     const def: ComponentDef<Struct> = {
         props: {
             value: 'foo',
-        },        
+        },
 
         events: {
             onReady: async () => {},
-        },        
+        },
 
         view: (_, c) => {
             return (

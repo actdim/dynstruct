@@ -1,12 +1,11 @@
-import {
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { LocalMsgChannels, LocalMsgStruct, TodoItem } from './localMsgStruct';
 
@@ -57,7 +56,7 @@ export const useTodoEdit = (params: ComponentParams<Struct>) => {
                     <p>
                         <button
                             onClick={() => {
-                                c.msgBus.dispatch({
+                                c.msgBus.send({
                                     channel: 'ADD-TODO-ITEM',
                                     payload: m.item,
                                 });
@@ -67,7 +66,7 @@ export const useTodoEdit = (params: ComponentParams<Struct>) => {
                         </button>
                         <button
                             onClick={() => {
-                                c.msgBus.dispatch({
+                                c.msgBus.send({
                                     channel: 'CLEAR-TODO-ITEMS',
                                 });
                             }}
@@ -76,7 +75,7 @@ export const useTodoEdit = (params: ComponentParams<Struct>) => {
                         </button>
                         <button
                             onClick={async () => {
-                                const msg = await c.msgBus.dispatchAsync({
+                                const msg = await c.msgBus.request({
                                     channel: 'GET-TODO-ITEMS',
                                 });
                                 alert(JSON.stringify(msg.payload));

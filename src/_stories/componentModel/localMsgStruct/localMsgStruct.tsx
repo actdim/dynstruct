@@ -1,4 +1,4 @@
-import { MsgStructFactory } from '@actdim/msgmesh/msgBusCore';
+import { MsgStructFactory } from '@actdim/msgmesh/contracts';
 import { KeysOf } from '@actdim/utico/typeCore';
 
 export type TodoItem = { id: number; name: string };

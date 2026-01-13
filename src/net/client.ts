@@ -3,7 +3,7 @@ import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
 import { ApiError } from "./apiError";
 import { BaseAppMsgStruct, BaseAppContext } from "@/appDomain/appContracts";
-import { MsgBus } from "@actdim/msgmesh/msgBusCore";
+import { MsgBus } from "@actdim/msgmesh/contracts";
 
 // MLWEB-2172
 
@@ -63,7 +63,7 @@ export class ClientBase {
     }
 
     protected async getBaseUrlAsync() {
-        const msg = await this.msgBus.dispatchAsync({
+        const msg = await this.msgBus.request({
             channel: "APP-CONFIG-GET"
         });
         const config = msg.payload;
@@ -78,7 +78,7 @@ export class ClientBase {
 
     private async updateSecurityAsync() {
         if (!this.accessToken) {
-            const msg = await this.msgBus.dispatchAsync({
+            const msg = await this.msgBus.request({
                 channel: "APP-SECURITY-GET-CONTEXT"
             });
             this.accessToken = msg.payload.accessToken;
@@ -171,18 +171,18 @@ export class ClientBase {
                         throw err;
                     }
                     if (err.status === httpStatus.UPGRADE_REQUIRED) {
-                        // await this.context.msgBus.dispatchAsync({
+                        // await this.context.msgBus.request({
                         //     channel: "APP_RELOAD" // APP_REQUEST_UPDGRADE
                         // });
                         throw err;
                     } else if (err.status === httpStatus.UNAUTHORIZED) {
                         if (err.response?.headers?.get("token-expired")) {
                             // token expired or invalid
-                            await this.msgBus.dispatchAsync({
+                            await this.msgBus.request({
                                 channel: "APP-SECURITY-AUTH-REFRESH"
                             });
                         } else {
-                            await this.msgBus.dispatchAsync({
+                            await this.msgBus.request({
                                 channel: "APP-SECURITY-REQUEST-AUTH"
                             });
                         }

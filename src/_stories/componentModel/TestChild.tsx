@@ -1,12 +1,11 @@
-import {
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { ComponentMsgHeaders } from '@/componentModel/contracts';
@@ -50,7 +49,7 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
                     ></input>
                     <button
                         onClick={() => {
-                            c.msgBus.dispatch({
+                            c.msgBus.send({
                                 channel: 'TEST-EVENT',
                                 payload: m.value,
                             });
@@ -60,7 +59,7 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
                     </button>
                     <button
                         onClick={async () => {
-                            const msg = await c.msgBus.dispatchAsync({
+                            const msg = await c.msgBus.request({
                                 channel: 'LOCAL-EVENT',
                                 payload: m.value,
                             });

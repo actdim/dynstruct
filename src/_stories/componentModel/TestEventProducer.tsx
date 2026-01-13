@@ -1,12 +1,11 @@
-import {
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 
@@ -16,7 +15,7 @@ type Struct = ComponentStruct<
         props: {
             value: string;
         };
-        
+
         msgScope: {
             publish: AppMsgChannels<'TEST-EVENT'>;
         };
@@ -30,7 +29,7 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
     const def: ComponentDef<Struct> = {
         props: {
             value: 'foo',
-        },        
+        },
 
         events: {
             onReady: async () => {},
@@ -48,7 +47,7 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
                     ></input>
                     <button
                         onClick={() => {
-                            c.msgBus.dispatch({
+                            c.msgBus.send({
                                 channel: 'TEST-EVENT',
                                 payload: m.value,
                             });

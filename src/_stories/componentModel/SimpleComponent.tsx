@@ -1,19 +1,17 @@
-import {
-    bind,
-    bindProp,
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    getFC,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
+import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
 import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
 import { DynamicContentStruct, useDynamicContent } from '../../componentModel/DynamicContent';
+import { bind, bindProp } from '@/componentModel/core';
 
 // import './simpleComponent.css';
 
@@ -41,7 +39,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
         props: {
             counter: 0,
             text: 'bar',
-        },        
+        },
         children: {
             button: useSimpleButton({
                 content: 'Add input',

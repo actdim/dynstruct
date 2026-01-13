@@ -1,13 +1,13 @@
-import {
+import type {
     Component,
     ComponentDef,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
-    useComponent,
-} from '@/componentModel/componentModel';
+} from '@/componentModel/contracts';
 import React from 'react';
-import { MsgStruct } from '@actdim/msgmesh/msgBusCore';
+import { MsgStruct } from '@actdim/msgmesh/contracts';
+import { useComponent } from './react';
 
 export type DynamicContentStruct<
     TData = any,
