@@ -17,8 +17,9 @@ export type BaseComponentContext<TMsgStruct extends MsgStruct = MsgStruct> = {
     currentId?: string;
 };
 
-export type TreeNode = {
+export type ComponentTreeNode = {
     id: string;
+    regType: string;
     parentId?: string;
     children: Set<string>;
 };
@@ -26,14 +27,14 @@ export type TreeNode = {
 // ComponentContext
 export type ComponentRegistryContext<TMsgStruct extends MsgStruct = MsgStruct> =
     BaseComponentContext<TMsgStruct> & {
-        register: (id: string, parentId?: string) => void;
+        register: (id: string, regType: string, parentId?: string) => void;
         unregister: (id: string) => void;
         getParent: (id: string) => string | undefined;
         getChildren: (id: string) => string[];
         getChainUp: (id: string) => string[];
         getChainDown: (id: string) => string[];
         getHierarchyPath: (id: string) => string;
-        getNodeMap: () => Map<string, TreeNode>;
+        getNodeMap: () => Map<string, ComponentTreeNode>;
     };
 
 export type ComponentMsgHeaders = MsgHeaders & {};
@@ -71,10 +72,7 @@ export type MsgChannelGroupSubscriberParams<
     TGroup extends keyof TStruct[TChannel] = typeof $CG_IN, // keyof TStruct[TChannel]
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
     TScope = any,
-> = Skip<
-    MsgSubParams<TStruct, TChannel, TGroup>,
-    'channel' | 'group' | 'callback' | 'filter'
-> & {
+> = Skip<MsgSubParams<TStruct, TChannel, TGroup>, 'channel' | 'group' | 'callback' | 'filter'> & {
     callback?: (msg: Msg<TStruct, TChannel, TGroup, TMsgHeaders>, scope: TScope) => void;
     filter?: (msg: Msg<TStruct, TChannel, TGroup, TMsgHeaders>, scope: TScope) => boolean;
     componentFilter?: ComponentMsgFilter;
@@ -290,7 +288,8 @@ export type ComponentDef<
     TStruct extends ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = {
-    name?: string;
+    // typeId
+    regType?: string;
     props?: Require<TStruct['props'], HasKeys<TStruct['props']>>;
     actions?: Require<TStruct['actions'], HasKeys<TStruct['actions']>>;
     effects?: keyof TStruct['effects'] extends never
@@ -346,6 +345,8 @@ export type ComponentBase<
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = {
     id: string;
+    key: string;
+    regType: string;
     parentId: string;
     // getHierarchyPath?
     getHierarchyId(): string;
@@ -353,7 +354,7 @@ export type ComponentBase<
     getChildren(): string[];
     getChainUp(): string[];
     getChainDown(): string[];
-    getNodeMap(): Map<string, TreeNode>;
+    getNodeMap(): Map<string, ComponentTreeNode>;
     bindings: Map<PropertyKey, Binding>;
     msgBus: MsgBus<ComponentMsgStruct<TStruct>, TMsgHeaders>;
     msgBroker: ComponentMsgBroker<TStruct>;
@@ -361,8 +362,14 @@ export type ComponentBase<
     View: ComponentViewFn;
 };
 
+export const $id = Symbol('$id');
+export const $key = Symbol('$key');
+
 export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
-    Readonly<TStruct['actions']>;
+    Readonly<TStruct['actions']> & {
+        readonly [$id]?: string;
+        readonly [$key]?: string;
+    };
 
 export type Component<
     TStruct extends ComponentStruct = ComponentStruct,
@@ -378,9 +385,12 @@ export type PropEventHandlers = {
     onChange?: (value: any) => void;
 };
 
-// ComponentConfig
 export type ComponentParams<TStruct extends ComponentStruct = ComponentStruct> =
-    ComponentPropParams<TStruct['props']> & ComponentEvents<TStruct>; // & PropsWithChildren
+    ComponentPropParams<TStruct['props']> &
+        ComponentEvents<TStruct> & {
+            [$id]?: string;
+            [$key]?: string;
+        }; // & PropsWithChildren?
 
 export type EffectController = {
     start: () => void;

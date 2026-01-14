@@ -67,6 +67,7 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
     let m: ComponentModel<Struct>;
 
     const def: ComponentDef<Struct> = {
+        regType: "ApiCallExample",
         props: {
             dataItems: [],
         },

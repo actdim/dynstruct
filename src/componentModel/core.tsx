@@ -133,34 +133,62 @@ export function createRecursiveProxy(
     return proxy;
 }
 
-export function toHtmlId(url: string, segmentsCount: number = 1): string {
-    const clean = url.split(/[?#]/)[0];
-    const parts = clean
+export function toHtmlId(url: string): string {
+    let parts = url
         .split('/')
         .filter(Boolean)
         .map((segment) => decodeURIComponent(segment));
 
-    const last = parts.slice(-segmentsCount);
-    const raw = last.join('-');
+    const raw = parts.join('-');
+    // sanitize
     let id = raw
         .normalize('NFKD')
         .replace(/[^a-zA-Z0-9\-_:.+#]/g, '-')
         .replace(/-+/g, '-')
         .replace(/^[^a-zA-Z]+/, '-')
+        // .replace(/:/g, '-')
+        // .replace(/\./g, '_')
+        // .replace(/#/g, '-')
         .replace(/[+#]$/, '-');
     return id;
 }
 
-export function getCallerFileName(depth = 2): string | null {
+export function getComponentSourceByCaller(depth = 2): string | null {
     const err = new Error();
     const stack = err.stack?.split('\n');
-    if (!stack || stack.length <= depth) return null;
-
-    const match = stack[depth].match(/\((.*):\d+:\d+\)/);
-    if (match) {
-        return match[1];
+    if (!stack || stack.length <= depth) {
+        return null;
     }
-    return null;
+    const match = stack[depth].match(/\(([^)]+)\)/);
+    const result = match?.[1];
+    if (result) {
+        if (
+            document.querySelector('script[type="module"][src*="/@vite/"]') &&
+            globalThis['CONFIG_TYPE'] === 'DEVELOPMENT'
+        ) {
+            return result.replace(/\?[^:]+/, '');
+        }
+    }
+    return result;
+}
+
+export function getComponentNameByCaller(depth = 2): string | null {
+    const err = new Error();
+    const stack = err.stack?.split('\n');
+    if (!stack || stack.length <= depth) {
+        return null;
+    }
+    const line = stack[depth].trim();
+    const match = line.match(/^at\s+([^\s(]+)/);
+    if (!match) {
+        return null;
+    }
+    const fnName = match[1];
+    const hookMatch = fnName.match(/^use(.+)/);
+    if (hookMatch) {
+        return hookMatch[1];
+    }
+    return fnName;
 }
 
 export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStruct>(

@@ -5,7 +5,9 @@ import { action, observable } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
 import { ReactComponentContext, useComponentContext } from './componentContext';
-import type {
+import {
+    $id,
+    $key,
     Binding,
     Component,
     ComponentChildren,
@@ -26,7 +28,7 @@ import { lazy } from '@actdim/utico/utils';
 import {
     createEffect,
     createRecursiveProxy,
-    getCallerFileName,
+    getComponentSourceByCaller,
     getComponentMsgBus,
     isBinding,
     ProxyEventHandlers,
@@ -34,19 +36,13 @@ import {
     toHtmlId,
 } from './core';
 
-type ComponentSourceInfo = {
-    // classId
-    structId: string;
-    count: 0;
-};
-
-const componentData = {
-    sources: new Map<string, ComponentSourceInfo>(),
-    count: 0,
-};
-
 function capitalize(name: string) {
     return name.replace(/^./, name[0].toUpperCase());
+}
+
+function cleanSourceRef(sourceRef: string) {
+    // remove origin
+    return sourceRef.replace(/^[a-z][a-z0-9+.-]*:\/\/[^\/]+/, '');
 }
 
 function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
@@ -59,6 +55,14 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
 
     if (!componentDef) {
         componentDef = {};
+    }
+
+    let type = componentDef.regType;
+    if (!type) {
+        type = getComponentSourceByCaller(6);
+        // type = getComponentNameByCaller(6);
+        type = cleanSourceRef(type);
+        // throw new Error('Valid component definition is required');
     }
 
     if (!params) {
@@ -87,7 +91,6 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
     }
 
     const ViewFC = observer((props: ComponentViewProps) => {
-        const id = component.id;
         const context = useComponentContext();
         const parentId = context.currentId;
 
@@ -97,26 +100,43 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
             msgBus = context.msgBus;
         }
 
-        const scopeContext = useMemo(
-            () => ({ ...context, currentId: id }),
-            [componentDef, params, context],
-        );
+        const nodeMap = context.getNodeMap();
+
+        const getChildNodes = (id: string) => {
+            const childIds = context.getChildren(id);
+            return childIds.map((childId) => nodeMap.get(childId));
+        };
+
+        const childNodes = getChildNodes(parentId);
+        let id = params[$id];
+        if (!id) {
+            let name = toHtmlId(type);
+            let key = params[$key];
+            if (!key) {
+                const componentCount = childNodes.filter(
+                    (node) => node.regType === componentDef.regType,
+                ).length;
+                key = (componentCount + 1).toString();
+            }
+            id = `${name}#${key}`;
+        }
+
+        component.id = id;
+        component.getHierarchyId = () => context.getHierarchyPath(id);
+        component.getChainDown = () => context.getChainDown(id);
+        component.getChainUp = () => context.getChainUp(id);
+        component.getChildren = () => context.getChildren(id);
+        component.getParent = () => context.getParent(id);
+        component.getNodeMap = () => context.getNodeMap();
 
         useLayoutEffect(() => {
             try {
+                context.register(id, componentDef.regType, parentId);
+
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>layout`);
                 }
-
-                context.register(id, parentId);
-
-                component.getHierarchyId = () => context.getHierarchyPath(id);
-                component.getChainDown = () => context.getChainDown(id);
-                component.getChainUp = () => context.getChainUp(id);
-                component.getChildren = () => context.getChildren(id);
-                component.getParent = () => context.getParent(id);
-                component.getNodeMap = () => context.getNodeMap();
 
                 registerMsgBroker(component);
 
@@ -132,7 +152,7 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>layout-destroy`);
                 }
-                context.unregister(id);
+                context.unregister(component.id);
 
                 msgBroker.abortController?.abort();
 
@@ -185,33 +205,16 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
             // msgBus.send
             content = <>{errDetails}</>;
         }
+        const scopeContext = useMemo(
+            () => ({ ...context, currentId: component.id }),
+            [componentDef, params, context],
+        );
         return (
             <ReactComponentContext.Provider value={scopeContext}>
                 {content}
             </ReactComponentContext.Provider>
         );
     });
-
-    let srcInfo: ComponentSourceInfo;
-    const sources = componentData.sources;
-
-    const fileName = getCallerFileName(6);
-    const srcName = toHtmlId(fileName, 2);
-
-    if (sources.has(fileName)) {
-        srcInfo = sources.get(fileName);
-        srcInfo.count++;
-    } else {
-        const structId = componentDef.name || srcName || `Component_${componentData.count}`;
-        srcInfo = {
-            structId: structId,
-            count: 0,
-        };
-        sources.set(fileName, srcInfo);
-        componentData.count++;
-    }
-
-    const id = `${srcInfo.structId}#${srcInfo.count}`;
 
     const children = {} as ComponentChildren<TStruct['children']>;
 
@@ -346,7 +349,9 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
 
     let effects: Record<string, EffectController> = {};
     component = {
-        id: id,
+        id: params[$id],
+        key: params[$key],
+        regType: type,
         parentId: undefined,
         getHierarchyId: () => undefined,
         getChainDown: () => undefined,

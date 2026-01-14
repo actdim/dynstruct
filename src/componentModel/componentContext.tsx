@@ -3,7 +3,11 @@
 //##############################################################################
 
 import React, { createContext, PropsWithChildren, useContext, useRef } from 'react';
-import { BaseComponentContext, ComponentRegistryContext, TreeNode } from './contracts';
+import {
+    BaseComponentContext,    
+    ComponentRegistryContext,
+    ComponentTreeNode,
+} from './contracts';
 
 export const ReactComponentContext = createContext<ComponentRegistryContext>(undefined);
 
@@ -14,7 +18,7 @@ export function ComponentContextProvider(
     }>,
 ) {
     let context: React.RefObject<ComponentRegistryContext>;
-    const treeRef = useRef(new Map<string, TreeNode>());
+    const treeRef = useRef(new Map<string, ComponentTreeNode>());
     // idStack
     const regStack = useRef([]);
 
@@ -22,7 +26,7 @@ export function ComponentContextProvider(
         return regStack.current[regStack.current.length - 1];
     };
 
-    const register = (id: string, parentId?: string) => {
+    const register = (id: string, regType: string, parentId?: string) => {
         let node = treeRef.current.get(id);
 
         if (!node) {
@@ -30,10 +34,12 @@ export function ComponentContextProvider(
                 id,
                 parentId,
                 children: new Set(),
+                regType: regType,
             };
             treeRef.current.set(id, node);
         } else {
             node.parentId = parentId;
+            node.regType = regType;
         }
 
         if (parentId) {
@@ -42,6 +48,7 @@ export function ComponentContextProvider(
                 parentNode = {
                     id: parentId,
                     children: new Set(),
+                    regType: undefined,
                 };
                 treeRef.current.set(parentId, parentNode);
             }
@@ -94,6 +101,18 @@ export function ComponentContextProvider(
         return result;
     };
 
+    const getRootId = (id: string) => {
+        let current = id;
+        while (true) {
+            const parent = getParent(current);
+            if (!parent) {
+                break;
+            }
+            current = parent;
+        }
+        return current;
+    };
+
     const getChainDown = (id: string): string[] => {
         const result: string[] = [];
         const stack: string[] = [id];
@@ -113,13 +132,13 @@ export function ComponentContextProvider(
     };
 
     const getHierarchy = (rootId: string) => {
-        const buildNode = (id: string): TreeNode => {
-            const childrenIds = getChildren(id) || [];
+        const buildNode = (id: string): ComponentTreeNode => {
+            const childIds = getChildren(id) || [];
             return {
                 id,
                 parentId: getParent(id),
-                children: childrenIds.map(buildNode),
-            } as TreeNode & { children: TreeNode[] };
+                children: childIds.map(buildNode),
+            } as ComponentTreeNode & { children: ComponentTreeNode[] };
         };
         return buildNode(rootId);
     };

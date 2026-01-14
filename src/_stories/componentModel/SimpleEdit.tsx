@@ -35,7 +35,7 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
 
         view: (_, c) => {
             return (
-                <>
+                <div id={c.id}>
                     <input
                         type="text"
                         onChange={(e) => {
@@ -43,7 +43,7 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
                         }}
                         value={m.value}
                     ></input>
-                </>
+                </div>
             );
         },
     };
