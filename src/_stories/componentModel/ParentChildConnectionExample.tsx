@@ -5,10 +5,10 @@ export const ParentChildConnectionExample = () => {
     return (
         <>
             <p>
-                <TestContainerFC></TestContainerFC>
+                <TestContainerFC $id="test1"></TestContainerFC>
             </p>
             <p>
-                <TestContainerFC></TestContainerFC>
+                <TestContainerFC $id="test2"></TestContainerFC>
             </p>
         </>
     );

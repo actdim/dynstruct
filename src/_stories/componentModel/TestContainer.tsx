@@ -35,6 +35,7 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
     let m: ComponentModel<Struct>;
 
     const componentDef: ComponentDef<Struct, ComponentMsgHeaders & { test: string }> = {
+        
         props: {
             text: undefined,
         },
@@ -42,7 +43,7 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
         events: {
             onChangeText: () => {
                 c.children.child2.model.value = m.text;
-            }
+            },
         },
 
         msgBroker: {
@@ -83,19 +84,17 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
 
         view: (_, c) => {
             return (
-                <>
-                    <div>
-                        <p>Text: {m.text}</p>
-                        <p>
-                            <div style={{ padding: '4px' }}>
-                                <c.children.child1.View></c.children.child1.View>
-                            </div>
-                            <div style={{ padding: '4px' }}>
-                                <c.children.child2.View></c.children.child2.View>
-                            </div>
-                        </p>
-                    </div>
-                </>
+                <div id={c.id}>
+                    <p>Text: {m.text}</p>
+                    <p>
+                        <div style={{ padding: '4px' }}>
+                            <c.children.child1.View></c.children.child1.View>
+                        </div>
+                        <div style={{ padding: '4px' }}>
+                            <c.children.child2.View></c.children.child2.View>
+                        </div>
+                    </p>
+                </div>
             );
         },
     };

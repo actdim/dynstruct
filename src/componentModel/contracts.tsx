@@ -363,13 +363,12 @@ export type ComponentBase<
     View: ComponentViewFn;
 };
 
-export const $id = Symbol('$id');
-export const $key = Symbol('$key');
-
 export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
     Readonly<TStruct['actions']> & {
-        readonly [$id]?: string;
-        readonly [$key]?: string;
+        // readonly __id?: string;
+        // readonly __key?: string;
+        readonly $id?: string;
+        readonly $key?: string;
     };
 
 export type Component<
@@ -389,8 +388,8 @@ export type PropEventHandlers = {
 export type ComponentParams<TStruct extends ComponentStruct = ComponentStruct> =
     ComponentPropParams<TStruct['props']> &
         ComponentEvents<TStruct> & {
-            [$id]?: string;
-            [$key]?: string;
+            $id?: string;
+            $key?: string;
         }; // & PropsWithChildren?
 
 export type EffectController = {

@@ -6,8 +6,6 @@ import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
 import { ReactComponentContext, useComponentContext } from './componentContext';
 import {
-    $id,
-    $key,
     Binding,
     Component,
     ComponentChildren,
@@ -101,9 +99,9 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         }
 
         if (!component.id) {
-            let id = params[$id];
+            let id = params.$id;
             if (!id) {
-                const key = params[$key];
+                const key = params.$key;
                 if (key) {
                     id = `${toHtmlId(regType)}#${key}`;
                 } else {
@@ -339,8 +337,8 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
 
     let effects: Record<string, EffectController> = {};
     component = {
-        id: params[$id],
-        key: params[$key],
+        id: params.$id,
+        key: params.$key,
         regType: regType,
         parentId: undefined,
         getHierarchyId: () => undefined,
