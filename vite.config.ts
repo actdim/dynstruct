@@ -30,7 +30,11 @@ export default defineConfig({
                 entryFileNames: "[name].es.js" // mjs
             }
         },
-        sourcemap: true
+        sourcemap: true,
+        // minify: "esbuild",
+    },
+    esbuild: {
+        // keepNames: true
     },
     server: {
         port: 5173,

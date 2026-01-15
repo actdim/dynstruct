@@ -9,9 +9,12 @@ import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
-import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
+import { SimpleEditFC, SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
 import { DynamicContentStruct, useDynamicContent } from '../../componentModel/DynamicContent';
 import { bind, bindProp } from '@/componentModel/core';
+import { observer } from 'mobx-react-lite';
+import { useLazyRef } from '@/reactHooks';
+import { observable } from 'mobx';
 
 // import './simpleComponent.css';
 
@@ -63,11 +66,12 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
                 },
             }),
             dynEdit: (params) => {
-                let editorModel = useSimpleEdit({
+                let dynComponent = useSimpleEdit({
                     value: bindProp(() => m, 'text'),
+                    // value: 'test',
                     // value: params.value,
                 });
-                return editorModel;
+                return dynComponent;
             },
         },
 
@@ -87,7 +91,6 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
                     <ul>
                         {Array.from({ length: m.counter }).map((_, i) => (
                             <li>
-                                {/* value={m.text} */}
                                 <c.children.DynEdit key={i}></c.children.DynEdit>
                             </li>
                         ))}

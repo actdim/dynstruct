@@ -34,6 +34,7 @@ export type ComponentRegistryContext<TMsgStruct extends MsgStruct = MsgStruct> =
         getChainUp: (id: string) => string[];
         getChainDown: (id: string) => string[];
         getHierarchyPath: (id: string) => string;
+        getNextId: (regType: string) => string;
         getNodeMap: () => Map<string, ComponentTreeNode>;
     };
 

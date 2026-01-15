@@ -31,10 +31,6 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
             value: 'foo',
         },
 
-        events: {
-            onReady: async () => {},
-        },
-
         view: (_, c) => {
             return (
                 <>

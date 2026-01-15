@@ -39,7 +39,11 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
             text: undefined,
         },
 
-        events: {},
+        events: {
+            onChangeText: () => {
+                c.children.child2.model.value = m.text;
+            }
+        },
 
         msgBroker: {
             subscribe: {
@@ -67,12 +71,13 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
         children: {
             child1: useTestChild({}),
             child2: useTestChild({
-                value: bind(
-                    () => m.text,
-                    (v) => {
-                        m.text = v;
-                    },
-                ),
+                // direct binding
+                // value: bind(
+                //     () => m.text,
+                //     (v) => {
+                //         m.text = v;
+                //     },
+                // ),
             }),
         },
 

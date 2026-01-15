@@ -57,11 +57,11 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         componentDef = {};
     }
 
-    let type = componentDef.regType;
-    if (!type) {
-        type = getComponentSourceByCaller(6);
+    let regType = componentDef.regType;
+    if (!regType) {
+        regType = getComponentSourceByCaller(6);
         // type = getComponentNameByCaller(6);
-        type = cleanSourceRef(type);
+        regType = cleanSourceRef(regType);
         // throw new Error('Valid component definition is required');
     }
 
@@ -100,38 +100,29 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
             msgBus = context.msgBus;
         }
 
-        const nodeMap = context.getNodeMap();
-
-        const getChildNodes = (id: string) => {
-            const childIds = context.getChildren(id);
-            return childIds.map((childId) => nodeMap.get(childId));
-        };
-
-        const childNodes = getChildNodes(parentId);
-        let id = params[$id];
-        if (!id) {
-            let name = toHtmlId(type);
-            let key = params[$key];
-            if (!key) {
-                const componentCount = childNodes.filter(
-                    (node) => node.regType === componentDef.regType,
-                ).length;
-                key = (componentCount + 1).toString();
+        if (!component.id) {
+            let id = params[$id];
+            if (!id) {
+                const key = params[$key];
+                if (key) {
+                    id = `${toHtmlId(regType)}#${key}`;
+                } else {
+                    id = context.getNextId(regType);
+                }
             }
-            id = `${name}#${key}`;
-        }
 
-        component.id = id;
-        component.getHierarchyId = () => context.getHierarchyPath(id);
-        component.getChainDown = () => context.getChainDown(id);
-        component.getChainUp = () => context.getChainUp(id);
-        component.getChildren = () => context.getChildren(id);
-        component.getParent = () => context.getParent(id);
-        component.getNodeMap = () => context.getNodeMap();
+            component.id = id;
+            component.getHierarchyId = () => context.getHierarchyPath(id);
+            component.getChainDown = () => context.getChainDown(id);
+            component.getChainUp = () => context.getChainUp(id);
+            component.getChildren = () => context.getChildren(id);
+            component.getParent = () => context.getParent(id);
+            component.getNodeMap = () => context.getNodeMap();
+        }
 
         useLayoutEffect(() => {
             try {
-                context.register(id, componentDef.regType, parentId);
+                context.register(component.id, regType, parentId);
 
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
@@ -232,7 +223,6 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         for (const [key, value] of Object.entries(componentDef.children)) {
             if (typeof value == 'function') {
                 const view = value as (params: any) => Component;
-                // observer
                 const ChildViewFC: ComponentViewImplFn<TStruct> = (props) => {
                     const c = view(props);
                     return <c.View />;
@@ -351,7 +341,7 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
     component = {
         id: params[$id],
         key: params[$key],
-        regType: type,
+        regType: regType,
         parentId: undefined,
         getHierarchyId: () => undefined,
         getChainDown: () => undefined,
@@ -401,7 +391,7 @@ export function useComponent<
         return () => {
             ref.current = null;
         };
-    }, [componentDef, params]);
+    }, []); // [params]?
     return ref.current;
 }
 

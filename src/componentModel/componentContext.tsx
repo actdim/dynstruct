@@ -3,11 +3,8 @@
 //##############################################################################
 
 import React, { createContext, PropsWithChildren, useContext, useRef } from 'react';
-import {
-    BaseComponentContext,    
-    ComponentRegistryContext,
-    ComponentTreeNode,
-} from './contracts';
+import { BaseComponentContext, ComponentRegistryContext, ComponentTreeNode } from './contracts';
+import { toHtmlId } from './core';
 
 export const ReactComponentContext = createContext<ComponentRegistryContext>(undefined);
 
@@ -21,6 +18,17 @@ export function ComponentContextProvider(
     const treeRef = useRef(new Map<string, ComponentTreeNode>());
     // idStack
     const regStack = useRef([]);
+
+    const seqMap = useRef(new Map<string, number>());
+
+    const getNextId = (regType: string) => {
+        let index = 1;
+        if (seqMap.current.has(regType)) {
+            index = seqMap.current.get(regType);
+        }
+        seqMap.current.set(regType, index + 1);
+        return `${toHtmlId(regType)}#${index}`;
+    };
 
     const getCurrentId = () => {
         return regStack.current[regStack.current.length - 1];
@@ -183,6 +191,7 @@ export function ComponentContextProvider(
         getChainDown,
         getHierarchyPath,
         getNodeMap,
+        getNextId,
     });
 
     return (

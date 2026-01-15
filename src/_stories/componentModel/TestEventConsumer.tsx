@@ -30,11 +30,7 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
         props: {
             value: 'foo',
             handle: true,
-        },
-
-        events: {
-            onReady: async () => {},
-        },
+        },        
 
         msgBroker: {
             subscribe: {

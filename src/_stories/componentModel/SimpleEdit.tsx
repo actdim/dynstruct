@@ -26,13 +26,8 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
 
     const def: ComponentDef<Struct> = {
         props: {
-            value: 'foo',
+            value: "foo",
         },
-
-        events: {
-            onReady: async () => {},
-        },
-
         view: (_, c) => {
             return (
                 <div id={c.id}>
