@@ -76,4 +76,4 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
 };
 
 export type TodoListStruct = Struct;
-export const TodoListFC = getFC(useTodoList);
+export const TodoList = getFC(useTodoList);

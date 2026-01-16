@@ -105,4 +105,4 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
 };
 
 export type TestContainerStruct = Struct;
-export const TestContainerFC = getFC(useTestContainer);
+export const TestContainer = getFC(useTestContainer);

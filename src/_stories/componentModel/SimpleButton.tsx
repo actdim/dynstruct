@@ -46,4 +46,4 @@ export const useSimpleButton = (params: ComponentParams<Struct>) => {
 };
 
 export type SimpleButtonStruct = Struct;
-export const SimpleButtonFC = getFC(useSimpleButton);
+export const SimpleButton = getFC(useSimpleButton);

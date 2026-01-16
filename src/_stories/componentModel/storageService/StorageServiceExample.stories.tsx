@@ -1,18 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
 import { AppContextProvider, appMsgBus } from '../bootstrap';
-import { StorageServiceFC } from '@/services/StorageService';
-import { StorageServiceExampleFC } from './StorageServiceExample';
+import { StorageService } from '@/services/react/StorageService';
+import { StorageServiceExample } from './StorageServiceExample';
 
-const meta: Meta<typeof StorageServiceExampleFC> = {
+const meta: Meta<typeof StorageServiceExample> = {
     title: 'dynstruct/Basics',
-    component: StorageServiceExampleFC,
+    component: StorageServiceExample,
     decorators: [
         (Story) => (
             <AppContextProvider value={{ msgBus: appMsgBus }}>
-                <StorageServiceFC storeName={"test"}>
+                <StorageService storeName={"test"}>
                     <Story></Story>
-                </StorageServiceFC>
+                </StorageService>
             </AppContextProvider>
         ),
     ],
@@ -21,9 +21,9 @@ const meta: Meta<typeof StorageServiceExampleFC> = {
 
 export default meta;
 
-type Story = StoryObj<typeof StorageServiceExampleFC>;
+type Story = StoryObj<typeof StorageServiceExample>;
 
-export const StorageServiceExample: Story = {
+export const StorageServiceExampleStory: Story = {
     name: 'Storage Service',
     args: {},
 };

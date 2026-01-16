@@ -20,7 +20,7 @@ export default meta;
 
 type Story = StoryObj<typeof ParentChildConnectionExample>;
 
-export const ConnectionParentChild: Story = {
+export const ConnectionParentChildStory: Story = {
     name: 'Parent/Child',
     args: {},
 };

@@ -1,6 +1,6 @@
 import { ClientBase } from "@/net/client";
-import { MsgBus, MsgStruct, MsgStructFactory } from "@actdim/msgmesh/contracts";
-import { AddPrefix, Diff, Filter, Func, KeysOf, RemoveSuffix, Skip, ToUpper } from "@actdim/utico/typeCore";
+import { MsgBus, MsgStructFactory } from "@actdim/msgmesh/contracts";
+import { AddPrefix, Filter, Func, RemoveSuffix, Skip, ToUpper } from "@actdim/utico/typeCore";
 
 const getMethodNames = (client: any) => {
     // return new Set(...)
@@ -9,7 +9,7 @@ const getMethodNames = (client: any) => {
     );
 };
 
-const baseMethodNames = getMethodNames(ClientBase.prototype);
+// const baseMethodNames = getMethodNames(ClientBase.prototype);
 
 // ServiceMsgDispatcher
 export type MsgProviderAdapter = {
@@ -18,7 +18,7 @@ export type MsgProviderAdapter = {
     channelSelector: (service: any, methodName: string) => string;
 };
 
-export function registerAdapters<TMsgStruct extends MsgStruct = MsgStruct>(msgBus: MsgBus<TMsgStruct>, adapters: MsgProviderAdapter[], abortSignal?: AbortSignal) {
+export function registerAdapters(msgBus: MsgBus<any>, adapters: MsgProviderAdapter[], abortSignal?: AbortSignal) {
     if (adapters) {
         for (const adapter of adapters) {
             const { service, channelSelector } = adapter;
@@ -29,7 +29,7 @@ export function registerAdapters<TMsgStruct extends MsgStruct = MsgStruct>(msgBu
                 const channel = channelSelector?.(service, methodName);
                 if (channel) {
                     msgBus.provide({
-                        channel: channel as keyof TMsgStruct,
+                        channel: channel,
                         topic: '/.*/',
                         callback: (msg) => {
                             return (service[methodName] as Func)(...((msg.payload || []) as any[]));
@@ -79,8 +79,3 @@ export function getMsgChannelSelector<TTPrefix extends string>(
         return `${entry[0]}${methodName.toUpperCase()}`;
     };
 }
-
-// TODO:
-// export type PublicKeys<T> = {
-//     [K in keyof T]: K extends `_${string}` ? never : K;
-// }[keyof T];

@@ -7,7 +7,7 @@ import type {
 } from '@/componentModel/contracts';
 import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { AppMsgStruct } from './bootstrap'; // appDomain
+import { appMsgBus, AppMsgStruct } from './bootstrap'; // appDomain
 import { DataItem, TestApiClient } from './TestApiClient';
 import { KeysOf } from '@actdim/utico/typeCore';
 import { ClientBase } from '@/net/client';
@@ -18,6 +18,8 @@ import {
     MsgProviderAdapter,
     getMsgChannelSelector,
 } from '@/componentModel/adapters';
+import { ServiceProvider } from '@/services/react/ServiceProvider';
+import { createServiceProvider } from '@/services/ServiceProvider';
 
 type ServiceSuffix = BaseServiceSuffix;
 type BaseApiPrefix = 'API';
@@ -35,7 +37,7 @@ type ApiMsgStruct = ToMsgStruct<
 >;
 
 export const services: Record<TestApiChannelPrefix, any> = {
-    "API-TEST-": new TestApiClient(),
+    'API-TEST-': new TestApiClient(),
 };
 
 export const msgProviderAdapters = Object.entries(services).map(
@@ -52,6 +54,10 @@ export type ComponentMsgStruct = ApiMsgStruct;
 export type ComponentMsgChannels<
     TChannel extends keyof ComponentMsgStruct | Array<keyof ComponentMsgStruct>,
 > = KeysOf<ComponentMsgStruct, TChannel>;
+
+export const ApiServiceProvider = () => ServiceProvider({ adapters: msgProviderAdapters });
+// global provider
+// export const apiServiceProvider =  createServiceProvider(appMsgBus, msgProviderAdapters);
 
 type Struct = ComponentStruct<
     ComponentMsgStruct,
@@ -120,4 +126,4 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
 };
 
 export type ApiCallExampleStruct = Struct;
-export const ApiCallExampleFC = getFC(useApiCallExample);
+export const ApiCallExample = getFC(useApiCallExample);

@@ -1,15 +1,15 @@
 import React from 'react';
-import { TestEventProducerFC } from './TestEventProducer';
-import { TestEventConsumerFC } from './TestEventConsumer';
+import { TestEventProducer } from './TestEventProducer';
+import { TestEventConsumer } from './TestEventConsumer';
 
 export const ComponentConnectionExample = () => {
     return (
         <>
             <p>
-                <TestEventProducerFC></TestEventProducerFC>
+                <TestEventProducer></TestEventProducer>
             </p>
             <p>
-                <TestEventConsumerFC></TestEventConsumerFC>
+                <TestEventConsumer></TestEventConsumer>
             </p>
         </>
     );

@@ -1,14 +1,14 @@
 import React from 'react';
-import { TestContainerFC } from './TestContainer';
+import { TestContainer } from './TestContainer';
 
 export const ParentChildConnectionExample = () => {
     return (
         <>
             <p>
-                <TestContainerFC $id="test1"></TestContainerFC>
+                <TestContainer $id="test1"></TestContainer>
             </p>
             <p>
-                <TestContainerFC $id="test2"></TestContainerFC>
+                <TestContainer $id="test2"></TestContainer>
             </p>
         </>
     );

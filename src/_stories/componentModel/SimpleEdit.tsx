@@ -49,4 +49,4 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
 };
 
 export type SimpleEditStruct = Struct;
-export const SimpleEditFC = getFC(useSimpleEdit);
+export const SimpleEdit = getFC(useSimpleEdit);

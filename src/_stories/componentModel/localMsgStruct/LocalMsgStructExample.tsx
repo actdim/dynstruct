@@ -90,4 +90,4 @@ export const useLocalMsgStructExample = (params: ComponentParams<Struct>) => {
 };
 
 export type LocalMsgStructExampleStruct = Struct;
-export const LocalMsgStructExampleFC = getFC(useLocalMsgStructExample);
+export const LocalMsgStructExample = getFC(useLocalMsgStructExample);

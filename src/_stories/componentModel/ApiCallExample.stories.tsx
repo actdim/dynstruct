@@ -1,27 +1,35 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
 import { AppContextProvider, appMsgBus } from './bootstrap';
-import { ApiCallExampleFC, msgProviderAdapters } from './ApiCallExample';
-import { ServiceProvider } from '@/services/ServiceProvider';
+import { ApiCallExample, ApiServiceProvider } from './ApiCallExample';
 
-const meta: Meta<typeof ApiCallExampleFC> = {
+const meta: Meta<typeof ApiCallExample> = {
     title: 'dynstruct/Basics',
-    component: ApiCallExampleFC,
+    component: ApiCallExample,
     decorators: [
         (Story) => (
             <AppContextProvider value={{ msgBus: appMsgBus }}>
-                <ServiceProvider adapters={msgProviderAdapters}></ServiceProvider>
+                <ApiServiceProvider></ApiServiceProvider>
                 <Story></Story>
             </AppContextProvider>
         ),
+    ],
+    loaders: [
+        async () => {
+            return { foo: 'bar' };
+        },
     ],
     args: {},
 };
 
 export default meta;
 
-type Story = StoryObj<typeof ApiCallExampleFC>;
+type Story = StoryObj<typeof ApiCallExample>;
 
-export const ApiCallExample: Story = {
+export const ApiCallExampleStory: Story = {
     args: {},
+    render: (args, context) => {
+        // console.log('loaded:', context.loaded);
+        return <ApiCallExample />;
+    },
 };

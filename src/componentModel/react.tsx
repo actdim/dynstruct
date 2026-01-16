@@ -392,12 +392,14 @@ export function useComponent<
 export function getFC<TStruct extends ComponentStruct>(
     factory: (params: ComponentParams<TStruct>) => Component<TStruct>,
 ): FC<ComponentParams<TStruct>> {
-    // observer
-    const fc = (params: ComponentParams<TStruct> & PropsWithChildren) => {
+    const result = (params: ComponentParams<TStruct> & PropsWithChildren) => {
         // componentHook
         const c = factory(params); // without useRef!
         // return c.view();
         return <c.View {...params} />;
     };
-    return fc;
+    return result;
 }
+
+// TODO:
+// do not observe props with "_", "$" prefixes

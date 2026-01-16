@@ -73,4 +73,4 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
 };
 
 export type TestChildStruct = Struct;
-export const TestChildFC = getFC(useTestChild);
+export const TestChild = getFC(useTestChild);

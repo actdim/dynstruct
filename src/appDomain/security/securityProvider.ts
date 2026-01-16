@@ -167,7 +167,7 @@ export class SecurityProvider<TUserInfo = any> {
                     key: this.storageKeys.accessToken
                 }
             })
-        ).payload;
+        ).payload.data.value;
         this.refreshToken = (
             await this.msgBus.request({
                 channel: "APP-KV-STORE-GET",
@@ -175,33 +175,27 @@ export class SecurityProvider<TUserInfo = any> {
                     key: this.storageKeys.refreshToken
                 }
             })
-        ).payload;
-        let value = (
+        ).payload.data.value;
+        this.userCredentials = (
             await this.msgBus.request({
                 channel: "APP-KV-STORE-GET",
                 payload: {
                     key: this.storageKeys.userCredentials
                 }
             })
-        ).payload;
+        ).payload.data.value || {
+            username: null,
+            password: null
+        };        
 
-        this.userCredentials = value
-            ? JSON.parse(value)
-            : {
-                username: undefined,
-                password: undefined
-            };
-
-        value = (
+        this.acl = (
             await this.msgBus.request({
                 channel: "APP-KV-STORE-GET",
                 payload: {
                     key: this.storageKeys.acl
                 }
             })
-        ).payload;
-
-        this.acl = value ? JSON.parse(value) : {};
+        ).payload.data.value || null;
 
         if (this.accessToken) {
             this.msgBus.request({
@@ -345,14 +339,14 @@ export class SecurityProvider<TUserInfo = any> {
             channel: "APP-KV-STORE-SET",
             payload: {
                 key: this.storageKeys.userCredentials,
-                value: this.userCredentials ? JSON.stringify(this.userCredentials) : ""
+                value: this.userCredentials ? this.userCredentials : null
             }
         });
         await this.msgBus.request({
             channel: "APP-KV-STORE-SET",
             payload: {
                 key: this.storageKeys.acl,
-                value: this.acl ? JSON.stringify(this.acl) : ""
+                value: this.acl ? this.acl : null
             }
         });
     }
@@ -400,6 +394,7 @@ export class SecurityProvider<TUserInfo = any> {
         };
 
         const content = JSON.stringify(tokens);
+        // const content = tokens;
 
         const requestParams: IRequestParams = {
             url: url,

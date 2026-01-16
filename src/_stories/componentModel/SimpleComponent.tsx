@@ -9,7 +9,7 @@ import { getFC, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
-import { SimpleEditFC, SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
+import { SimpleEdit, SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
 import { DynamicContentStruct, useDynamicContent } from '../../componentModel/DynamicContent';
 import { bind, bindProp } from '@/componentModel/core';
 import { observer } from 'mobx-react-lite';
@@ -107,4 +107,4 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
 };
 
 export type SimpleComponentStruct = Struct;
-export const SimpleComponentFC = getFC(useSimpleComponent);
+export const SimpleComponent = getFC(useSimpleComponent);

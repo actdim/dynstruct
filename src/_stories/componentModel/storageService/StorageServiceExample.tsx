@@ -49,4 +49,4 @@ export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
 };
 
 export type StorageServiceExampleStruct = Struct;
-export const StorageServiceExampleFC = getFC(useStorageServiceExample);
+export const StorageServiceExample = getFC(useStorageServiceExample);

@@ -63,4 +63,4 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
 };
 
 export type TestEventProducerStruct = Struct;
-export const TestEventProducerFC = getFC(useTestEventProducer);
+export const TestEventProducer = getFC(useTestEventProducer);

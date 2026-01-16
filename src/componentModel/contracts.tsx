@@ -321,7 +321,7 @@ export type ComponentDefChildren<TRefStruct extends ComponentRefStruct> = Requir
 >;
 
 export type ComponentChildren<TRefStruct extends ComponentRefStruct> = {
-    [P in keyof TRefStruct as TRefStruct[P] extends Function
+    readonly [P in keyof TRefStruct as TRefStruct[P] extends Function
         ? `${Capitalize<P & string>}`
         : P]: TRefStruct[P] extends (params: infer TParams) => infer T
         ? T extends ComponentStruct
@@ -345,22 +345,22 @@ export type ComponentBase<
     TStruct extends ComponentStruct = ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = {
-    id: string;
-    key: string;
-    regType: string;
-    parentId: string;
+    readonly id: string;
+    readonly key: string;
+    readonly regType: string;
+    readonly parentId: string;
     // getHierarchyPath?
-    getHierarchyId(): string;
-    getParent(): string | undefined;
-    getChildren(): string[];
-    getChainUp(): string[];
-    getChainDown(): string[];
-    getNodeMap(): Map<string, ComponentTreeNode>;
-    bindings: Map<PropertyKey, Binding>;
-    msgBus: MsgBus<ComponentMsgStruct<TStruct>, TMsgHeaders>;
-    msgBroker: ComponentMsgBroker<TStruct>;
-    effects: Record<string, EffectController>;
-    View: ComponentViewFn;
+    readonly getHierarchyId: () => string;
+    readonly getParent: () => string | undefined;
+    readonly getChildren: () => string[];
+    readonly getChainUp: () => string[];
+    readonly getChainDown: () => string[];
+    readonly getNodeMap: () => Map<string, ComponentTreeNode>;
+    readonly bindings: Map<PropertyKey, Binding>;
+    readonly msgBus: MsgBus<ComponentMsgStruct<TStruct>, TMsgHeaders>;
+    readonly msgBroker: ComponentMsgBroker<TStruct>;
+    readonly effects: Record<string, EffectController>;
+    readonly View: ComponentViewFn;
 };
 
 export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
@@ -376,8 +376,8 @@ export type Component<
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = {
     readonly model: ComponentModel<TStruct>;
-    readonly children: Readonly<ComponentChildren<TStruct['children']>>;
-} & Readonly<ComponentBase<TStruct, TMsgHeaders>>;
+    readonly children: ComponentChildren<TStruct['children']>;
+} & ComponentBase<TStruct, TMsgHeaders>;
 
 export type PropEventHandlers = {
     onGet?: () => any;

@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";
 import { BaseContext, ComponentRegistryContext } from "@/componentModel/contracts";
 import { useComponentContext } from "@/componentModel/componentContext"
+import { StoreItem } from "@actdim/utico/store/storeContracts";
 
 export const $NAV_GOTO = "APP-NAV-GOTO";
 export const $NAV_GET_CONTEXT = "APP-NAV-GET-CONTEXT";
@@ -171,7 +172,7 @@ export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                     key: string;
                     useEncryption?: boolean;
                 };
-                out: string;
+                out: StoreItem;
             };
             [$KV_STORE_SET]: {
                 in: {

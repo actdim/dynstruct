@@ -95,4 +95,4 @@ export const useTodoEdit = (params: ComponentParams<Struct>) => {
 };
 
 export type TodoEditStruct = Struct;
-export const TodoEditFC = getFC(useTodoEdit);
+export const TodoEdit = getFC(useTodoEdit);

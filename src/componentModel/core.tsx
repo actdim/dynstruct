@@ -1,5 +1,5 @@
 import React from 'react';
-import { Msg, MsgBus } from '@actdim/msgmesh/contracts';
+import { MsgBus } from '@actdim/msgmesh/contracts';
 import { isObservable, runInAction, toJS, autorun, IReactionDisposer } from 'mobx';
 import type {
     Binding,

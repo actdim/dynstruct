@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
-import { SimpleComponentFC } from './SimpleComponent';
+import { SimpleComponent } from './SimpleComponent';
 import { AppContextProvider, appMsgBus } from './bootstrap';
 
-const meta: Meta<typeof SimpleComponentFC> = {
+const meta: Meta<typeof SimpleComponent> = {
     title: 'dynstruct/Basics',
-    component: SimpleComponentFC,
+    component: SimpleComponent,
     decorators: [
         (Story) => (
             <AppContextProvider value={{ msgBus: appMsgBus }}>
@@ -18,8 +18,8 @@ const meta: Meta<typeof SimpleComponentFC> = {
 
 export default meta;
 
-type Story = StoryObj<typeof SimpleComponentFC>;
+type Story = StoryObj<typeof SimpleComponent>;
 
-export const SimpleComponent: Story = {
+export const SimpleComponentStory: Story = {
     args: {},
 };

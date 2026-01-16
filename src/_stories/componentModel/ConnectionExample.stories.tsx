@@ -20,7 +20,7 @@ export default meta;
 
 type Story = StoryObj<typeof ComponentConnectionExample>;
 
-export const ConnectionBasics: Story = {
+export const ConnectionBasicsStory: Story = {
     name: 'Basics',
     args: {},
 };
