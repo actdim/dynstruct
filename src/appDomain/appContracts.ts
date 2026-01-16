@@ -2,8 +2,8 @@ import { MsgStructBase, MsgStructFactory } from "@actdim/msgmesh/contracts";
 import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityMsgStruct } from "@/appDomain/security/securityContracts";
 import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";
-import { ComponentRegistryContext } from "@/componentModel/contracts";
-import { useComponentContext } from "@/componentModel/componentContext";
+import { BaseContext, ComponentRegistryContext } from "@/componentModel/contracts";
+import { useComponentContext } from "@/componentModel/componentContext"
 
 export const $NAV_GOTO = "APP-NAV-GOTO";
 export const $NAV_GET_CONTEXT = "APP-NAV-GET-CONTEXT";
@@ -198,22 +198,19 @@ export type BaseApiConfig = {
 // BaseApp(Domain)Config
 export type BaseAppDomainConfig<
     TSecurityDomainConfig extends BaseSecurityDomainConfig = BaseSecurityDomainConfig,
-    TApiConfig extends BaseApiConfig = BaseApiConfig,
-    TApiName extends PropertyKey = string
-// TApiName extends keyof any = string
+    TApiConfig extends BaseApiConfig = BaseApiConfig
 > = {
     id: string;
     name?: string;
     baseUrl: string;
     security: TSecurityDomainConfig;
-    apis: Record<TApiName, TApiConfig>;
+    defaultApi?: string;
+    apis: Record<string, TApiConfig>;
     // HATEOAS? (React Admin)
 };
 
 export type BaseAppMsgChannels<TChannel extends keyof BaseAppMsgStruct | Array<keyof BaseAppMsgStruct>> = KeysOf<BaseAppMsgStruct, TChannel>;
 
-export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> = ComponentRegistryContext<TMsgStruct> & {
+export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> = BaseContext<TMsgStruct> & {
     // securityProvider: SecurityProvider;
 };
-
-export const useBaseAppContext = <TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct>() => useComponentContext() as BaseAppContext<TMsgStruct>;

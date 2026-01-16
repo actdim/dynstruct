@@ -12,9 +12,8 @@ import {
 import { HasKeys, MaybeKeyOf, MaybePromise, Require, Skip } from '@actdim/utico/typeCore';
 import { FC, PropsWithChildren, ReactNode } from 'react';
 
-export type BaseComponentContext<TMsgStruct extends MsgStruct = MsgStruct> = {
+export type BaseContext<TMsgStruct extends MsgStruct = MsgStruct> = {
     msgBus: MsgBus<TMsgStruct>;
-    currentId?: string;
 };
 
 export type ComponentTreeNode = {
@@ -26,7 +25,8 @@ export type ComponentTreeNode = {
 
 // ComponentContext
 export type ComponentRegistryContext<TMsgStruct extends MsgStruct = MsgStruct> =
-    BaseComponentContext<TMsgStruct> & {
+    BaseContext<TMsgStruct> & {
+        currentId?: string;
         register: (id: string, regType: string, parentId?: string) => void;
         unregister: (id: string) => void;
         getParent: (id: string) => string | undefined;

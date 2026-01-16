@@ -27,7 +27,7 @@ export function useDynamicContent<TData = any>(
 ) {
     let c: Component<DynamicContentStruct<TData>>;
     let m: ComponentModel<DynamicContentStruct<TData>>;
-    const componentDef: ComponentDef<DynamicContentStruct<TData>> = {
+    const def: ComponentDef<DynamicContentStruct<TData>> = {
         props: {
             render: undefined,
             data: undefined,
@@ -37,7 +37,7 @@ export function useDynamicContent<TData = any>(
         },
     };
 
-    c = useComponent(componentDef, params);
+    c = useComponent(def, params);
     m = c.model;
     return c;
 }

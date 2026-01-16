@@ -7,7 +7,7 @@ import {
 } from '@/componentModel/contracts';
 import { getFC, useComponent } from '@/componentModel/react';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
-import { BaseAppMsgChannels, BaseAppMsgStruct, useBaseAppContext } from '@/appDomain/appContracts';
+import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { PropsWithChildren } from 'react';
 
 type Struct = ComponentStruct<

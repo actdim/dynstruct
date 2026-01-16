@@ -3,7 +3,7 @@
 //##############################################################################
 
 import React, { createContext, PropsWithChildren, useContext, useRef } from 'react';
-import { BaseComponentContext, ComponentRegistryContext, ComponentTreeNode } from './contracts';
+import { BaseContext, ComponentRegistryContext, ComponentTreeNode } from './contracts';
 import { toHtmlId } from './core';
 
 export const ReactComponentContext = createContext<ComponentRegistryContext>(undefined);
@@ -11,7 +11,7 @@ export const ReactComponentContext = createContext<ComponentRegistryContext>(und
 // ComponentRegistry(Context)Provider
 export function ComponentContextProvider(
     props: PropsWithChildren<{
-        value?: BaseComponentContext;
+        value?: BaseContext;
     }>,
 ) {
     let context: React.RefObject<ComponentRegistryContext>;

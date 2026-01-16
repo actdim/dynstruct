@@ -31,7 +31,7 @@ export const useSimpleButton = (params: ComponentParams<Struct>) => {
             content: undefined,
         },
 
-        view: (_, c) => {
+        view: (_, c) => {            
             return (
                 <>
                     <button onClick={m.onClick}>{m.content}</button>

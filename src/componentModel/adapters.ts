@@ -45,6 +45,7 @@ export function registerAdapters<TMsgStruct extends MsgStruct = MsgStruct>(msgBu
 }
 
 export type BaseServiceSuffix = 'CLIENT' | 'API' | 'SERVICE' | 'FETCHER' | 'CONTROLLER' | 'LOADER' | 'REPOSITORY' | 'PROVIDER';
+export type BaseWordSeparator = "-"; // "."
 
 // const suffixes = ['CLIENT', 'API', 'SERVICE'] satisfies Uppercase<BaseServiceSuffix>[];
 // runtime version: `${prefix}${removeSuffix(serviceName.toUpperCase(), suffixes)}_`
@@ -52,7 +53,8 @@ export type ToMsgChannelPrefix<
     TServiceName extends string,
     Prefix extends string,
     Suffix extends string = BaseServiceSuffix,
-> = `${Prefix}${RemoveSuffix<Uppercase<TServiceName>, Suffix>}_`;
+    WordSeparator extends string = BaseWordSeparator
+> = `${Prefix}${WordSeparator}${RemoveSuffix<Uppercase<TServiceName>, Suffix>}${WordSeparator}`;
 
 type ToMsgStructSource<TService, TPrefix extends string, TSkip extends keyof TService = never> = Filter<
     ToUpper<AddPrefix<Skip<TService, TSkip>, TPrefix>>,

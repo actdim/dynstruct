@@ -1,5 +1,5 @@
 import React from 'react';
-import { MsgBus } from '@actdim/msgmesh/contracts';
+import { Msg, MsgBus } from '@actdim/msgmesh/contracts';
 import { isObservable, runInAction, toJS, autorun, IReactionDisposer } from 'mobx';
 import type {
     Binding,
@@ -207,22 +207,21 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
                 }
                 const filter = provider.filter;
                 const componentFilter = provider.componentFilter || ComponentMsgFilter.None;
-                const msgFilter = (msg) => {
+                provider.filter = (msg) => {
                     let result = true;
                     if (componentFilter & ComponentMsgFilter.FromAncestors) {
                         const ancestorIds = component.getChainUp();
-                        result = ancestorIds.indexOf(msg.headers?.sourceId) >= 0;
+                        result = ancestorIds?.indexOf(msg.headers?.sourceId) >= 0;
                     }
                     if (result && componentFilter & ComponentMsgFilter.FromDescendants) {
-                        const ancestorIds = component.getChainDown();
-                        result = ancestorIds.indexOf(msg.headers?.sourceId) >= 0;
+                        const descendantIds = component.getChainDown();
+                        result = descendantIds?.indexOf(msg.headers?.sourceId) >= 0;
                     }
                     if (result && filter) {
                         result = filter(msg, component);
                     }
                     return result;
                 };
-                provider.filter = msgFilter;
 
                 component.msgBus.provide({
                     ...p,
@@ -248,22 +247,21 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
                 }
                 const filter = subscriber.filter;
                 const componentFilter = subscriber.componentFilter || ComponentMsgFilter.None;
-                const msgFilter = (msg) => {
+                subscriber.filter = (msg) => {
                     let result = true;
                     if (componentFilter & ComponentMsgFilter.FromAncestors) {
                         const ancestorIds = component.getChainUp();
-                        result = ancestorIds.indexOf(msg.headers?.sourceId) >= 0;
+                        result = ancestorIds?.indexOf(msg.headers?.sourceId) >= 0;
                     }
                     if (result && componentFilter & ComponentMsgFilter.FromDescendants) {
-                        const ancestorIds = component.getChainDown();
-                        result = ancestorIds.indexOf(msg.headers?.sourceId) >= 0;
+                        const descendantIds = component.getChainDown();
+                        result = descendantIds?.indexOf(msg.headers?.sourceId) >= 0;
                     }
                     if (result && filter) {
                         result = filter(msg, component);
                     }
                     return result;
                 };
-                subscriber.filter = msgFilter;
 
                 component.msgBus.on({
                     ...s,

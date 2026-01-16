@@ -20,8 +20,12 @@ import {
 } from '@/componentModel/adapters';
 
 type ServiceSuffix = BaseServiceSuffix;
-
-type TestApiChannelPrefix = ToMsgChannelPrefix<typeof TestApiClient.name, 'API_', ServiceSuffix>;
+type BaseApiPrefix = 'API';
+type TestApiChannelPrefix = ToMsgChannelPrefix<
+    typeof TestApiClient.name,
+    BaseApiPrefix,
+    ServiceSuffix
+>;
 
 type ApiMsgStruct = ToMsgStruct<
     TestApiClient,
@@ -31,7 +35,7 @@ type ApiMsgStruct = ToMsgStruct<
 >;
 
 export const services: Record<TestApiChannelPrefix, any> = {
-    API_TEST_: new TestApiClient(),
+    "API-TEST-": new TestApiClient(),
 };
 
 export const msgProviderAdapters = Object.entries(services).map(
@@ -56,8 +60,8 @@ type Struct = ComponentStruct<
             dataItems: DataItem[];
         };
         msgScope: {
-            subscribe: ComponentMsgChannels<'API_TEST_GETDATAITEMS'>;
-            publish: ComponentMsgChannels<'API_TEST_GETDATAITEMS'>;
+            subscribe: ComponentMsgChannels<'API-TEST-GETDATAITEMS'>;
+            publish: ComponentMsgChannels<'API-TEST-GETDATAITEMS'>;
         };
     }
 >;
@@ -67,7 +71,7 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
     let m: ComponentModel<Struct>;
 
     const def: ComponentDef<Struct> = {
-        regType: "ApiCallExample",
+        regType: 'ApiCallExample',
         props: {
             dataItems: [],
         },
@@ -78,7 +82,7 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
                     <button
                         onClick={async () => {
                             const msg = await c.msgBus.request({
-                                channel: 'API_TEST_GETDATAITEMS',
+                                channel: 'API-TEST-GETDATAITEMS',
                                 payloadFn: (fn) => fn([1, 2], ['first', 'second']),
                                 // payload: [
                                 //     [1, 2],

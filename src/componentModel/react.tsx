@@ -88,6 +88,8 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         msgBroker.abortController = new AbortController();
     }
 
+    const context = useComponentContext();
+
     const ViewFC = observer((props: ComponentViewProps) => {
         const context = useComponentContext();
         const parentId = context.currentId;
@@ -108,14 +110,7 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
                     id = context.getNextId(regType);
                 }
             }
-
             component.id = id;
-            component.getHierarchyId = () => context.getHierarchyPath(id);
-            component.getChainDown = () => context.getChainDown(id);
-            component.getChainUp = () => context.getChainUp(id);
-            component.getChildren = () => context.getChildren(id);
-            component.getParent = () => context.getParent(id);
-            component.getNodeMap = () => context.getNodeMap();
         }
 
         useLayoutEffect(() => {
@@ -341,12 +336,12 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         key: params.$key,
         regType: regType,
         parentId: undefined,
-        getHierarchyId: () => undefined,
-        getChainDown: () => undefined,
-        getChainUp: () => undefined,
-        getChildren: () => undefined,
-        getParent: () => undefined,
-        getNodeMap: () => undefined,
+        getHierarchyId: () => context.getHierarchyPath(component.id),
+        getChainDown: () => context.getChainDown(component.id),
+        getChainUp: () => context.getChainUp(component.id),
+        getChildren: () => context.getChildren(component.id),
+        getParent: () => context.getParent(component.id),
+        getNodeMap: () => context.getNodeMap(),
         bindings: bindings,
         get msgBus() {
             return componentMsgBus();

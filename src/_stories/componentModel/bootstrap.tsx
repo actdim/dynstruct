@@ -2,7 +2,7 @@ import { BaseApiMsgStruct, BaseAppMsgStruct, NavRoutes } from '@/appDomain/appCo
 import { createNavigationRoute } from '@/appDomain/navigation';
 import { ComponentContextProvider, useComponentContext } from '@/componentModel/componentContext';
 import type {
-    BaseComponentContext,
+    BaseContext,
     ComponentMsgHeaders,
     ComponentRegistryContext,
 } from '@/componentModel/contracts';
@@ -60,7 +60,7 @@ export type AppContext = ComponentRegistryContext<AppMsgStruct>;
 
 export const AppContextProvider = (
     props: PropsWithChildren<{
-        value?: BaseComponentContext<AppMsgStruct>;
+        value?: BaseContext<AppMsgStruct>;
     }>,
 ) => ComponentContextProvider(props);
 

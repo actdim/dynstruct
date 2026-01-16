@@ -26,7 +26,7 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
-    const componentDef: ComponentDef<Struct, ComponentMsgHeaders & { test?: string }> = {
+    const def: ComponentDef<Struct, ComponentMsgHeaders & { test?: string }> = {
         props: {
             value: 'foo',
         },
@@ -67,7 +67,7 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
         },
     };
 
-    c = useComponent(componentDef, params);
+    c = useComponent(def, params);
     m = c.model;
     return c;
 };
