@@ -45,10 +45,10 @@ export function registerAdapters(msgBus: MsgBus<any>, adapters: MsgProviderAdapt
 }
 
 export type BaseServiceSuffix = 'CLIENT' | 'API' | 'SERVICE' | 'FETCHER' | 'CONTROLLER' | 'LOADER' | 'REPOSITORY' | 'PROVIDER';
-export type BaseWordSeparator = "-"; // "."
+export type BaseWordSeparator = "."; // "/"
 
 // const suffixes = ['CLIENT', 'API', 'SERVICE'] satisfies Uppercase<BaseServiceSuffix>[];
-// runtime version: `${prefix}${removeSuffix(serviceName.toUpperCase(), suffixes)}_`
+// runtime version: `${prefix}${removeSuffix(serviceName.toUpperCase(), suffixes)}.`
 export type ToMsgChannelPrefix<
     TServiceName extends string,
     Prefix extends string,

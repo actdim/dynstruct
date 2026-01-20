@@ -37,7 +37,7 @@ type ApiMsgStruct = ToMsgStruct<
 >;
 
 export const services: Record<TestApiChannelPrefix, any> = {
-    'API-TEST-': new TestApiClient(),
+    'API.TEST.': new TestApiClient(),
 };
 
 export const msgProviderAdapters = Object.entries(services).map(
@@ -66,8 +66,8 @@ type Struct = ComponentStruct<
             dataItems: DataItem[];
         };
         msgScope: {
-            subscribe: ComponentMsgChannels<'API-TEST-GETDATAITEMS'>;
-            publish: ComponentMsgChannels<'API-TEST-GETDATAITEMS'>;
+            subscribe: ComponentMsgChannels<'API.TEST.GETDATAITEMS'>;
+            publish: ComponentMsgChannels<'API.TEST.GETDATAITEMS'>;
         };
     }
 >;
@@ -88,7 +88,7 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
                     <button
                         onClick={async () => {
                             const msg = await c.msgBus.request({
-                                channel: 'API-TEST-GETDATAITEMS',
+                                channel: 'API.TEST.GETDATAITEMS',
                                 payloadFn: (fn) => fn([1, 2], ['first', 'second']),
                                 // payload: [
                                 //     [1, 2],

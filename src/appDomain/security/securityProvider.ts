@@ -5,14 +5,22 @@ import {
     BaseSecurityDomainConfig,
     UserCredentials,
     SecurityTokens,
-    SecurityContext
+    SecurityContext,
+    $AUTH_SIGNIN,
+    $AUTH_SIGNOUT,
+    $AUTH_SIGNIN_REQUEST,
+    $CONTEXT_GET,
+    $ACL_GET,
+    $AUTH_REFRESH,
+    $AUTH_ENSURE,
+    $CONFIG_GET as $SECURITY_CONFIG_GET
 } from "./securityContracts";
 import { getValuePrefixer } from "@actdim/utico/typeCore";
 import { jwtDecode } from "jwt-decode";
 import { getResponseResult, IRequestParams, IRequestState, IResponseState } from "@/net/request";
 import { ApiError } from "@/net/apiError";
 import { MsgBus } from "@actdim/msgmesh/contracts";
-import { BaseAppMsgStruct } from "@/appDomain/appContracts";
+import { $CONFIG_GET, $STORE_GET, $STORE_REMOVE, $STORE_SET, BaseAppMsgStruct } from "@/appDomain/appContracts";
 
 const userNameClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
 
@@ -79,59 +87,59 @@ export class SecurityProvider<TUserInfo = any> {
     constructor(msgBus: MsgBus<BaseAppMsgStruct>) {
         this.msgBus = msgBus;
 
-        this.init = this.updateConfigAsync();
+        this.init = this.updateConfig();
 
         // TODO: support custom requests
 
         this.msgBus.provide({
-            channel: "APP-SECURITY-GET-CONTEXT",
+            channel: $CONTEXT_GET,
             callback: (msg) => {
                 return this.getContext();
             }
         });
 
         this.msgBus.provide({
-            channel: "APP-SECURITY-GET-ACL",
+            channel: $ACL_GET,
             callback: (msg) => {
                 return this.getAcl(msg.payload);
             }
         });
 
         this.msgBus.provide({
-            channel: "APP-SECURITY-AUTH-SIGNIN",
+            channel: $AUTH_SIGNIN,
             callback: (msg) => {
-                return this.signInAsync(msg.payload);
+                return this.signIn(msg.payload);
             }
         });
 
         this.msgBus.provide({
-            channel: "APP-SECURITY-AUTH-SIGNOUT",
+            channel: $AUTH_SIGNOUT,
             callback: (msg) => {
-                return this.signOutAsync();
+                return this.signOut();
             }
         });
 
         this.msgBus.provide({
-            channel: "APP-SECURITY-AUTH-REFRESH",
+            channel: $AUTH_REFRESH,
             callback: (msg) => {
-                return this.refreshAsync();
+                return this.refreshAuth();
             }
         });
 
         this.msgBus.provide({
-            channel: "APP-SECURITY-REQUEST-AUTH",
+            channel: $AUTH_ENSURE,
             callback: (msg) => {
-                return this.requestAuthorize();
+                return this.ensureAuth();
             }
         });
 
         // HELPER
         this.msgBus.provide({
-            channel: "APP-SECURITY-GET-CONFIG",
+            channel: $SECURITY_CONFIG_GET,
             callback: async (msg) => {
                 return (
                     await this.msgBus.request({
-                        channel: "APP-CONFIG-GET"
+                        channel: $CONFIG_GET
                     })
                 ).payload?.security;
             }
@@ -149,20 +157,20 @@ export class SecurityProvider<TUserInfo = any> {
         };
     }
 
-    private async updateConfigAsync() {
+    private async updateConfig() {
         const msg = await this.msgBus.request({
-            channel: "APP-CONFIG-GET"
+            channel: $CONFIG_GET
         });
         this.domainConfig = msg.payload.security;
         const prefixer = getValuePrefixer<typeof storageKeys>(`${this.domainConfig.id}/`);
         this.storageKeys = prefixer(storageKeys);
-        await this.restoreDataAsync();
+        await this.restoreData();
     }
 
-    async restoreDataAsync() {
+    async restoreData() {
         this.accessToken = (
             await this.msgBus.request({
-                channel: "APP-KV-STORE-GET",
+                channel: $STORE_GET,
                 payload: {
                     key: this.storageKeys.accessToken
                 }
@@ -170,7 +178,7 @@ export class SecurityProvider<TUserInfo = any> {
         ).payload.data.value;
         this.refreshToken = (
             await this.msgBus.request({
-                channel: "APP-KV-STORE-GET",
+                channel: $STORE_GET,
                 payload: {
                     key: this.storageKeys.refreshToken
                 }
@@ -178,7 +186,7 @@ export class SecurityProvider<TUserInfo = any> {
         ).payload.data.value;
         this.userCredentials = (
             await this.msgBus.request({
-                channel: "APP-KV-STORE-GET",
+                channel: $STORE_GET,
                 payload: {
                     key: this.storageKeys.userCredentials
                 }
@@ -186,11 +194,11 @@ export class SecurityProvider<TUserInfo = any> {
         ).payload.data.value || {
             username: null,
             password: null
-        };        
+        };
 
         this.acl = (
             await this.msgBus.request({
-                channel: "APP-KV-STORE-GET",
+                channel: $STORE_GET,
                 payload: {
                     key: this.storageKeys.acl
                 }
@@ -199,7 +207,7 @@ export class SecurityProvider<TUserInfo = any> {
 
         if (this.accessToken) {
             this.msgBus.request({
-                channel: "APP-SECURITY-AUTH-SIGNIN",
+                channel: $AUTH_SIGNIN,
                 group: "out",
                 payload: this.getContext()
             });
@@ -221,56 +229,56 @@ export class SecurityProvider<TUserInfo = any> {
     // };
 
     // removeSavedData
-    async clearSavedDataAsync() {
+    async clearSavedData() {
         this.accessToken = null;
         await this.msgBus.request({
-            channel: "APP-KV-STORE-REMOVE",
+            channel: $STORE_REMOVE,
             payload: {
                 key: this.storageKeys.accessToken
             }
         });
         this.refreshToken = null;
         await this.msgBus.request({
-            channel: "APP-KV-STORE-REMOVE",
+            channel: $STORE_REMOVE,
             payload: {
                 key: this.storageKeys.refreshToken
             }
         });
         this.userCredentials = null;
         await this.msgBus.request({
-            channel: "APP-KV-STORE-REMOVE",
+            channel: $STORE_REMOVE,
             payload: {
                 key: this.storageKeys.userCredentials
             }
         });
         this.acl = null;
         await this.msgBus.request({
-            channel: "APP-KV-STORE-REMOVE",
+            channel: $STORE_REMOVE,
             payload: {
                 key: this.storageKeys.acl
             }
         });
     }
 
-    async requestAuthorize() {
+    async ensureAuth() {
         this.accessToken = null;
         this.acl = null;
 
         const signIn = this.msgBus.once({
-            channel: "APP-SECURITY-AUTH-SIGNIN",
+            channel: $AUTH_SIGNIN,
             group: "out"
         });
 
         const signOut = async () => {
             await this.msgBus.once({
-                channel: "APP-SECURITY-AUTH-SIGNOUT",
+                channel: $AUTH_SIGNOUT,
                 group: "out"
             });
             throw new Error("Auth failed: login aborted");
         };
 
         this.msgBus.send({
-            channel: "APP-SECURITY-REQUEST-AUTH-SIGNIN",
+            channel: $AUTH_SIGNIN_REQUEST,
             payload: {
                 callbackUrl: window.location.pathname + window.location.search
             }
@@ -278,7 +286,7 @@ export class SecurityProvider<TUserInfo = any> {
         await Promise.race([signIn, signOut]);
     }
 
-    async signInAsync(credentials: UserCredentials) {
+    async signIn(credentials: UserCredentials) {
         let url = this.domainConfig.routes?.authSignIn;
 
         url = url.replace(/[?&]$/, "");
@@ -315,35 +323,35 @@ export class SecurityProvider<TUserInfo = any> {
         this.refreshToken = tokens.refreshToken;
         // this.acl = ...;
 
-        this.saveDataAsync();
+        this.saveData();
 
         return this.getContext();
     }
 
-    async saveDataAsync() {
+    async saveData() {
         await this.msgBus.request({
-            channel: "APP-KV-STORE-SET",
+            channel: $STORE_SET,
             payload: {
                 key: this.storageKeys.accessToken,
                 value: this.accessToken || null
             }
         });
         await this.msgBus.request({
-            channel: "APP-KV-STORE-SET",
+            channel: $STORE_SET,
             payload: {
                 key: this.storageKeys.refreshToken,
                 value: this.refreshToken || null
             }
         });
         await this.msgBus.request({
-            channel: "APP-KV-STORE-SET",
+            channel: $STORE_SET,
             payload: {
                 key: this.storageKeys.userCredentials,
                 value: this.userCredentials ? this.userCredentials : null
             }
         });
         await this.msgBus.request({
-            channel: "APP-KV-STORE-SET",
+            channel: $STORE_SET,
             payload: {
                 key: this.storageKeys.acl,
                 value: this.acl ? this.acl : null
@@ -351,7 +359,7 @@ export class SecurityProvider<TUserInfo = any> {
         });
     }
 
-    async signOutAsync() {
+    async signOut() {
         let url = this.domainConfig.routes?.authSignOut;
         if (url) {
             url = url.replace(/[?&]$/, "");
@@ -379,11 +387,11 @@ export class SecurityProvider<TUserInfo = any> {
         // this.refreshToken = null;
         // this.userCredentials = null;
         // this.acl = null;
-        // this.saveDataAsync();
-        this.clearSavedDataAsync();
+        // this.saveData();
+        this.clearSavedData();
     }
 
-    async refreshAsync() {
+    async refreshAuth() {
         let url = this.domainConfig.routes?.authRefresh;
         if (url) {
             url = url.replace(/[?&]$/, "");
@@ -423,7 +431,7 @@ export class SecurityProvider<TUserInfo = any> {
         // this.userInfo = ...; // TODO
         // this.acl = ...;
 
-        this.saveDataAsync();
+        this.saveData();
 
         return this.getContext();
     }

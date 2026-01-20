@@ -1,5 +1,5 @@
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { $STORE_GET, $STORE_REMOVE, $STORE_SET, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { MsgBus } from '@actdim/msgmesh/contracts';
 
 export async function createStorageService(msgBus: MsgBus<BaseAppMsgStruct>, storeName: string, abortSignal?: AbortSignal) {
@@ -14,7 +14,7 @@ export async function createStorageService(msgBus: MsgBus<BaseAppMsgStruct>, sto
     }
 
     msgBus.provide({
-        channel: 'APP-KV-STORE-GET',
+        channel: $STORE_GET,
         group: "in",
         options: {
             abortSignal
@@ -26,7 +26,7 @@ export async function createStorageService(msgBus: MsgBus<BaseAppMsgStruct>, sto
     });
 
     msgBus.provide({
-        channel: 'APP-KV-STORE-SET',
+        channel: $STORE_SET,
         group: "in",
         options: {
             abortSignal
@@ -43,7 +43,7 @@ export async function createStorageService(msgBus: MsgBus<BaseAppMsgStruct>, sto
     });
 
     msgBus.provide({
-        channel: 'APP-KV-STORE-REMOVE',
+        channel: $STORE_REMOVE,
         group: "in",
         options: {
             abortSignal

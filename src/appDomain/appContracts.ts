@@ -2,26 +2,24 @@ import { MsgStructBase, MsgStructFactory } from "@actdim/msgmesh/contracts";
 import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityMsgStruct } from "@/appDomain/security/securityContracts";
 import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";
-import { BaseContext, ComponentRegistryContext } from "@/componentModel/contracts";
-import { useComponentContext } from "@/componentModel/componentContext"
+import { BaseContext } from "@/componentModel/contracts";
 import { StoreItem } from "@actdim/utico/store/storeContracts";
 
-export const $NAV_GOTO = "APP-NAV-GOTO";
-export const $NAV_GET_CONTEXT = "APP-NAV-GET-CONTEXT";
-export const $NAV_CONTEXT_CHANGED = "APP-NAV-CONTEXT-CHANGED";
-export const $NAV_READ_HISTORY = "APP-NAV-READ-HISTORY";
-// TOAST
-export const $NOTICE = "APP-NOTICE";
-export const $CONFIG_GET = "APP-CONFIG-GET";
-// ERROR?
-export const $FETCH = "APP-FETCH";
+export const $NAV_GOTO = "APP.NAV.GOTO";
+export const $NAV_CONTEXT_GET = "APP.NAV.CONTEXT.GET";
+export const $NAV_CONTEXT_CHANGED = "APP.NAV.CONTEXT.CHANGED";
+export const $NAV_HISTORY_READ = "APP.NAV.HISTORY.READ";
 
-export const $KV_STORE_GET = "APP-KV-STORE-GET";
-export const $KV_STORE_SET = "APP-KV-STORE-SET";
-export const $KV_STORE_REMOVE = "APP-KV-STORE-REMOVE";
-// TODO: has, clear, entries
+export const $NOTICE = "APP.NOTICE";
+export const $CONFIG_GET = "APP.CONFIG.GET";
 
-export type Module = "security" | "api-client";
+export const $ERROR = "APP.ERROR";
+export const $FETCH = "APP.FETCH";
+
+export const $STORE_GET = "APP.STORE.GET";
+export const $STORE_SET = "APP.STORE.SET";
+export const $STORE_REMOVE = "APP.STORE.REMOVE";
+// TODO: HAS, CLEAR
 
 export type NavPath = {
     /**
@@ -104,19 +102,21 @@ export type NavContext = {
 export type NavHistory = Array<NavContext>;
 
 // OperationContext?
-export type AppError<TModule = Module> = {
-    module: TModule;
-    // code: string;
-    type: string;
-    title?: string;
+export type AppError = {
+    // code?: string;
+    type?: string;
+    name?: string;
     source?: any;
-    details?: any;
-    // instance?: string;
+    // module: string;
+    // description
+    detail?: string;
     timestamp?: string;
     // errors: AppError[];
-    traceId?: string;
-    field?: string;
-    reason?: string;
+    // traceId?: string;    
+    message: string;
+    // reason?: string;
+    // propertyBag/context
+    properties?: Record<string | number, any>;
 };
 
 // Base(App)ApiMsgStruct
@@ -127,6 +127,29 @@ export type BaseApiMsgStruct = BaseSecurityMsgStruct &
         // };
     }>;
 
+export type Importance =
+    | "critical"
+    | "high"
+    | "normal"
+    | "low"
+    | undefined
+
+// Intent
+export type Severity =
+    // critical/high
+    | 'emergency'
+    | 'alert' // danger
+    | 'error' // failure
+    | 'warn' // caution
+    // normal
+    | 'notice' // notification
+    | 'info' // default
+    | 'success' // confirmation
+    // low
+    | 'hint' // note
+    | 'debug' // trace
+    | undefined;
+
 // BaseAppMsgStruct
 export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApiMsgStruct &
     MsgStructFactory<
@@ -135,7 +158,10 @@ export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                 in: {
                     text: string;
                     title?: string;
-                    type: any;
+                    detail?: string;
+                    severity: Severity;
+                    // propertyBag/context
+                    properties?: Record<string | number, any>;
                 };
                 out: void;
             };
@@ -148,7 +174,7 @@ export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                 ex: NavRouteStruct<TNavRoutes>;
                 out: void;
             };
-            [$NAV_GET_CONTEXT]: {
+            [$NAV_CONTEXT_GET]: {
                 in: void;
                 out: NavContext;
             };
@@ -156,9 +182,13 @@ export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                 in: NavContext;
                 out: void;
             };
-            [$NAV_READ_HISTORY]: {
+            [$NAV_HISTORY_READ]: {
                 in: number;
                 out: NavContext;
+            };
+            [$ERROR]: {
+                in: AppError;
+                out: boolean;
             };
             [$FETCH]: {
                 in: {
@@ -167,14 +197,14 @@ export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                 };
                 out: Response;
             };
-            [$KV_STORE_GET]: {
+            [$STORE_GET]: {
                 in: {
                     key: string;
                     useEncryption?: boolean;
                 };
                 out: StoreItem;
             };
-            [$KV_STORE_SET]: {
+            [$STORE_SET]: {
                 in: {
                     key: string;
                     value: any;
@@ -182,7 +212,7 @@ export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                 };
                 out: void;
             };
-            [$KV_STORE_REMOVE]: {
+            [$STORE_REMOVE]: {
                 in: {
                     key: string;
                 };

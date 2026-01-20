@@ -20,20 +20,21 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { getFC, useComponent } from '@/componentModel/react';
+import { PropsWithChildren } from 'react';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
     {
-        props: {
+        props: PropsWithChildren & {
             history: NavContext[];
             routes: NavRoutes;
         };
         msgScope: {
             provide: BaseAppMsgChannels<
-                | 'APP-NAV-GOTO'
-                | 'APP-NAV-GET-CONTEXT'
-                | 'APP-NAV-READ-HISTORY'
-                | 'APP-NAV-CONTEXT-CHANGED'
+                | 'APP.NAV.GOTO'
+                | 'APP.NAV.CONTEXT.GET'
+                | 'APP.NAV.HISTORY.READ'
+                | 'APP.NAV.CONTEXT.CHANGED'
             >;
         };
     }
@@ -59,7 +60,7 @@ export const useNavService = (params: ComponentParams<Struct>) => {
         },
         msgBroker: {
             provide: {
-                'APP-NAV-GOTO': {
+                'APP.NAV.GOTO': {
                     in: {
                         callback: async (msg) => {
                             navigate(msg.payload as To);
@@ -72,21 +73,21 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                         },
                     },
                 },
-                'APP-NAV-GET-CONTEXT': {
+                'APP.NAV.CONTEXT.GET': {
                     in: {
                         callback: (msg) => {
                             return m.history[m.history.length - 1];
                         },
                     },
                 },
-                'APP-NAV-READ-HISTORY': {
+                'APP.NAV.HISTORY.READ': {
                     in: {
                         callback: (msg) => {
                             return m.history[m.history.length - 1];
                         },
                     },
                 },
-                'APP-NAV-CONTEXT-CHANGED': {},
+                'APP.NAV.CONTEXT.CHANGED': {},
             },
         },
         events: {
@@ -101,7 +102,7 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                     };
                     history.push(ctx);
                     c.msgBus.send({
-                        channel: 'APP-NAV-CONTEXT-CHANGED',
+                        channel: 'APP.NAV.CONTEXT.CHANGED',
                         group: 'in',
                         payload: ctx,
                     });

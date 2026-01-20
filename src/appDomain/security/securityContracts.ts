@@ -22,15 +22,16 @@ export type IAccessDescriptor = {
     [P in AccessLevel]?: string;
 };
 
-export const $SIGNIN = "APP-SECURITY-AUTH-SIGNIN";
-export const $REQUEST_SIGNIN = "APP-SECURITY-REQUEST-AUTH-SIGNIN";
-export const $SIGNOUT = "APP-SECURITY-AUTH-SIGNOUT";
-export const $REQUEST_SIGNOUT = "APP-SECURITY-REQUEST-AUTH-SIGNOUT";
-export const $REFRESH = "APP-SECURITY-AUTH-REFRESH";
-export const $REQUEST_AUTH = "APP-SECURITY-REQUEST-AUTH";
-export const $GET_ACL = "APP-SECURITY-GET-ACL";
-export const $GET_CONTEXT = "APP-SECURITY-GET-CONTEXT";
-export const $GET_CONFIG = "APP-SECURITY-GET-CONFIG";
+export const $AUTH_SIGNIN = "APP.SECURITY.AUTH.SIGNIN" as const;
+export const $AUTH_SIGNIN_REQUEST = "APP.SECURITY.AUTH.SIGNIN.REQUEST" as const;
+export const $AUTH_SIGNOUT = "APP.SECURITY.AUTH.SIGNOUT" as const;
+export const $AUTH_SIGNOUT_REQUEST = "APP.SECURITY.AUTH.SIGNOUT.REQUEST" as const;
+export const $AUTH_REFRESH = "APP.SECURITY.AUTH.REFRESH" as const;
+// require
+export const $AUTH_ENSURE = "APP.SECURITY.AUTH.ENSURE" as const;
+export const $ACL_GET = "APP.SECURITY.ACL.GET" as const;
+export const $CONTEXT_GET = "APP.SECURITY.CONTEXT.GET" as const;
+export const $CONFIG_GET = "APP.SECURITY.CONFIG.GET" as const;
 
 export type SecurityTokens = {
     accessToken?: string;
@@ -40,46 +41,46 @@ export type SecurityTokens = {
 // Base(App)SecurityMsgStruct
 export type BaseSecurityMsgStruct = RequireExtends<
     {
-        [$SIGNIN]: {
+        [$AUTH_SIGNIN]: {
             in: UserCredentials;
             out: SecurityContext;
         };
-        [$REQUEST_SIGNIN]: {
+        [$AUTH_SIGNIN_REQUEST]: {
             in: {
                 callbackUrl: string;
             };
             // out: void;
         };
-        [$SIGNOUT]: {
+        [$AUTH_SIGNOUT]: {
             in: void;
             out: void;
         };
-        [$REQUEST_SIGNOUT]: {
+        [$AUTH_SIGNOUT_REQUEST]: {
             in: {
                 callbackUrl: string;
             };
             // out: void;
         };
-        [$REFRESH]: {
+        [$AUTH_REFRESH]: {
             in: Skip<SecurityTokens, "accessToken">;
             out: SecurityContext;
         };
-        [$REQUEST_AUTH]: {
+        [$AUTH_ENSURE]: {
             in: void;
             out: void;
         };
-        [$GET_ACL]: {
+        [$ACL_GET]: {
             in: ISecurable;
             out: IAccessDescriptor;
         };
-        [$GET_CONTEXT]: {
+        [$CONTEXT_GET]: {
             in: void;
             out: SecurityContext;
         };
-        [$GET_CONFIG]: {
+        [$CONFIG_GET]: {
             in: void;
             out: BaseSecurityDomainConfig;
-        };        
+        };
     } & MsgStructBase,
     MsgStruct
 >;

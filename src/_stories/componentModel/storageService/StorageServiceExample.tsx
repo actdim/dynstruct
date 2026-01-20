@@ -13,7 +13,7 @@ type Struct = ComponentStruct<
     BaseAppMsgStruct,
     {
         msgScope: {
-            provide: BaseAppMsgChannels<'APP-KV-STORE-SET'>;
+            provide: BaseAppMsgChannels<'APP.STORE.SET'>;
         };
     }
 >;
@@ -28,7 +28,7 @@ export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
                     <button
                         onClick={() => {
                             c.msgBus.send({
-                                channel: 'APP-KV-STORE-SET',
+                                channel: 'APP.STORE.SET',
                                 payload: {
                                     key: 'test',
                                     value: 'foo',

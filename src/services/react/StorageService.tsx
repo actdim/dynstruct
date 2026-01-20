@@ -17,9 +17,7 @@ type Struct = ComponentStruct<
             storeName?: string;
         };
         msgScope: {
-            provide: BaseAppMsgChannels<
-                'APP-KV-STORE-GET' | 'APP-KV-STORE-SET' | 'APP-KV-STORE-REMOVE'
-            >;
+            provide: BaseAppMsgChannels<'APP.STORE.GET' | 'APP.STORE.SET' | 'APP.STORE.REMOVE'>;
         };
     }
 >;
@@ -44,7 +42,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
         },
         msgBroker: {
             provide: {
-                'APP-KV-STORE-GET': {
+                'APP.STORE.GET': {
                     in: {
                         callback: async (msg) => {
                             await init;
@@ -53,7 +51,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
                         },
                     },
                 },
-                'APP-KV-STORE-SET': {
+                'APP.STORE.SET': {
                     in: {
                         callback: async (msg) => {
                             await init;
@@ -66,7 +64,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
                         },
                     },
                 },
-                'APP-KV-STORE-REMOVE': {
+                'APP.STORE.REMOVE': {
                     in: {
                         callback: async (msg) => {
                             await init;

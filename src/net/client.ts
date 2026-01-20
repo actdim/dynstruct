@@ -2,14 +2,9 @@ import { v4 as uuid } from "uuid";
 import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
 import { ApiError } from "./apiError";
-import { BaseAppMsgStruct, BaseAppContext } from "@/appDomain/appContracts";
+import { BaseAppMsgStruct, BaseAppContext, $CONFIG_GET } from "@/appDomain/appContracts";
 import { MsgBus } from "@actdim/msgmesh/contracts";
-
-// MLWEB-2172
-
-// TODO: support request cancellation
-// https://stackoverflow.com/questions/31061838/how-do-i-cancel-an-http-fetch-request
-// https://mukeshprajapati0251.medium.com/cancel-rest-api-pending-request-1af65e70366d
+import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $CONTEXT_GET } from "@/appDomain/security/securityContracts";
 
 export function extractApiName(name: string, suffixes: string[]): string | null {
     if (!name) {
@@ -53,7 +48,7 @@ export class ClientBase {
         this.msgBus = context.msgBus;
         // TODO: unsubscribe
         this.msgBus.on({
-            channel: "APP-SECURITY-AUTH-SIGNIN",
+            channel: $AUTH_SIGNIN,
             group: "out",
             callback: (msg) => {
                 this.accessToken = msg.payload.accessToken;
@@ -64,7 +59,7 @@ export class ClientBase {
 
     protected async getBaseUrlAsync() {
         const msg = await this.msgBus.request({
-            channel: "APP-CONFIG-GET"
+            channel: $CONFIG_GET
         });
         const config = msg.payload;
         const apiName = extractApiName(this.name, this.apiSuffixes);
@@ -79,7 +74,7 @@ export class ClientBase {
     private async updateSecurityAsync() {
         if (!this.accessToken) {
             const msg = await this.msgBus.request({
-                channel: "APP-SECURITY-GET-CONTEXT"
+                channel: $CONTEXT_GET
             });
             this.accessToken = msg.payload.accessToken;
         }
@@ -172,18 +167,18 @@ export class ClientBase {
                     }
                     if (err.status === httpStatus.UPGRADE_REQUIRED) {
                         // await this.context.msgBus.request({
-                        //     channel: "APP_RELOAD" // APP_REQUEST_UPDGRADE
+                        //     channel: "APP.RELOAD"
                         // });
                         throw err;
                     } else if (err.status === httpStatus.UNAUTHORIZED) {
                         if (err.response?.headers?.get("token-expired")) {
                             // token expired or invalid
                             await this.msgBus.request({
-                                channel: "APP-SECURITY-AUTH-REFRESH"
+                                channel: $AUTH_REFRESH
                             });
                         } else {
                             await this.msgBus.request({
-                                channel: "APP-SECURITY-REQUEST-AUTH"
+                                channel: $AUTH_ENSURE
                             });
                         }
                         // codes:
@@ -248,6 +243,12 @@ export class ClientBase {
         return request.result;
     }
 }
+
+// TODO: check MLWEB-2172
+// TODO: support request cancellation
+// https://stackoverflow.com/questions/31061838/how-do-i-cancel-an-http-fetch-request
+// https://mukeshprajapati0251.medium.com/cancel-rest-api-pending-request-1af65e70366d
+
 /* 
 if (status === 404) {
       return response.text().then((_responseText) => {
