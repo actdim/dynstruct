@@ -124,4 +124,4 @@ export const useNavService = (params: ComponentParams<Struct>) => {
 };
 
 export type NavServiceStruct = Struct;
-export const NavService = getFC(useNavService);
+export const NavService: React.FC<ComponentParams<Struct>> = getFC(useNavService);

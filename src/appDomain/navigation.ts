@@ -2,17 +2,17 @@ import { compile, match } from "path-to-regexp";
 import { NavRoute, NavRouteParams } from "./appContracts";
 import { ReactNode } from "react";
 // createAppRoute
-export function createNavigationRoute<TParams extends NavRouteParams = NavRouteParams>(config: {
+export function createNavigationRoute<TParams extends NavRouteParams = NavRouteParams>(options: {
     pattern: string;
     element: ReactNode;
     defaultParams?: TParams;
 }) {
-    const toPath = compile(config.pattern);
-    const matcher = match(config.pattern);
+    const toPath = compile(options.pattern);
+    const matcher = match(options.pattern);
     return {
         path: (params?: object) => {
             if (!params) {
-                return config.pattern;
+                return options.pattern;
             }
             return toPath(params);
         },
@@ -23,7 +23,7 @@ export function createNavigationRoute<TParams extends NavRouteParams = NavRouteP
             }
             return matchResult.params;
         },
-        element: config.element,
-        defaultParams: config.defaultParams
+        element: options.element,
+        defaultParams: options.defaultParams
     } as NavRoute<TParams>;
 }

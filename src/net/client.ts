@@ -54,10 +54,10 @@ export class ClientBase {
                 this.accessToken = msg.payload.accessToken;
             }
         });
-        this.init = Promise.all([this.getBaseUrlAsync(), this.updateSecurityAsync()]);
+        this.init = Promise.all([this.getBaseUrl(), this.updateSecurity()]);
     }
 
-    protected async getBaseUrlAsync() {
+    protected async getBaseUrl() {
         const msg = await this.msgBus.request({
             channel: $CONFIG_GET
         });
@@ -71,7 +71,7 @@ export class ClientBase {
         this.baseUrl = apiEntry?.[1].url || config.baseUrl;
     }
 
-    private async updateSecurityAsync() {
+    private async updateSecurity() {
         if (!this.accessToken) {
             const msg = await this.msgBus.request({
                 channel: $CONTEXT_GET
@@ -82,7 +82,7 @@ export class ClientBase {
     }
 
     private async addAuthorizationAsync(request: IRequestParams) {
-        const accessToken = await this.updateSecurityAsync();
+        const accessToken = await this.updateSecurity();
         if (!accessToken) {
             throw ApiError.create({
                 status: httpStatus.UNAUTHORIZED
@@ -153,6 +153,7 @@ export class ClientBase {
     }
 
     private async executeRequestAsync(request: IRequestState): Promise<IRequestState> {
+        // retryCount
         let attempt = 0;
         do {
             try {
@@ -188,8 +189,9 @@ export class ClientBase {
                         // AUTH_REQUIRED
                         // header: WWW-Authenticate
                         continue;
+                    } else if (err.status >= httpStatus.INTERNAL_SERVER_ERROR) {
+                        continue;
                     }
-                    continue;
                 }
                 throw err;
             } finally {

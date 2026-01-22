@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@actdim/msgmesh':
-        specifier: ^1.2.3
-        version: 1.2.3(@actdim/utico@1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
+        specifier: ^1.2.5
+        version: 1.2.5(@actdim/utico@1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
       '@actdim/utico':
         specifier: ^1.1.2
         version: 1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
@@ -150,8 +150,8 @@ importers:
 
 packages:
 
-  '@actdim/msgmesh@1.2.3':
-    resolution: {integrity: sha512-YgQMb7GoueBtUwpz1EeAVAkOUL75S7p/EIgGOrIG5LMy18HPjun/G/5c9XvpWUhdtbmEN8/eauM72xG19WVU5g==}
+  '@actdim/msgmesh@1.2.5':
+    resolution: {integrity: sha512-/BYc2RFRsyjBoD19Ed9QvBpY3nmjT0vfUF2szG9qHeYI9mMUFK0D6MrM33B7cuSVqnMo8UQidx5LJc/W1A2hyQ==}
     peerDependencies:
       '@actdim/utico': ^1.1.2
       rxjs: ^7.8.2
@@ -2858,7 +2858,7 @@ packages:
 
 snapshots:
 
-  '@actdim/msgmesh@1.2.3(@actdim/utico@1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
+  '@actdim/msgmesh@1.2.5(@actdim/utico@1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
     dependencies:
       '@actdim/utico': 1.1.2(dexie@4.2.1)(moment@2.30.1)(uuid@13.0.0)
       rxjs: 7.8.2

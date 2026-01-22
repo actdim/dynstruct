@@ -11,9 +11,8 @@ export enum AccessLevel {
     Full = ~(~0 << 5) // Unrestricted
 }
 
-// HTTP RFC 7231
 export type UserCredentials = {
-    username: string;
+    userName: string;
     password: string;
 };
 
@@ -90,14 +89,15 @@ export type ISecurable = {
 };
 
 // AppSecurityContext
-export type SecurityContext<TUserInfo = any> = {
+export type SecurityContext = {
     // isAuthenticated: boolean;
     // isExpired: boolean;
     accessToken: string;
     refreshToken: string;
     // sessionToken: string;
     // sid: string; // SID is an acronym for "security identity", grant recipient
-    userInfo: TUserInfo;
+    // signInInfo
+    authInfo?: any;
     // authority: string;
     authProvider: string; // authSource
     domain: string; // protection space, scope of protection

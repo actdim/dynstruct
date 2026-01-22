@@ -203,7 +203,7 @@ export type Binding<T = any, TFrom = any> = {
     readonly converter?: ValueConverter<T, TFrom>;
     readonly validator?: Validator<T>;
     readonly readOnly?: boolean;
-    [$isBinding]: boolean;
+    [$isBinding]: true;
 };
 
 export type ComponentPropSource<T> = T | Binding<T>;

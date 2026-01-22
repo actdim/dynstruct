@@ -38,7 +38,8 @@ const storageKeys = {
     refreshToken: "REFRESH_TOKEN",
     acl: "ACL",
     userCredentials: "USER_CREDENTIALS",
-    userInfo: "USER_INFO"
+    // signInInfo
+    authInfo: "AUTH_INFO"
 };
 
 function decodeJWTToken<T extends TokenPayload>(token: string): T {
@@ -53,7 +54,7 @@ function decodeJWTToken<T extends TokenPayload>(token: string): T {
     }
 }
 
-export class SecurityProvider<TUserInfo = any> {
+export class SecurityProvider {
     // private isAuthenticated: boolean;
 
     // private isExpired: boolean;
@@ -70,7 +71,7 @@ export class SecurityProvider<TUserInfo = any> {
 
     private userCredentials: UserCredentials;
 
-    private userInfo: TUserInfo;
+    private authInfo: any;
 
     // private authority: string;
     private authProvider: string;
@@ -93,47 +94,52 @@ export class SecurityProvider<TUserInfo = any> {
 
         this.msgBus.provide({
             channel: $CONTEXT_GET,
-            callback: (msg) => {
+            callback: async (msg) => {
+                await this.init;
                 return this.getContext();
             }
         });
 
         this.msgBus.provide({
             channel: $ACL_GET,
-            callback: (msg) => {
+            callback: async (msg) => {
+                await this.init;
                 return this.getAcl(msg.payload);
             }
         });
 
         this.msgBus.provide({
             channel: $AUTH_SIGNIN,
-            callback: (msg) => {
+            callback: async (msg) => {
+                await this.init;
                 return this.signIn(msg.payload);
             }
         });
 
         this.msgBus.provide({
             channel: $AUTH_SIGNOUT,
-            callback: (msg) => {
+            callback: async (msg) => {
+                await this.init;
                 return this.signOut();
             }
         });
 
         this.msgBus.provide({
             channel: $AUTH_REFRESH,
-            callback: (msg) => {
+            callback: async (msg) => {
+                await this.init;
                 return this.refreshAuth();
             }
         });
 
         this.msgBus.provide({
             channel: $AUTH_ENSURE,
-            callback: (msg) => {
+            callback: async (msg) => {
+                await this.init;
                 return this.ensureAuth();
             }
         });
 
-        // HELPER
         this.msgBus.provide({
             channel: $SECURITY_CONFIG_GET,
             callback: async (msg) => {
@@ -150,7 +156,7 @@ export class SecurityProvider<TUserInfo = any> {
         return {
             accessToken: this.accessToken,
             refreshToken: this.refreshToken,
-            userInfo: this.userInfo,
+            authInfo: this.authInfo,
             authProvider: this.authProvider,
             domain: this.domain,
             tokenExpiresAt: this.tokenExpiresAt
@@ -162,51 +168,58 @@ export class SecurityProvider<TUserInfo = any> {
             channel: $CONFIG_GET
         });
         this.domainConfig = msg.payload.security;
-        const prefixer = getValuePrefixer<typeof storageKeys>(`${this.domainConfig.id}/`);
+        const prefixer = getValuePrefixer<typeof storageKeys>(`${this.domainConfig?.id}/`);
         this.storageKeys = prefixer(storageKeys);
         await this.restoreData();
     }
 
     async restoreData() {
-        this.accessToken = (
-            await this.msgBus.request({
-                channel: $STORE_GET,
-                payload: {
-                    key: this.storageKeys.accessToken
-                }
-            })
-        ).payload.data.value;
-        this.refreshToken = (
-            await this.msgBus.request({
-                channel: $STORE_GET,
-                payload: {
-                    key: this.storageKeys.refreshToken
-                }
-            })
-        ).payload.data.value;
-        this.userCredentials = (
-            await this.msgBus.request({
-                channel: $STORE_GET,
-                payload: {
-                    key: this.storageKeys.userCredentials
-                }
-            })
-        ).payload.data.value || {
-            username: null,
+        let msg = await this.msgBus.request({
+            channel: $STORE_GET,
+            payload: {
+                key: this.storageKeys.accessToken
+            }
+        });
+        this.accessToken = msg.payload.data?.value;
+
+        msg = await this.msgBus.request({
+            channel: $STORE_GET,
+            payload: {
+                key: this.storageKeys.refreshToken
+            }
+        });
+        this.refreshToken = msg.payload.data?.value;
+
+        msg = await this.msgBus.request({
+            channel: $STORE_GET,
+            payload: {
+                key: this.storageKeys.userCredentials
+            }
+        });
+        this.userCredentials = msg.payload.data?.value || {
+            userName: null,
             password: null
         };
 
-        this.acl = (
-            await this.msgBus.request({
-                channel: $STORE_GET,
-                payload: {
-                    key: this.storageKeys.acl
-                }
-            })
-        ).payload.data.value || null;
+        msg = await this.msgBus.request({
+            channel: $STORE_GET,
+            payload: {
+                key: this.storageKeys.authInfo
+            }
+        });
+
+        this.authInfo = msg.payload.data?.value;
+
+        msg = await this.msgBus.request({
+            channel: $STORE_GET,
+            payload: {
+                key: this.storageKeys.acl
+            }
+        })
+        this.acl = msg.payload.data?.value || null;
 
         if (this.accessToken) {
-            this.msgBus.request({
+            this.msgBus.send({
                 channel: $AUTH_SIGNIN,
                 group: "out",
                 payload: this.getContext()
@@ -215,7 +228,7 @@ export class SecurityProvider<TUserInfo = any> {
     }
 
     public get domain(): string {
-        return this.domainConfig.id;
+        return this.domainConfig?.id;
     }
 
     // cleanUserAndActionsStorage = (): void => {
@@ -249,6 +262,13 @@ export class SecurityProvider<TUserInfo = any> {
             channel: $STORE_REMOVE,
             payload: {
                 key: this.storageKeys.userCredentials
+            }
+        });
+        this.authInfo = null;
+        await this.msgBus.request({
+            channel: $STORE_REMOVE,
+            payload: {
+                key: this.storageKeys.authInfo
             }
         });
         this.acl = null;
@@ -293,8 +313,10 @@ export class SecurityProvider<TUserInfo = any> {
 
         const content = JSON.stringify(credentials);
 
+        // TODO:
         // application/x-www-form-urlencoded?
-        // username=&password=
+        // ?userName=&password=
+        // userName:password (BASIC)
 
         const requestParams: IRequestParams = {
             url: url,
@@ -315,7 +337,8 @@ export class SecurityProvider<TUserInfo = any> {
         await getResponseResult(response, request);
         ApiError.assert(response, request);
 
-        let tokens = response.resolved.json as SecurityTokens;
+        this.authInfo = response.resolved.json;
+        const tokens = this.authInfo as SecurityTokens;
 
         this.userCredentials = credentials;
 
@@ -348,6 +371,13 @@ export class SecurityProvider<TUserInfo = any> {
             payload: {
                 key: this.storageKeys.userCredentials,
                 value: this.userCredentials ? this.userCredentials : null
+            }
+        });
+        await this.msgBus.request({
+            channel: $STORE_SET,
+            payload: {
+                key: this.storageKeys.authInfo,
+                value: this.authInfo ? this.authInfo : null
             }
         });
         await this.msgBus.request({

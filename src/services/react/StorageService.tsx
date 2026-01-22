@@ -26,7 +26,7 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
-    async function _updateStoreAsync() {
+    async function _updateStore() {
         store = await PersistentStore.open(m.storeName);
     }
 
@@ -46,8 +46,8 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
                     in: {
                         callback: async (msg) => {
                             await init;
-                            const item = await store.get(msg.payload.key);
-                            return item?.data.value;
+                            const item = await store.get(msg.payload.key);                            
+                            return item;
                         },
                     },
                 },
@@ -76,16 +76,16 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
         },
         events: {
             onChangeStoreName: () => {
-                _updateStoreAsync();
+                _updateStore();
             },
         },
     };
 
     c = useComponent(def, params);
     m = c.model;
-    _updateStoreAsync().then(() => ready());
+    _updateStore().then(() => ready());
     return c;
 };
 
 export type StorageServiceStruct = Struct;
-export const StorageService = getFC(useStorageService);
+export const StorageService: React.FC<ComponentParams<Struct>> = getFC(useStorageService);

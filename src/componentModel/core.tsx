@@ -193,7 +193,12 @@ export function getComponentNameByCaller(depth = 2): string | null {
 
 export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStruct>(
     component: Component<TStruct>,
+    abortController: AbortController,
 ) {
+    const abortSignal = AbortSignal.any([
+        component.msgBroker.abortController.signal,
+        abortController.signal,
+    ]);
     const providers = component?.msgBroker.provide;
     if (providers) {
         for (const [channel, providerGroups] of Object.entries(providers)) {
@@ -228,7 +233,7 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
                     channel: channel,
                     group: g,
                     options: {
-                        abortSignal: component.msgBroker.abortController.signal,
+                        abortSignal: abortController.signal,
                     },
                 });
             }
@@ -267,8 +272,8 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
                     ...s,
                     channel: channel,
                     group: g,
-                    config: {
-                        abortSignal: component.msgBroker.abortController.signal,
+                    options: {
+                        abortSignal: abortController.signal,
                     },
                 });
             }

@@ -1,4 +1,4 @@
-import { MsgStructBase, MsgStructFactory } from "@actdim/msgmesh/contracts";
+import { $C_ERROR, MsgStructBase, MsgStructFactory } from "@actdim/msgmesh/contracts";
 import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityMsgStruct } from "@/appDomain/security/securityContracts";
 import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";
@@ -14,6 +14,8 @@ export const $NOTICE = "APP.NOTICE";
 export const $CONFIG_GET = "APP.CONFIG.GET";
 
 export const $ERROR = "APP.ERROR";
+export const $MSGBUS_ERROR = $C_ERROR;
+
 export const $FETCH = "APP.FETCH";
 
 export const $STORE_GET = "APP.STORE.GET";
@@ -101,22 +103,23 @@ export type NavContext = {
 
 export type NavHistory = Array<NavContext>;
 
-// OperationContext?
+export const $isAppError = Symbol("$isAppError");
 export type AppError = {
-    // code?: string;
     type?: string;
     name?: string;
-    source?: any;
+    source?: string;
     // module: string;
     // description
+    stack?: string;
     detail?: string;
     timestamp?: string;
-    // errors: AppError[];
-    // traceId?: string;    
-    message: string;
     // reason?: string;
+    cause?: AppError;
+    // traceId?: string;
+    message: string;
     // propertyBag/context
     properties?: Record<string | number, any>;
+    [$isAppError]: true;
 };
 
 // Base(App)ApiMsgStruct
@@ -159,7 +162,7 @@ export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                     text: string;
                     title?: string;
                     detail?: string;
-                    severity: Severity;
+                    severity?: Severity;
                     // propertyBag/context
                     properties?: Record<string | number, any>;
                 };
@@ -187,7 +190,17 @@ export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApi
                 out: NavContext;
             };
             [$ERROR]: {
-                in: AppError;
+                in: {
+                    err: any;
+                    properties?: Record<string | number, any>
+                };
+                out: boolean;
+            };
+            [$MSGBUS_ERROR]: {
+                in: {
+                    err: any;
+                    properties?: Record<string | number, any>
+                };
                 out: boolean;
             };
             [$FETCH]: {

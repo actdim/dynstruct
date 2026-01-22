@@ -26,7 +26,7 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
-    async function _updateAsync() {
+    async function _update() {
         const msg = await c.msgBus.request({
             channel: 'GET-TODO-ITEMS',
         });
@@ -43,14 +43,14 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
                 'ADD-TODO-ITEM': {
                     out: {
                         callback: async () => {
-                            await _updateAsync();
+                            await _update();
                         },
                     },
                 },
                 'CLEAR-TODO-ITEMS': {
                     out: {
                         callback: async () => {
-                            await _updateAsync();
+                            await _update();
                         },
                     },
                 },

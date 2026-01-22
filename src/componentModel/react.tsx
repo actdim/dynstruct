@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useLayoutEffect, FC, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Mutable } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
 import { action, observable } from 'mobx';
@@ -13,6 +13,7 @@ import {
     ComponentModel,
     ComponentMsgHeaders,
     ComponentParams,
+    ComponentRegistryContext,
     ComponentStruct,
     ComponentViewImplFn,
     ComponentViewProps,
@@ -45,6 +46,7 @@ function cleanSourceRef(sourceRef: string) {
 
 function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
     componentDef: ComponentDef<TStruct>,
+    context: ComponentRegistryContext,
     params?: ComponentParams<TStruct>,
 ): Component<TStruct> {
     // result
@@ -77,7 +79,7 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
             if (headers?.sourceId == undefined) {
                 headers.sourceId = component.id;
             }
-        }); // as ComponentModel<TStruct>['msgBus']
+        });
     });
 
     let msgBroker = {
@@ -87,8 +89,6 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
     if (!msgBroker.abortController) {
         msgBroker.abortController = new AbortController();
     }
-
-    const context = useComponentContext();
 
     const ViewFC = observer((props: ComponentViewProps) => {
         const context = useComponentContext();
@@ -116,56 +116,59 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         useLayoutEffect(() => {
             try {
                 context.register(component.id, regType, parentId);
-
+                componentDef.events?.onLayout?.(component);
+                params.onLayout?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>layout`);
                 }
-
-                registerMsgBroker(component);
-
-                componentDef.events?.onLayout?.(component);
-                params.onLayout?.(component);
             } catch (err) {
                 componentDef.events?.onError?.(component, err);
                 params.onError?.(component, err);
+                if (getGlobalFlags().debug) {
+                    const hierarchyId = component.getHierarchyId();
+                    console.debug(`${hierarchyId}>layout-error`);
+                }
             }
-
             return () => {
+                context.unregister(component.id);
+                componentDef.events?.onLayoutDestroy?.(component);
+                params.onLayoutDestroy?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>layout-destroy`);
                 }
-                context.unregister(component.id);
-
-                msgBroker.abortController?.abort();
-
-                componentDef.events?.onLayoutDestroy?.(component);
-                params.onLayoutDestroy?.(component);
             };
         }, [componentDef, params, context]);
 
         useEffect(() => {
+            const abortController = new AbortController();
             try {
+                registerMsgBroker(component, abortController);
+                componentDef.events?.onReady?.(component);
+                params.onReady?.(component);
                 if (getGlobalFlags().debug) {
                     // mount
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>ready`);
                 }
-                componentDef.events?.onReady?.(component);
-                params.onReady?.(component);
-            } catch (err) {
+            } catch (err) {                
+                componentDef.events?.onError?.(component, err);
+                params.onError?.(component, err);
+                if (getGlobalFlags().debug) {
+                    const hierarchyId = component.getHierarchyId();
+                    console.debug(`${hierarchyId}>mount-error`);
+                }
+            }
+            return () => {
+                abortController?.abort();
+                componentDef.events?.onDestroy?.(component);
+                params.onDestroy?.(component);
                 if (getGlobalFlags().debug) {
                     // unmount
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>destroy`);
                 }
-                componentDef.events?.onError?.(component, err);
-                params.onError?.(component, err);
-            }
-            return () => {
-                componentDef.events?.onDestroy?.(component);
-                params.onDestroy?.(component);
             };
         }, [componentDef, params, context]);
 
@@ -379,7 +382,8 @@ export function useComponent<
     TStruct extends ComponentStruct = ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 >(componentDef: ComponentDef<TStruct, TMsgHeaders>, params: ComponentParams<TStruct>) {
-    const ref = useLazyRef(() => createComponent(componentDef, params));
+    const context = useComponentContext();
+    const ref = useLazyRef(() => createComponent(componentDef, context, params));
     useLayoutEffect(() => {
         return () => {
             ref.current = null;
@@ -391,10 +395,10 @@ export function useComponent<
 // asFC/toFC
 export function getFC<TStruct extends ComponentStruct>(
     factory: (params: ComponentParams<TStruct>) => Component<TStruct>,
-): FC<ComponentParams<TStruct>> {
-    const result = (params: ComponentParams<TStruct> & PropsWithChildren) => {
+): React.FC<ComponentParams<TStruct>> {
+    const result = (params: ComponentParams<TStruct> & React.PropsWithChildren) => {
         // componentHook
-        const c = factory(params); // without useRef!
+        const c = factory(params);
         // return c.view();
         return <c.View {...params} />;
     };

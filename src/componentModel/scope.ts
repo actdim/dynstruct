@@ -57,7 +57,7 @@ export class DisposableComponent implements Disposable {
         return releaser;
     }
 
-    public async allHandlersAsync(): Promise<void> {
+    public async allHandlers(): Promise<void> {
         await Promise.all(this.handlers);
     }
 
