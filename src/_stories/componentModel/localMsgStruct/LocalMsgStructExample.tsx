@@ -5,11 +5,11 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { TodoEditStruct, useTodoEdit } from './todoEdit';
 import { TodoListStruct, useTodoList } from './todoList';
-import { LocalMsgChannels, LocalMsgStruct, TodoItem } from './localMsgStruct';
+import { LocalMsgChannels, LocalMsgHeaders, LocalMsgStruct, TodoItem } from './localMsgStruct';
 
 type Struct = ComponentStruct<
     LocalMsgStruct,
@@ -28,9 +28,9 @@ type Struct = ComponentStruct<
 >;
 
 export const useLocalMsgStructExample = (params: ComponentParams<Struct>) => {
-    let c: Component<Struct>;
+    let c: Component<Struct, LocalMsgHeaders>;
     let m: ComponentModel<Struct>;
-    const def: ComponentDef<Struct> = {
+    const def: ComponentDef<Struct, LocalMsgHeaders> = {
         props: {
             data: [],
         },
@@ -44,7 +44,11 @@ export const useLocalMsgStructExample = (params: ComponentParams<Struct>) => {
                             if (item) {
                                 item.name = newItem.name;
                             } else {
-                                m.data.push(newItem);
+                                if (msg.headers.priority > 0) {
+                                    m.data.splice(0, 0, newItem);
+                                } else {
+                                    m.data.push(newItem);
+                                }
                             }
                             m.data = m.data.slice();
                         },
@@ -90,4 +94,4 @@ export const useLocalMsgStructExample = (params: ComponentParams<Struct>) => {
 };
 
 export type LocalMsgStructExampleStruct = Struct;
-export const LocalMsgStructExample = getFC(useLocalMsgStructExample);
+export const LocalMsgStructExample = toReact(useLocalMsgStructExample);

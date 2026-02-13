@@ -28,6 +28,7 @@ type Story = StoryObj<typeof ApiCallExample>;
 
 export const ApiCallExampleStory: Story = {
     args: {},
+    name: 'Api Call Example',
     render: (args, context) => {
         // console.log('loaded:', context.loaded);
         return <ApiCallExample />;

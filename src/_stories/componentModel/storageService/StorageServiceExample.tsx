@@ -6,7 +6,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 
 type Struct = ComponentStruct<
@@ -49,4 +49,4 @@ export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
 };
 
 export type StorageServiceExampleStruct = Struct;
-export const StorageServiceExample = getFC(useStorageServiceExample);
+export const StorageServiceExample = toReact(useStorageServiceExample);

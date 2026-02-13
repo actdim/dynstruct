@@ -103,7 +103,7 @@ export type NavContext = {
 
 export type NavHistory = Array<NavContext>;
 
-export const $isAppError = Symbol("$isAppError");
+export const $isAppError = Symbol("isAppError"); // brand
 export type AppError = {
     type?: string;
     name?: string;
@@ -239,7 +239,7 @@ export type BaseApiConfig = {
     versions?: string[];
 };
 
-// BaseApp(Domain)Config
+// BaseApp(Domain)Options
 export type BaseAppDomainConfig<
     TSecurityDomainConfig extends BaseSecurityDomainConfig = BaseSecurityDomainConfig,
     TApiConfig extends BaseApiConfig = BaseApiConfig
@@ -256,5 +256,5 @@ export type BaseAppDomainConfig<
 export type BaseAppMsgChannels<TChannel extends keyof BaseAppMsgStruct | Array<keyof BaseAppMsgStruct>> = KeysOf<BaseAppMsgStruct, TChannel>;
 
 export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> = BaseContext<TMsgStruct> & {
-    // securityProvider: SecurityProvider;
+    // securityProvider: SecurityProvider;        
 };

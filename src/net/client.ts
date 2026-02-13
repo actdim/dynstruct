@@ -2,7 +2,7 @@ import { v4 as uuid } from "uuid";
 import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
 import { ApiError } from "./apiError";
-import { BaseAppMsgStruct, BaseAppContext, $CONFIG_GET } from "@/appDomain/appContracts";
+import { BaseAppMsgStruct, BaseAppContext, $CONFIG_GET, BaseApiConfig } from "@/appDomain/appContracts";
 import { MsgBus } from "@actdim/msgmesh/contracts";
 import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $CONTEXT_GET } from "@/appDomain/security/securityContracts";
 
@@ -24,9 +24,11 @@ export function extractApiName(name: string, suffixes: string[]): string | null 
 const API_SUFFIXES = ["api", "controller", "client", "fetcher"];
 // App(Api)ClientBase
 export class ClientBase {
-    protected baseUrl: string;
+    public baseUrl: string;
 
-    protected name: string;
+    public name: string;
+
+    public apiId: string;
 
     // private requestStates
     private requestStateMap: Map<string, IRequestState>;
@@ -37,52 +39,82 @@ export class ClientBase {
 
     private accessToken: string;
 
-    private init: Promise<any>;
-
     private apiSuffixes: string[];
+
+    private apiConfig: BaseApiConfig;
+
+    private abortController: AbortController;
 
     constructor(context: BaseAppContext, fetcher?: IFetcher, apiSuffixes = API_SUFFIXES) {
         this.apiSuffixes = apiSuffixes;
         this.fetcher = fetcher || window;
         this.requestStateMap = new Map<string, IRequestState>();
         this.msgBus = context.msgBus;
-        // TODO: unsubscribe
+        this.abortController = new AbortController();
+        const abortSignals = [this.abortController.signal];
+        if (context?.abortSignal) {
+            abortSignals.push(context.abortSignal);
+        }
+        const abortSignal = AbortSignal.any(abortSignals);
+
+        // + $CONFIG_SET/$CONFIG_UPDATE?
         this.msgBus.on({
             channel: $AUTH_SIGNIN,
             group: "out",
             callback: (msg) => {
                 this.accessToken = msg.payload.accessToken;
+                // this.updateSecurity();
+            },
+            options: {
+                abortSignal
             }
         });
-        this.init = Promise.all([this.getBaseUrl(), this.updateSecurity()]);
+
     }
 
-    protected async getBaseUrl() {
+    [Symbol.dispose]() {
+        this.abortController.abort();
+    }
+
+    protected async init() {
+        if (!this.baseUrl) {
+            await this.updateApiConfig();
+        }
+        if (!this.accessToken) {
+            await this.updateSecurity();
+        }
+    }
+
+    protected async updateApiConfig() {
         const msg = await this.msgBus.request({
             channel: $CONFIG_GET
         });
         const config = msg.payload;
-        const apiName = extractApiName(this.name, this.apiSuffixes);
-        const apiEntry = Object.entries(config.apis).find((entry) => entry[0].toLowerCase() === apiName?.toLowerCase());
-        if (!apiEntry) {
-            // console.debug
-            console.warn(`API "${apiName}" is not defined in the current configuration. Using default configuration.`);
+        let apiId = this.apiId;
+        if (!apiId) {
+            this.apiId = apiId = extractApiName(this.name, this.apiSuffixes);
         }
-        this.baseUrl = apiEntry?.[1].url || config.baseUrl;
+        const apiEntry = Object.entries(config?.apis || {}).find((entry) => entry[0].toLowerCase() === apiId?.toLowerCase());
+        if (!apiEntry) {
+            console.warn(`API "${apiId}" is not defined in the current configuration. Using default configuration.`);
+        }
+        this.apiConfig = apiEntry?.[1];
+        this.baseUrl = this.apiConfig?.url || config?.baseUrl;
     }
 
     private async updateSecurity() {
-        if (!this.accessToken) {
-            const msg = await this.msgBus.request({
-                channel: $CONTEXT_GET
-            });
-            this.accessToken = msg.payload.accessToken;
-        }
+        const msg = await this.msgBus.request({
+            channel: $CONTEXT_GET
+        });
+        this.accessToken = msg.payload.accessToken;
         return this.accessToken;
     }
 
     private async addAuthorizationAsync(request: IRequestParams) {
-        const accessToken = await this.updateSecurity();
+        if (!this.accessToken) {
+            await this.updateSecurity();
+        }
+        const accessToken = this.accessToken;
         if (!accessToken) {
             throw ApiError.create({
                 status: httpStatus.UNAUTHORIZED

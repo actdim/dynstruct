@@ -5,7 +5,7 @@ import {
     ComponentModel,
     ComponentDef,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { PropsWithChildren } from 'react';
@@ -88,4 +88,4 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
 };
 
 export type StorageServiceStruct = Struct;
-export const StorageService: React.FC<ComponentParams<Struct>> = getFC(useStorageService);
+export const StorageService: React.FC<ComponentParams<Struct>> = toReact(useStorageService);

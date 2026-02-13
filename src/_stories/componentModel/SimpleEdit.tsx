@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgStruct } from './bootstrap';
 
@@ -49,4 +49,4 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
 };
 
 export type SimpleEditStruct = Struct;
-export const SimpleEdit = getFC(useSimpleEdit);
+export const SimpleEdit = toReact(useSimpleEdit);

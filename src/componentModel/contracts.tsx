@@ -12,8 +12,12 @@ import {
 import { HasKeys, MaybeKeyOf, MaybePromise, Require, Skip } from '@actdim/utico/typeCore';
 import { FC, PropsWithChildren, ReactNode } from 'react';
 
-export type BaseContext<TMsgStruct extends MsgStruct = MsgStruct> = {
-    msgBus: MsgBus<TMsgStruct>;
+export type BaseContext<
+    TMsgStruct extends MsgStruct = MsgStruct,
+    TMsgHeaders extends MsgHeaders = MsgHeaders,
+> = {
+    msgBus: MsgBus<TMsgStruct, TMsgHeaders>;
+    abortSignal?: AbortSignal;
 };
 
 export type ComponentTreeNode = {
@@ -24,19 +28,21 @@ export type ComponentTreeNode = {
 };
 
 // ComponentContext
-export type ComponentRegistryContext<TMsgStruct extends MsgStruct = MsgStruct> =
-    BaseContext<TMsgStruct> & {
-        currentId?: string;
-        register: (id: string, regType: string, parentId?: string) => void;
-        unregister: (id: string) => void;
-        getParent: (id: string) => string | undefined;
-        getChildren: (id: string) => string[];
-        getChainUp: (id: string) => string[];
-        getChainDown: (id: string) => string[];
-        getHierarchyPath: (id: string) => string;
-        getNextId: (regType: string) => string;
-        getNodeMap: () => Map<string, ComponentTreeNode>;
-    };
+export type ComponentRegistryContext<
+    TMsgStruct extends MsgStruct = MsgStruct,
+    TMsgHeaders extends MsgHeaders = MsgHeaders,
+> = BaseContext<TMsgStruct, TMsgHeaders> & {
+    currentId?: string;
+    register: (id: string, regType: string, parentId?: string) => void;
+    unregister: (id: string) => void;
+    getParent: (id: string) => string | undefined;
+    getChildren: (id: string) => string[];
+    getChainUp: (id: string) => string[];
+    getChainDown: (id: string) => string[];
+    getHierarchyPath: (id: string) => string;
+    getNextId: (regType: string) => string;
+    getNodeMap: () => Map<string, ComponentTreeNode>;
+};
 
 export type ComponentMsgHeaders = MsgHeaders & {};
 
@@ -193,7 +199,7 @@ export type Validator<T> = {
     validate: (value: T) => MaybePromise<ValidationResult>;
 };
 
-export const $isBinding = Symbol('$isBinding'); // brand
+export const $isBinding = Symbol('isBinding'); // brand
 
 export type Binding<T = any, TFrom = any> = {
     // getter
@@ -247,11 +253,11 @@ export type ComponentEvents<TStruct extends ComponentStruct = ComponentStruct> =
     [P in keyof TStruct['props'] as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
 } & {
     [P in keyof TStruct['props'] as `${typeof $ON_CHANGING}${Capitalize<P & string>}`]?: ValueChangingHandler<
-        TStruct['props']
+        TStruct['props'][P]
     >;
 } & {
     [P in keyof TStruct['props'] as `${typeof $ON_CHANGE}${Capitalize<P & string>}`]?: ValueChangeHandler<
-        TStruct['props']
+        TStruct['props'][P]
     >;
 };
 
@@ -359,17 +365,18 @@ export type ComponentBase<
     readonly bindings: Map<PropertyKey, Binding>;
     readonly msgBus: MsgBus<ComponentMsgStruct<TStruct>, TMsgHeaders>;
     readonly msgBroker: ComponentMsgBroker<TStruct>;
-    readonly effects: Record<string, EffectController>;
+    readonly effects: keyof TStruct['effects'] extends never
+        ? never
+        : Record<
+              TStruct['effects'] extends string ? TStruct['effects'] : TStruct['effects'][number],
+              EffectController
+          >;
     readonly View: ComponentViewFn;
+    readonly [Symbol.dispose]: () => void;
 };
 
 export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
-    Readonly<TStruct['actions']> & {
-        // readonly __id?: string;
-        // readonly __key?: string;
-        readonly $id?: string;
-        readonly $key?: string;
-    };
+    Readonly<TStruct['actions']>;
 
 export type Component<
     TStruct extends ComponentStruct = ComponentStruct,
@@ -393,9 +400,9 @@ export type ComponentParams<TStruct extends ComponentStruct = ComponentStruct> =
         }; // & PropsWithChildren?
 
 export type EffectController = {
-    start: () => void;
+    // execute/apply
+    run: () => void;
     pause: () => void;
     resume: () => void;
     stop: () => void;
-    restart: () => void;
 };

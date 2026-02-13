@@ -7,7 +7,7 @@ import {
     type ComponentParams,
     type ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap'; // appDomain
 import { TestChildStruct, useTestChild } from './TestChild';
@@ -26,7 +26,7 @@ type Struct = ComponentStruct<
         msgScope: {
             subscribe: AppMsgChannels<'TEST-EVENT'>;
             provide: AppMsgChannels<'LOCAL-EVENT'>;
-        };
+        };        
     }
 >;
 
@@ -34,7 +34,7 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
-    const def: ComponentDef<Struct, ComponentMsgHeaders & { test: string }> = {
+    const def: ComponentDef<Struct> = {
         
         props: {
             text: undefined,
@@ -105,4 +105,4 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
 };
 
 export type TestContainerStruct = Struct;
-export const TestContainer = getFC(useTestContainer);
+export const TestContainer = toReact(useTestContainer);

@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { appMsgBus, AppMsgStruct } from './bootstrap'; // appDomain
 import { DataItem, TestApiClient } from './TestApiClient';
@@ -84,7 +84,7 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
 
         view: (_, c) => {
             return (
-                <div>
+                <div id={c.id}>
                     <button
                         onClick={async () => {
                             const msg = await c.msgBus.request({
@@ -126,4 +126,4 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
 };
 
 export type ApiCallExampleStruct = Struct;
-export const ApiCallExample = getFC(useApiCallExample);
+export const ApiCallExample = toReact(useApiCallExample);

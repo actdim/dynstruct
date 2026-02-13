@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { ComponentMsgHeaders } from '@/componentModel/contracts';
@@ -26,7 +26,7 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
-    const def: ComponentDef<Struct, ComponentMsgHeaders & { test?: string }> = {
+    const def: ComponentDef<Struct> = {
         props: {
             value: 'foo',
         },
@@ -73,4 +73,4 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
 };
 
 export type TestChildStruct = Struct;
-export const TestChild = getFC(useTestChild);
+export const TestChild = toReact(useTestChild);

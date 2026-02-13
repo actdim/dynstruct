@@ -44,20 +44,23 @@ function cleanSourceRef(sourceRef: string) {
     return sourceRef.replace(/^[a-z][a-z0-9+.-]*:\/\/[^\/]+/, '');
 }
 
-function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
-    componentDef: ComponentDef<TStruct>,
-    context: ComponentRegistryContext,
+function createComponent<
+    TStruct extends ComponentStruct = ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(
+    def: ComponentDef<TStruct, TMsgHeaders>,
+    context: ComponentRegistryContext<TStruct['msg'], TMsgHeaders>,
     params?: ComponentParams<TStruct>,
-): Component<TStruct> {
+): Component<TStruct, TMsgHeaders> {
     // result
-    let component: Mutable<Component<TStruct>>;
+    let component: Mutable<Component<TStruct, TMsgHeaders>>;
     let model: Mutable<ComponentModel<TStruct>>;
 
-    if (!componentDef) {
-        componentDef = {};
+    if (!def) {
+        def = {};
     }
 
-    let regType = componentDef.regType;
+    let regType = def.regType;
     if (!regType) {
         regType = getComponentSourceByCaller(6);
         // type = getComponentNameByCaller(6);
@@ -69,8 +72,8 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         params = {};
     }
 
-    const view = componentDef.view;
-    let msgBus = componentDef.msgBus;
+    const view = def.view;
+    let msgBus = def.msgBus;
 
     const bindings = new Map<PropertyKey, Binding>();
 
@@ -83,15 +86,30 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
     });
 
     let msgBroker = {
-        ...componentDef.msgBroker,
+        ...def.msgBroker,
     };
 
     if (!msgBroker.abortController) {
         msgBroker.abortController = new AbortController();
     }
 
+    const initEffects = () => {
+        if (def.effects) {
+            for (const [name, fn] of Object.entries(def.effects)) {
+                component.effects[name] = createEffect(
+                    component,
+                    name,
+                    fn as EffectFn<TStruct, ComponentMsgHeaders>,
+                );
+            }
+        }
+    };
+
     const ViewFC = observer((props: ComponentViewProps) => {
-        const context = useComponentContext();
+        const context = useComponentContext() as ComponentRegistryContext<
+            TStruct['msg'],
+            TMsgHeaders
+        >;
         const parentId = context.currentId;
 
         component.parentId = parentId;
@@ -116,14 +134,15 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         useLayoutEffect(() => {
             try {
                 context.register(component.id, regType, parentId);
-                componentDef.events?.onLayout?.(component);
+                initEffects();
+                def.events?.onLayout?.(component);
                 params.onLayout?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>layout`);
                 }
             } catch (err) {
-                componentDef.events?.onError?.(component, err);
+                def.events?.onError?.(component, err);
                 params.onError?.(component, err);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
@@ -132,45 +151,47 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
             }
             return () => {
                 context.unregister(component.id);
-                componentDef.events?.onLayoutDestroy?.(component);
+                def.events?.onLayoutDestroy?.(component);
                 params.onLayoutDestroy?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>layout-destroy`);
                 }
             };
-        }, [componentDef, params, context]);
+        }, [def, params, context]);
 
         useEffect(() => {
             const abortController = new AbortController();
             try {
                 registerMsgBroker(component, abortController);
-                componentDef.events?.onReady?.(component);
+                def.events?.onReady?.(component);
                 params.onReady?.(component);
                 if (getGlobalFlags().debug) {
                     // mount
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>ready`);
                 }
-            } catch (err) {                
-                componentDef.events?.onError?.(component, err);
+            } catch (err) {
+                def.events?.onError?.(component, err);
                 params.onError?.(component, err);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>mount-error`);
                 }
+                throw err;
             }
             return () => {
                 abortController?.abort();
-                componentDef.events?.onDestroy?.(component);
+                def.events?.onDestroy?.(component);
                 params.onDestroy?.(component);
+                component[Symbol.dispose]();
                 if (getGlobalFlags().debug) {
                     // unmount
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>destroy`);
                 }
             };
-        }, [componentDef, params, context]);
+        }, [def, params, context]);
 
         let content: React.ReactNode;
         // let content: any;
@@ -187,15 +208,16 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
                 content = <>{props.children}</>;
             }
         } catch (err) {
-            // throw err;
-            const errDetails = JSON.stringify(err);
-            // msgBus.send
-            content = <>{errDetails}</>;
+            throw err;
+            // const errDetails = JSON.stringify(err);
+            // content = <>{errDetails}</>;
+            // msgBus.send({});
         }
         const scopeContext = useMemo(
             () => ({ ...context, currentId: component.id }),
-            [componentDef, params, context],
+            [def, params, context],
         );
+
         return (
             <ReactComponentContext.Provider value={scopeContext}>
                 {content}
@@ -207,16 +229,16 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
 
     model = {} as Mutable<ComponentModel<TStruct>>;
 
-    if (componentDef.props) {
-        Object.assign(model, componentDef.props);
+    if (def.props) {
+        Object.assign(model, def.props);
     }
 
-    if (componentDef.actions) {
-        Object.assign(model, componentDef.actions);
+    if (def.actions) {
+        Object.assign(model, def.actions);
     }
 
-    if (componentDef.children) {
-        for (const [key, value] of Object.entries(componentDef.children)) {
+    if (def.children) {
+        for (const [key, value] of Object.entries(def.children)) {
             if (typeof value == 'function') {
                 const view = value as (params: any) => Component;
                 const ChildViewFC: ComponentViewImplFn<TStruct> = (props) => {
@@ -248,7 +270,7 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
 
     const proxyEventHandlers: Pick<ProxyEventHandlers, 'onPropChanging' | 'onPropChange'> = {
         onPropChanging:
-            params.onPropChanging || componentDef.events?.onPropChanging
+            params.onPropChanging || def.events?.onPropChanging
                 ? (prop, oldValue, newValue) => {
                       let result = true;
                       let handler = params.onPropChanging;
@@ -256,7 +278,7 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
                           result = handler(String(prop), oldValue, newValue);
                       }
                       if (result) {
-                          handler = componentDef.events?.onPropChanging;
+                          handler = def.events?.onPropChanging;
                           if (handler) {
                               result = handler(String(prop), oldValue, newValue);
                           }
@@ -265,17 +287,17 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
                   }
                 : undefined,
         onPropChange:
-            params.onPropChange || componentDef.events?.onPropChange
+            params.onPropChange || def.events?.onPropChange
                 ? (prop, value) => {
                       params.onPropChange?.(String(prop), value);
-                      componentDef.events?.onPropChange?.(String(prop), value);
+                      def.events?.onPropChange?.(String(prop), value);
                   }
                 : undefined,
     };
 
     function resolveOnGetEventHandler(prop: string) {
         const key = `${$ON_GET}${capitalize(prop)}`;
-        return params[key] || componentDef.events?.[key];
+        return params[key] || def.events?.[key];
     }
 
     function resolveOnChangingEventHandler(prop: string) {
@@ -287,7 +309,7 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
                 result = handler(oldValue, newValue);
             }
             if (result) {
-                handler = componentDef.events?.[key] as ValueChangingHandler<any>;
+                handler = def.events?.[key] as ValueChangingHandler<any>;
                 if (handler) {
                     result = handler(oldValue, newValue);
                 }
@@ -300,14 +322,14 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
         const key = `${$ON_CHANGE}${capitalize(prop)}`;
         return ((value: any) => {
             (params[key] as ValueChangeHandler<any>)?.(value);
-            (componentDef.events?.[key] as ValueChangeHandler<any>)?.(value);
+            (def.events?.[key] as ValueChangeHandler<any>)?.(value);
         }) as ValueChangeHandler;
     }
 
     let annotationMap: Record<string, any> = {};
 
-    if (componentDef.props) {
-        for (const prop of Object.keys(componentDef.props)) {
+    if (def.props) {
+        for (const prop of Object.keys(def.props)) {
             proxyEventHandlers[prop] = {
                 onGet: resolveOnGetEventHandler(prop),
                 onChanging: resolveOnChangingEventHandler(prop),
@@ -315,14 +337,14 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
             };
         }
 
-        for (const key of Object.keys(componentDef.props)) {
+        for (const key of Object.keys(def.props)) {
             annotationMap[key] = observable.deep;
         }
     }
 
-    if (componentDef.actions) {
+    if (def.actions) {
         const annotationMap: Record<string, any> = {};
-        for (const key of Object.keys(componentDef.actions)) {
+        for (const key of Object.keys(def.actions)) {
             annotationMap[key] = action;
         }
     }
@@ -333,7 +355,6 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
 
     model = createRecursiveProxy(model, bindings, proxyEventHandlers);
 
-    let effects: Record<string, EffectController> = {};
     component = {
         id: params.$id,
         key: params.$key,
@@ -350,25 +371,20 @@ function createComponent<TStruct extends ComponentStruct = ComponentStruct>(
             return componentMsgBus();
         },
         msgBroker: msgBroker,
-        effects: effects,
+        effects: {} as Component<TStruct, TMsgHeaders>['effects'],
         // view: componentDef.view,
         View: ViewFC,
         children: children,
         model: model,
+        [Symbol.dispose]: () => {
+            for (const [name, fn] of Object.entries(component.effects)) {
+                (fn as EffectController).stop();
+            }
+        },
     };
 
-    if (componentDef.effects) {
-        for (const [name, fn] of Object.entries(componentDef.effects)) {
-            effects[name] = createEffect(
-                component,
-                name,
-                fn as EffectFn<TStruct, ComponentMsgHeaders>,
-            );
-        }
-    }
-
-    if (componentDef.events?.onInit) {
-        componentDef.events.onInit(component);
+    if (def.events?.onInit) {
+        def.events.onInit(component);
     }
 
     if (params.onInit) {
@@ -382,8 +398,10 @@ export function useComponent<
     TStruct extends ComponentStruct = ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 >(componentDef: ComponentDef<TStruct, TMsgHeaders>, params: ComponentParams<TStruct>) {
-    const context = useComponentContext();
-    const ref = useLazyRef(() => createComponent(componentDef, context, params));
+    const context = useComponentContext() as ComponentRegistryContext<TStruct['msg'], TMsgHeaders>;
+    const ref = useLazyRef(() =>
+        createComponent<TStruct, TMsgHeaders>(componentDef, context, params),
+    );
     useLayoutEffect(() => {
         return () => {
             ref.current = null;
@@ -392,13 +410,12 @@ export function useComponent<
     return ref.current;
 }
 
-// asFC/toFC
-export function getFC<TStruct extends ComponentStruct>(
-    factory: (params: ComponentParams<TStruct>) => Component<TStruct>,
+export function toReact<TStruct extends ComponentStruct>(
+    factoryHook: (params: ComponentParams<TStruct>) => Component<TStruct>,
 ): React.FC<ComponentParams<TStruct>> {
     const result = (params: ComponentParams<TStruct> & React.PropsWithChildren) => {
-        // componentHook
-        const c = factory(params);
+        // componentFactory
+        const c = factoryHook(params);
         // return c.view();
         return <c.View {...params} />;
     };

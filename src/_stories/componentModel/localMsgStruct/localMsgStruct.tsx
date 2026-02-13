@@ -1,3 +1,4 @@
+import { ComponentMsgHeaders } from '@/componentModel/contracts';
 import { MsgStructFactory } from '@actdim/msgmesh/contracts';
 import { KeysOf } from '@actdim/utico/typeCore';
 
@@ -20,3 +21,4 @@ export type LocalMsgStruct = MsgStructFactory<{
 
 export type LocalMsgChannels<TChannel extends keyof LocalMsgStruct | Array<keyof LocalMsgStruct>> =
     KeysOf<LocalMsgStruct, TChannel>;
+export type LocalMsgHeaders = ComponentMsgHeaders & { priority: number };

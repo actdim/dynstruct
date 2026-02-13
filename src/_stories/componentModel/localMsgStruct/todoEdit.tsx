@@ -5,15 +5,16 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { LocalMsgChannels, LocalMsgStruct, TodoItem } from './localMsgStruct';
+import { LocalMsgChannels, LocalMsgHeaders, LocalMsgStruct, TodoItem } from './localMsgStruct';
 
 type Struct = ComponentStruct<
     LocalMsgStruct,
     {
         props: {
             item: TodoItem;
+            priority: number;
         };
 
         msgScope: {
@@ -23,11 +24,12 @@ type Struct = ComponentStruct<
 >;
 
 export const useTodoEdit = (params: ComponentParams<Struct>) => {
-    let c: Component<Struct>;
+    let c: Component<Struct, LocalMsgHeaders>;
     let m: ComponentModel<Struct>;
-    const def: ComponentDef<Struct> = {
+    const def: ComponentDef<Struct, LocalMsgHeaders> = {
         props: {
             item: { id: 1, name: 'Wake Up' },
+            priority: undefined,
         },
 
         view: (_, c) => {
@@ -54,11 +56,24 @@ export const useTodoEdit = (params: ComponentParams<Struct>) => {
                         ></input>
                     </p>
                     <p>
+                        Category:
+                        <input
+                            type="text"
+                            value={m.priority}
+                            onChange={(e) => {
+                                m.priority = +e.target.value;
+                            }}
+                        ></input>
+                    </p>
+                    <p>
                         <button
                             onClick={() => {
                                 c.msgBus.send({
                                     channel: 'ADD-TODO-ITEM',
                                     payload: m.item,
+                                    headers: {
+                                        priority: m.priority,
+                                    },
                                 });
                             }}
                         >
@@ -95,4 +110,4 @@ export const useTodoEdit = (params: ComponentParams<Struct>) => {
 };
 
 export type TodoEditStruct = Struct;
-export const TodoEdit = getFC(useTodoEdit);
+export const TodoEdit = toReact(useTodoEdit);

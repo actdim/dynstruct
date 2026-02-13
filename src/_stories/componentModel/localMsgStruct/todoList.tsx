@@ -5,9 +5,9 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { LocalMsgChannels, LocalMsgStruct, TodoItem } from './localMsgStruct';
+import { LocalMsgChannels, LocalMsgHeaders, LocalMsgStruct, TodoItem } from './localMsgStruct';
 
 type Struct = ComponentStruct<
     LocalMsgStruct,
@@ -23,7 +23,7 @@ type Struct = ComponentStruct<
 >;
 
 export const useTodoList = (params: ComponentParams<Struct>) => {
-    let c: Component<Struct>;
+    let c: Component<Struct, LocalMsgHeaders>;
     let m: ComponentModel<Struct>;
 
     async function _update() {
@@ -33,7 +33,7 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
         m.list = msg.payload;
     }
 
-    const def: ComponentDef<Struct> = {
+    const def: ComponentDef<Struct, LocalMsgHeaders> = {
         props: {
             list: [],
         },
@@ -76,4 +76,4 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
 };
 
 export type TodoListStruct = Struct;
-export const TodoList = getFC(useTodoList);
+export const TodoList = toReact(useTodoList);

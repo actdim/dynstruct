@@ -1,6 +1,6 @@
 import React from 'react';
 import { MsgBus } from '@actdim/msgmesh/contracts';
-import { isObservable, runInAction, toJS, autorun, IReactionDisposer } from 'mobx';
+import { isObservable, runInAction, toJS, autorun, IReactionDisposer, observable } from 'mobx';
 import type {
     Binding,
     Component,
@@ -43,7 +43,7 @@ export function bind<T, TFrom = any>(
 
 export function bindProp<T extends object, P extends keyof T>(target: () => T, prop: P): Binding {
     return {
-        get: () => target()[prop],
+        get: () => target()?.[prop],
         set: (value: T[P]) => {
             target()[prop] = value;
         },
@@ -84,11 +84,11 @@ export function createRecursiveProxy(
 
             // 2. bindings
             const binding = bindings.get(prop);
+
+            const value = Reflect.get(obj, prop, receiver);
             if (binding?.get) {
                 return binding.get();
             }
-
-            const value = Reflect.get(obj, prop, receiver);
 
             if (typeof value === 'object' && value !== null && isObservable(value)) {
                 return createRecursiveProxy(value, bindings, handlers);
@@ -281,16 +281,16 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
     }
 }
 
-export function getComponentMsgBus<TStruct extends ComponentStruct = ComponentStruct>(
-    msgBus: MsgBus<TStruct['msg']>,
-    headerSetter: (headers?: ComponentMsgHeaders) => void,
-) {
-    const updateParams = (params: { payload?: any; headers?: ComponentMsgHeaders }) => {
+export function getComponentMsgBus<
+    TStruct extends ComponentStruct = ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(msgBus: MsgBus<TStruct['msg'], TMsgHeaders>, headerSetter: (headers?: TMsgHeaders) => void) {
+    const updateParams = (params: { payload?: any; headers?: TMsgHeaders }) => {
         if (params.payload != undefined) {
             params.payload = structuredClone(toJS(params.payload)); // always?
         }
         if (!params.headers) {
-            params.headers = {};
+            params.headers = {} as TMsgHeaders;
         }
         headerSetter?.(params.headers);
     };
@@ -317,7 +317,7 @@ export function getComponentMsgBus<TStruct extends ComponentStruct = ComponentSt
             updateParams(params);
             return msgBus.request(params);
         },
-    } as MsgBus<TStruct['msg']>;
+    } as MsgBus<TStruct['msg'], TMsgHeaders>;
 }
 
 export function createEffect<
@@ -329,53 +329,48 @@ export function createEffect<
     fn: EffectFn<TStruct, TMsgHeaders>,
 ): EffectController {
     let disposer: IReactionDisposer | null = null;
-    let paused = false;
-    let effectCleanup: () => void = undefined;
+
+    const paused = observable.box(false);
 
     const start = () => {
         if (disposer) {
             return;
         }
-
-        disposer = autorun(
-            () => {
-                if (!paused) {
-                    const cleanup = fn(component);
-                    if (typeof cleanup === 'function') {
-                        cleanup();
-                        effectCleanup = cleanup;
+        runInAction(() => {
+            paused.set(false);
+            disposer = autorun(
+                () => {
+                    if (!paused.get()) {
+                        fn(component);
                     }
-                }
-            },
-            { name: `effect:${name}` },
-        );
+                },
+                {
+                    name: `effect:${name}`,
+                },
+            );
+        });
     };
 
     const stop = () => {
         disposer?.();
         disposer = null;
-        if (effectCleanup) {
-            effectCleanup();
-            effectCleanup = undefined;
-        }
     };
 
     const pause = () => {
-        paused = true;
+        runInAction(() => {
+            paused.set(true);
+        });
     };
 
     const resume = () => {
-        paused = false;
-    };
-
-    const restart = () => {
-        stop();
-        start();
+        runInAction(() => {
+            paused.set(false);
+        });
     };
 
     start();
 
-    return { start, pause, resume, stop, restart };
+    return { run, pause, resume, stop };
 }
 
 // TODO: move to utico

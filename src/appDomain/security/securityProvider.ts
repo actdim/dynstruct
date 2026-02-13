@@ -19,8 +19,8 @@ import { getValuePrefixer } from "@actdim/utico/typeCore";
 import { jwtDecode } from "jwt-decode";
 import { getResponseResult, IRequestParams, IRequestState, IResponseState } from "@/net/request";
 import { ApiError } from "@/net/apiError";
-import { MsgBus } from "@actdim/msgmesh/contracts";
-import { $CONFIG_GET, $STORE_GET, $STORE_REMOVE, $STORE_SET, BaseAppMsgStruct } from "@/appDomain/appContracts";
+import { MsgBus, MsgSubOptions } from "@actdim/msgmesh/contracts";
+import { $CONFIG_GET, $STORE_GET, $STORE_REMOVE, $STORE_SET, BaseAppContext, BaseAppMsgStruct } from "@/appDomain/appContracts";
 
 const userNameClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
 
@@ -83,76 +83,92 @@ export class SecurityProvider {
 
     private fetcher: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> } = window;
 
-    private init: Promise<any>;
+    private abortController: AbortController;
 
-    constructor(msgBus: MsgBus<BaseAppMsgStruct>) {
-        this.msgBus = msgBus;
+    constructor(context: BaseAppContext) {
+        this.msgBus = context.msgBus;
 
-        this.init = this.updateConfig();
+        this.abortController = new AbortController();
+        const abortSignals = [this.abortController.signal];
+        if (context?.abortSignal) {
+            abortSignals.push(context.abortSignal);
+        }
+        const abortSignal = AbortSignal.any(abortSignals);
 
         // TODO: support custom requests
 
+        const options: MsgSubOptions = {
+            abortSignal
+        };
         this.msgBus.provide({
             channel: $CONTEXT_GET,
-            callback: async (msg) => {
-                await this.init;
+            callback: (msg) => {
                 return this.getContext();
-            }
+            }, options
         });
 
         this.msgBus.provide({
             channel: $ACL_GET,
-            callback: async (msg) => {
-                await this.init;
+            callback: (msg) => {
                 return this.getAcl(msg.payload);
-            }
+            }, options
         });
 
         this.msgBus.provide({
             channel: $AUTH_SIGNIN,
-            callback: async (msg) => {
-                await this.init;
+            callback: (msg) => {
                 return this.signIn(msg.payload);
-            }
+            }, options
         });
 
         this.msgBus.provide({
             channel: $AUTH_SIGNOUT,
-            callback: async (msg) => {
-                await this.init;
+            callback: (msg) => {
                 return this.signOut();
-            }
+            }, options
         });
 
         this.msgBus.provide({
             channel: $AUTH_REFRESH,
-            callback: async (msg) => {
-                await this.init;
+            callback: (msg) => {
                 return this.refreshAuth();
-            }
+            }, options
         });
 
         this.msgBus.provide({
             channel: $AUTH_ENSURE,
-            callback: async (msg) => {
-                await this.init;
+            callback: (msg) => {
                 return this.ensureAuth();
-            }
+            }, options
         });
+
+        // + $CONFIG_SET/$CONFIG_UPDATE?
 
         this.msgBus.provide({
             channel: $SECURITY_CONFIG_GET,
             callback: async (msg) => {
+                // return this.domainConfig;
                 return (
                     await this.msgBus.request({
                         channel: $CONFIG_GET
                     })
                 ).payload?.security;
-            }
+            }, options
         });
     }
 
-    public getContext(): SecurityContext {
+    [Symbol.dispose]() {
+        this.abortController.abort();
+    }
+
+    protected async init() {
+        if (!this.domainConfig) {
+            await this.updateConfig();
+        }
+    }
+
+    public async getContext(): Promise<SecurityContext> {
+        await this.init();
         return {
             accessToken: this.accessToken,
             refreshToken: this.refreshToken,
@@ -219,10 +235,11 @@ export class SecurityProvider {
         this.acl = msg.payload.data?.value || null;
 
         if (this.accessToken) {
+            const context = await this.getContext();
             this.msgBus.send({
                 channel: $AUTH_SIGNIN,
                 group: "out",
-                payload: this.getContext()
+                payload: context
             });
         }
     }
@@ -280,7 +297,10 @@ export class SecurityProvider {
         });
     }
 
-    async ensureAuth() {
+    public async ensureAuth() {
+
+        // await this.init();
+
         this.accessToken = null;
         this.acl = null;
 
@@ -303,10 +323,13 @@ export class SecurityProvider {
                 callbackUrl: window.location.pathname + window.location.search
             }
         });
+
         await Promise.race([signIn, signOut]);
     }
 
-    async signIn(credentials: UserCredentials) {
+    public async signIn(credentials: UserCredentials) {
+        await this.init();
+
         let url = this.domainConfig.routes?.authSignIn;
 
         url = url.replace(/[?&]$/, "");
@@ -389,7 +412,9 @@ export class SecurityProvider {
         });
     }
 
-    async signOut() {
+    public async signOut() {
+        await this.init();
+
         let url = this.domainConfig.routes?.authSignOut;
         if (url) {
             url = url.replace(/[?&]$/, "");
@@ -421,7 +446,9 @@ export class SecurityProvider {
         this.clearSavedData();
     }
 
-    async refreshAuth() {
+    public async refreshAuth() {
+        await this.init();
+
         let url = this.domainConfig.routes?.authRefresh;
         if (url) {
             url = url.replace(/[?&]$/, "");
@@ -466,9 +493,10 @@ export class SecurityProvider {
         return this.getContext();
     }
 
-    async getAcl<T extends ISecurable>(obj: T) {
+    public async getAcl<T extends ISecurable>(obj: T) {
         // TODO: read from this.acl
 
+        await this.init();
         return {
             [AccessLevel.Full]: ""
         } as IAccessDescriptor;

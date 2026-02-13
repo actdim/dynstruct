@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 
@@ -87,4 +87,4 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
 };
 
 export type TestEventConsumerStruct = Struct;
-export const TestEventConsumer = getFC(useTestEventConsumer);
+export const TestEventConsumer = toReact(useTestEventConsumer);

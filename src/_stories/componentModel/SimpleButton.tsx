@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { AppMsgStruct } from './bootstrap';
 
@@ -46,4 +46,4 @@ export const useSimpleButton = (params: ComponentParams<Struct>) => {
 };
 
 export type SimpleButtonStruct = Struct;
-export const SimpleButton = getFC(useSimpleButton);
+export const SimpleButton = toReact(useSimpleButton);

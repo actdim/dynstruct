@@ -5,16 +5,13 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { AppMsgChannels, AppMsgStruct } from './bootstrap';
+import { AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
-import { SimpleEdit, SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
+import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
 import { DynamicContentStruct, useDynamicContent } from '../../componentModel/DynamicContent';
 import { bind, bindProp } from '@/componentModel/core';
-import { observer } from 'mobx-react-lite';
-import { useLazyRef } from '@/reactHooks';
-import { observable } from 'mobx';
 
 // import './simpleComponent.css';
 
@@ -30,7 +27,7 @@ type Struct = ComponentStruct<
             edit: SimpleEditStruct;
             content: DynamicContentStruct<string, AppMsgStruct>;
             dynEdit: (props: { value?: string }) => SimpleEditStruct;
-        };
+        };        
     }
 >;
 
@@ -102,9 +99,9 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
 
     c = useComponent(def, params);
     m = c.model;
-
+    
     return c;
 };
 
 export type SimpleComponentStruct = Struct;
-export const SimpleComponent = getFC(useSimpleComponent);
+export const SimpleComponent = toReact(useSimpleComponent);

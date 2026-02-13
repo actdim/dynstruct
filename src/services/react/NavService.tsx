@@ -19,7 +19,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { getFC, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react';
 import { PropsWithChildren } from 'react';
 
 type Struct = ComponentStruct<
@@ -124,4 +124,4 @@ export const useNavService = (params: ComponentParams<Struct>) => {
 };
 
 export type NavServiceStruct = Struct;
-export const NavService: React.FC<ComponentParams<Struct>> = getFC(useNavService);
+export const NavService: React.FC<ComponentParams<Struct>> = toReact(useNavService);
