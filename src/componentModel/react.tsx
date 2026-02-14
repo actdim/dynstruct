@@ -10,6 +10,7 @@ import {
     Component,
     ComponentChildren,
     ComponentDef,
+    ComponentEvents,
     ComponentModel,
     ComponentMsgHeaders,
     ComponentParams,
@@ -34,6 +35,7 @@ import {
     registerMsgBroker,
     toHtmlId,
 } from './core';
+import { ErrorBoundary } from './react/errorBoundary';
 
 function capitalize(name: string) {
     return name.replace(/^./, name[0].toUpperCase());
@@ -58,6 +60,10 @@ function createComponent<
 
     if (!def) {
         def = {};
+    }
+
+    if (def.useErrorBoundary == undefined) {
+        def.useErrorBoundary = true;
     }
 
     let regType = def.regType;
@@ -96,16 +102,20 @@ function createComponent<
     const initEffects = () => {
         if (def.effects) {
             for (const [name, fn] of Object.entries(def.effects)) {
-                component.effects[name] = createEffect(
-                    component,
-                    name,
-                    fn as EffectFn<TStruct, ComponentMsgHeaders>,
-                );
+                try {
+                    component.effects[name] = createEffect(
+                        component,
+                        name,
+                        fn as EffectFn<TStruct, ComponentMsgHeaders>,
+                    );
+                } catch (e) {
+                    console.log(e);
+                }
             }
         }
     };
 
-    const ViewFC = observer((props: ComponentViewProps) => {
+    const OrigView = observer((props: ComponentViewProps) => {
         const context = useComponentContext() as ComponentRegistryContext<
             TStruct['msg'],
             TMsgHeaders
@@ -135,11 +145,11 @@ function createComponent<
             try {
                 context.register(component.id, regType, parentId);
                 initEffects();
-                def.events?.onLayout?.(component);
-                params.onLayout?.(component);
+                def.events?.onLayoutReady?.(component);
+                params.onLayoutReady?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
-                    console.debug(`${hierarchyId}>layout`);
+                    console.debug(`${hierarchyId}>layout-ready`);
                 }
             } catch (err) {
                 def.events?.onError?.(component, err);
@@ -194,25 +204,19 @@ function createComponent<
         }, [def, params, context]);
 
         let content: React.ReactNode;
-        // let content: any;
-        try {
-            if (getGlobalFlags().debug) {
-                // render
-                const hierarchyId = component.getHierarchyId();
-                console.debug(`${hierarchyId}>view`);
-            }
-            if (typeof view === 'function') {
-                content = view(props, component);
-            } else {
-                // content = props.children;
-                content = <>{props.children}</>;
-            }
-        } catch (err) {
-            throw err;
-            // const errDetails = JSON.stringify(err);
-            // content = <>{errDetails}</>;
-            // msgBus.send({});
+
+        if (getGlobalFlags().debug) {
+            // render
+            const hierarchyId = component.getHierarchyId();
+            console.debug(`${hierarchyId}>view`);
         }
+        if (typeof view === 'function') {
+            content = view(props, component);
+        } else {
+            // Content = () => props.children;
+            content = <>{props.children}</>;
+        }
+
         const scopeContext = useMemo(
             () => ({ ...context, currentId: component.id }),
             [def, params, context],
@@ -224,6 +228,24 @@ function createComponent<
             </ReactComponentContext.Provider>
         );
     });
+
+    // <ErrorBoundary onError={onError}>{view(props, component)}</ErrorBoundary>
+    let onError: (error: unknown, info?: unknown) => React.ReactNode = null;
+    if (def.events?.onError || params.onError) {
+        onError = (error, info) => {
+            let result1 = def.events?.onError(component, error, info);
+            let result2 = params.onError?.(component, error, info);
+            return (result1 || result2) as React.ReactNode;
+        };
+    }
+    let View = OrigView;
+    if (onError || def.useErrorBoundary) {
+        View = ((props) => (
+            <ErrorBoundary onError={onError}>
+                <OrigView {...props} />
+            </ErrorBoundary>
+        )) as typeof OrigView;
+    }
 
     const children = {} as ComponentChildren<TStruct['children']>;
 
@@ -373,7 +395,7 @@ function createComponent<
         msgBroker: msgBroker,
         effects: {} as Component<TStruct, TMsgHeaders>['effects'],
         // view: componentDef.view,
-        View: ViewFC,
+        View: View,
         children: children,
         model: model,
         [Symbol.dispose]: () => {

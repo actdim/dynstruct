@@ -43,12 +43,15 @@ export const useEffectDemo = (params: ComponentParams<Struct>) => {
         },
         events: {
             onChangeTrackingEnabled: (v) => {
-                if (m.trackingEnabled) {
+                if (v) {
                     c.effects.trackNameChanges.resume();
                 } else {
                     c.effects.trackNameChanges.pause();
                 }
             },
+            // onError: (err) => {
+            //     return <>Houston, we have a problem</>;
+            // },
         },
         effects: {
             trackNameChanges: (c) => {

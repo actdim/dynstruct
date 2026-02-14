@@ -49,7 +49,7 @@ The architectural core is framework-agnostic, allowing the same component struct
 
 🎯 **Navigation & Routing** - Built-in navigation contracts with React Router integration
 
-🔐 **Security Provider** - Authentication, authorization, and ACL support
+🔐 **Security Provider** - Authentication and authorization support
 
 ## Quick Start
 
@@ -764,33 +764,225 @@ This separation means you can refactor logic, add validation, or change behavior
 
 ### Component Structure
 
-Every component in dynstruct is defined by its **ComponentStruct**, which explicitly declares:
+The first step in the dynstruct architectural pattern is defining the **component structure**. The base generic class `ComponentStruct` acts as a structural constructor — a scaffold that provides constraints, hints, and full IntelliSense to the developer when forming the base type contract. All derived component model APIs are built on top of this contract through TypeScript's advanced type system.
+
+**Crucially, component structures are pure type declarations** — they require no implementations (hook-constructors), only type information. This means you can define the entire application's component hierarchy at the type level before writing a single line of runtime code.
 
 ```typescript
-ComponentStruct = {
-    props: { /* component properties */ },
-    actions: { /* methods/actions */ },
-    children: { /* child components */ },
-    msgScope: { /* message channels */ },
-    msg: MsgStruct /* message types */
-}
+type Struct = ComponentStruct<
+    AppMsgStruct,
+    // The message bus structure that will serve as the basis for the
+    // component's msgBroker operation. This type maps to Struct["msg"].
+    {
+        props: {
+            // Names and types of component properties that will be reactive
+            // (including nested values) after the component is created.
+            counter: number;
+            message: string;
+            items: Item[];
+        };
+
+        actions: {
+            // Method signatures that perform operations on properties.
+            // Action calls are optimized for batching reactive property
+            // change application.
+            increment: () => void;
+            updateMessage: (text: string) => void;
+        };
+
+        children: {
+            // Names and types of child components.
+            // Types are base structures (similar to this one) of other components.
+            // No implementations (hook-constructors) are required to form the
+            // structure — only type data.
+            header: HeaderStruct;
+            footer: FooterStruct;
+            todoList: TodoListStruct;
+        };
+
+        msgScope: {
+            // Message bus channel names this component works with.
+            // Divided into sections: subscribe, publish, provide.
+            // See @actdim/msgmesh documentation for details.
+            //
+            // msgScope narrows the bus working area (it is normal to use a
+            // global app-wide bus) to this component's zone of responsibility.
+            // This not only makes working with the bus more convenient
+            // (the namespace is not polluted by other channels), but also
+            // lets you immediately see the component's message scope.
+
+            // Channels this component subscribes to (consumes messages from)
+            subscribe: AppMsgChannels<'USER-UPDATED' | 'DATA-LOADED'>;
+
+            // Channels this component publishes messages to
+            publish: AppMsgChannels<'FORM-SUBMITTED'>;
+
+            // Channels for which this component is a response-message
+            // provider ("out" groups) for request-messages ("in" groups)
+            provide: AppMsgChannels<'GET-USER-DATA' | 'VALIDATE-INPUT'>;
+        };
+
+        // List of effect names that will be available in this component.
+        // Effect implementations are defined in ComponentDef (see below).
+        effects: ['loadData', 'syncState'];
+    }
+>;
 ```
+
+| Field | Description |
+|---|---|
+| `props` | Reactive property names and types. All declared properties (including nested values) become reactive after component creation. |
+| `actions` | Method signatures that operate on props. Action calls are optimized for batching reactive property change application. |
+| `children` | Names and types of child components. Uses base structures of other components — **no implementations required, only type data**. |
+| `msgScope` | Message bus channels this component works with. Sections: `subscribe` (incoming message subscriptions), `publish` (outgoing message channels), `provide` (response provider for request-messages). Narrows the global bus scope to this component's responsibility zone. See [@actdim/msgmesh](https://www.npmjs.com/package/@actdim/msgmesh) documentation. |
+| `effects` | List of effect names available in this component. Implementations are defined in `ComponentDef`. |
 
 ### Component Definition
 
-The **ComponentDef** is where you implement the actual component:
+The component implementation is created inside a **hook-constructor** function (`use<ComponentName>`) using the `ComponentDef<Struct>` type. This is where you provide the runtime implementation for the contract declared in the structure:
 
 ```typescript
-const def: ComponentDef<Struct> = {
-    props: { /* initial values */ },
-    actions: { /* action implementations */ },
-    children: { /* child component instances */ },
-    events: { /* component events */ },
-    msgBroker: { /* message handlers */ },
-    effects: { /* lifecycle effects */ },
-    view: (_, c) => <div>/* JSX */</div>
+const useMyComponent = (params: ComponentParams<Struct>) => {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
+        // Component type identifier used when registering in the component tree.
+        // Also used to form the component instance ID, which can be used
+        // (manually) as an HTML id in the component's markup.
+        regType: 'MyComponent',
+
+        props: {
+            // Initial values for properties (types match those declared
+            // in the component structure).
+            counter: params.counter ?? 0,
+            message: params.message ?? 'Hello',
+            items: [],
+        },
+
+        actions: {
+            // Method implementations (signatures match those declared
+            // in the component structure). Actions perform operations on
+            // properties; their calls are optimized for batching reactive
+            // property change application.
+            increment: () => { m.counter++; },
+            updateMessage: (text) => { m.message = text; },
+        },
+
+        effects: {
+            // Effect implementations. Effects are methods similar to actions
+            // (or they simply call actions), but they run automatically as
+            // soon as any property accessed within the effect implementation
+            // changes.
+            //
+            // Effects are accessed on the component instance by name via
+            // the `effects` property (e.g. c.effects.loadData).
+            //
+            // An effect runs immediately when the component is created and
+            // can later be manually paused, resumed, or stopped entirely.
+            loadData: (component) => {
+                console.log('Items count:', m.items.length);
+                // Return an optional cleanup function
+                return () => { /* cleanup */ };
+            },
+            syncState: (component) => {
+                console.log('Counter is', m.counter);
+            },
+        },
+
+        children: {
+            // Child component instances created via their hook-constructors
+            // (use*). When creating children you can initialize their
+            // properties, including bindings, and assign additional (external)
+            // event handlers.
+            header: useHeader({ title: bind(() => m.message) }),
+            footer: useFooter({ year: 2025 }),
+            todoList: useTodoList({
+                items: bind(
+                    () => m.items,
+                    v => { m.items = v; }
+                ),
+            }),
+        },
+
+        events: {
+            // Component event handlers. The type system offers a choice of
+            // all supported events. See the Component Events section below
+            // for the full list.
+            onInit: (component) => { console.log('Initialized'); },
+            onChangeCounter: (value) => {
+                if (value > 100) m.message = 'Counter is high!';
+            },
+        },
+
+        msgBroker: {
+            // Message bus handlers declared in the component structure.
+            // Defined by channels and groups in sections:
+            provide: {
+                // Response-message providers ("out" groups)
+                // for request-messages ("in" groups).
+                'GET-USER-DATA': {
+                    in: {
+                        callback: (msgIn, headers, component) => {
+                            return { userId: '1', name: 'Alice', email: 'a@b.c' };
+                        },
+                    },
+                },
+            },
+            subscribe: {
+                // Handlers for incoming messages.
+                'USER-UPDATED': {
+                    in: {
+                        callback: (msg, component) => {
+                            console.log('User updated:', msg.payload);
+                        },
+                        componentFilter: ComponentMsgFilter.FromDescendants,
+                    },
+                },
+            },
+        },
+
+        // Message bus instance. If not specified, the bus from the
+        // available component model context will be used.
+        // The bus must be compatible with the message structure
+        // declared in the component structure.
+        msgBus: undefined,
+
+        // Component render function that produces the view (JSX).
+        // Uses automatic JSX components created for child components
+        // (accessed via component.children.*.View).
+        // This function is intended to be compact since all wiring
+        // and initialization code is distributed across other
+        // definition areas. Inline capability exists but is mainly
+        // for embedding dynstruct components into regular ones.
+        view: (_, c) => (
+            <div>
+                <h3>{m.message}</h3>
+                <p>Counter: {m.counter}</p>
+                <c.children.header.View />
+                <c.children.todoList.View />
+                <c.children.footer.View />
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
 };
 ```
+
+| Field | Description |
+|---|---|
+| `regType` | Component type identifier used when registering in the component tree. Also used to form the instance ID (can be used as HTML `id`). |
+| `props` | Initial property values (types match the component structure). |
+| `actions` | Method implementations (signatures match the structure). Optimized for batching reactive property changes. |
+| `effects` | Effect implementations — methods that run automatically when any property accessed within them changes. An effect runs on component creation and can be paused, resumed, or stopped via `c.effects.<name>`. Returns an optional cleanup function. |
+| `children` | Child component instances created via hook-constructors (`use*`). Properties can be initialized with values or bindings; external event handlers can be assigned. |
+| `events` | Component event handlers (lifecycle, property changes). See [Component Events](#component-events). |
+| `msgBroker` | Message bus handlers for channels declared in the structure. Contains `provide` (response providers) and `subscribe` (message handlers) sections. |
+| `msgBus` | Explicit message bus instance. If omitted, the bus from the component model context is used. Must be compatible with the declared message structure. |
+| `view` | Render function producing the component's JSX view. Child components are rendered via `c.children.<name>.View`. Intended to be compact — logic is distributed across other definition areas. |
 
 ### Reactive Properties
 
@@ -1245,39 +1437,50 @@ const descendants = component.getChainDown();
 
 ### Component Events
 
-The framework provides **automatic type-safe event handlers** for component lifecycle and property changes. IntelliSense automatically suggests available events based on your component structure.
+The component model provides **automatic type-safe event handlers** for the component lifecycle and property changes. IntelliSense automatically suggests all available events based on the component structure.
+
+The full set of supported events is defined by the `ComponentEvents<TStruct>` type and is divided into three groups: **lifecycle events**, **global property change events**, and **property-specific events**.
 
 #### Lifecycle Events
+
+| Event | Phase | Description |
+|---|---|---|
+| `onInit` | preMount | Initialization event. Called after props and children are set up, but before the HTML representation is inserted into the DOM. |
+| `onLayoutReady` | mount | The HTML representation is ready and inserted into the DOM tree, but the frame has not been painted yet. |
+| `onReady` | postMount | The HTML representation has already been rendered and is visible to the user. The component is fully ready for interaction. |
+| `onLayoutDestroy` | preUnmount | The component's HTML representation is about to be removed from the DOM. |
+| `onDestroy` | unmount | The component is destroyed. All resources should be released. |
+| `onError` | — | An error occurred during component operation. Receives the error object and optional info. |
 
 ```typescript
 const def: ComponentDef<Struct> = {
     events: {
-        // Component initialization (after props are set)
+        // Initialization (preMount)
         onInit: (component) => {
             console.log('Component initialized:', component.id);
         },
 
-        // Component layout complete (after children are created)
-        onLayout: (component) => {
-            console.log('Component layout done');
+        // HTML inserted into DOM, frame not yet painted (mount)
+        onLayoutReady: (component) => {
+            console.log('Component layout ready');
         },
 
-        // Component ready (after effects are executed)
+        // HTML rendered and visible (postMount)
         onReady: (component) => {
             console.log('Component is ready for interaction');
         },
 
-        // Before layout cleanup
+        // HTML representation about to be removed from DOM
         onLayoutDestroy: (component) => {
-            console.log('Cleaning up layout');
+            console.log('Layout will be destroyed');
         },
 
-        // Before component destruction
+        // Component destroyed
         onDestroy: (component) => {
-            console.log('Component will be destroyed');
+            console.log('Component destroyed');
         },
 
-        // Error handling
+        // Error during component operation
         onError: (component, error) => {
             console.error('Component error:', error);
         }
@@ -1287,19 +1490,25 @@ const def: ComponentDef<Struct> = {
 
 #### Global Property Change Events
 
+These events fire when **any** reactive property changes. Useful for cross-cutting concerns like logging, validation, or synchronization.
+
+| Event | Description |
+|---|---|
+| `onPropChanging` | Fires before any reactive property changes. Return `false` to cancel the change. |
+| `onPropChange` | Fires after any reactive property has changed. |
+
 ```typescript
 const def: ComponentDef<Struct> = {
     events: {
-        // Before ANY property changes
+        // Before ANY property changes — return false to cancel
         onPropChanging: (propName, oldValue, newValue) => {
             console.log(`Property ${propName} changing:`, oldValue, '->', newValue);
-            // Return false to cancel change
-            return newValue !== null;
+            return newValue !== null; // cancel if null
         },
 
-        // After ANY property changes
-        onPropChange: (propName, oldValue, newValue) => {
-            console.log(`Property ${propName} changed:`, oldValue, '->', newValue);
+        // After ANY property has changed
+        onPropChange: (propName, value) => {
+            console.log(`Property ${propName} changed to:`, value);
         }
     }
 };
@@ -1307,7 +1516,13 @@ const def: ComponentDef<Struct> = {
 
 #### Property-Specific Events (Automatically Typed)
 
-For each property in `props`, the framework **automatically generates** typed event handlers:
+For each property declared in `props`, the type system **automatically generates** typed event handler slots. IntelliSense provides suggestions for all properties.
+
+| Event pattern | Description |
+|---|---|
+| `onGet<PropName>` | Getter interceptor — called when the property is read. Returns the value. |
+| `onChanging<PropName>` | Fires before a specific property changes. Return `false` to cancel the change. |
+| `onChange<PropName>` | Fires after a specific property has changed. |
 
 ```typescript
 type MyStruct = ComponentStruct<AppMsgStruct, {
@@ -1327,28 +1542,26 @@ const def: ComponentDef<MyStruct> = {
     events: {
         // IntelliSense automatically suggests these based on props!
 
-        // Getter interceptor - called when property is read
+        // Getter interceptor — called when property is read
         onGetCounter: () => {
             console.log('Counter was read');
-            return m.counter; // return actual value
+            return m.counter;
         },
 
-        // Before specific property changes
+        // Before a specific property changes — return false to cancel
         onChangingText: (oldValue, newValue) => {
             console.log('Text changing:', oldValue, '->', newValue);
-            // Return false to cancel, or return modified value
             return newValue.trim(); // sanitize input
         },
 
-        // After specific property changes
-        onChangeText: (oldValue, newValue) => {
-            console.log('Text changed to:', newValue);
-            // Sync with child component
-            c.children.child1.model.value = newValue;
+        // After a specific property has changed
+        onChangeText: (value) => {
+            console.log('Text changed to:', value);
+            c.children.child1.model.value = value;
         },
 
-        onChangeIsActive: (oldValue, newValue) => {
-            if (newValue) {
+        onChangeIsActive: (value) => {
+            if (value) {
                 console.log('Component activated!');
             }
         }
@@ -1428,27 +1641,94 @@ const useForm = (params: ComponentParams<FormStruct>) => {
 - ✅ **Synchronization** - keep parent and child components in sync
 - ✅ **Lifecycle hooks** - respond to component lifecycle stages
 
-### Lifecycle Effects
+### Effects
 
-For side effects with manual cleanup, use `effects`:
+Effects are **auto-tracking reactive functions**. An effect runs immediately when the component is created, and then **re-runs automatically** whenever any reactive property accessed inside it changes. Effect names must first be declared in the component structure, then implemented in `ComponentDef`.
+
+Each effect is accessible on the component instance via `c.effects.<name>` and exposes an `EffectController` with three methods:
+
+| Method | Description |
+|---|---|
+| `pause()` | Suspends the effect. Property changes are ignored until resumed. |
+| `resume()` | Resumes a paused effect and immediately re-evaluates it. |
+| `stop()` | Stops the effect entirely. It will not run again. |
+
+An effect can optionally return a **cleanup function** that is called when the effect is stopped or the component is destroyed.
+
+**Example** — computed `fullName` that auto-updates when `firstName` or `lastName` changes, with pause/resume control:
 
 ```typescript
-const def: ComponentDef<Struct> = {
-    effects: {
-        'loadData': (component) => {
-            // Setup
-            const subscription = component.model.data$.subscribe(data => {
-                console.log('Data updated:', data);
-            });
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+        fullName: string;
+        firstName: string;
+        lastName: string;
+        trackingEnabled: boolean;
+    };
+    children: {
+        firstNameEdit: SimpleEditStruct;
+        lastNameEdit: SimpleEditStruct;
+    };
+    // Declare effect names in the structure
+    effects: 'trackNameChanges';
+}>;
 
-            // Return cleanup function
-            return () => {
-                subscription.unsubscribe();
-            };
-        }
-    }
+const useEffectDemo = (params: ComponentParams<Struct>) => {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
+        props: {
+            fullName: undefined,
+            firstName: 'John',
+            lastName: 'Smith',
+            trackingEnabled: true,
+        },
+        events: {
+            // Toggle effect pause/resume via a property change event
+            onChangeTrackingEnabled: (v) => {
+                if (v) {
+                    c.effects.trackNameChanges.resume();
+                } else {
+                    c.effects.trackNameChanges.pause();
+                }
+            },
+        },
+        effects: {
+            // Runs immediately on creation, then re-runs whenever
+            // m.firstName or m.lastName changes
+            trackNameChanges: (c) => {
+                m.fullName = `${m.firstName} ${m.lastName}`;
+            },
+        },
+        children: {
+            firstNameEdit: useSimpleEdit({
+                value: bindProp(() => m, 'firstName'),
+            }),
+            lastNameEdit: useSimpleEdit({
+                value: bindProp(() => m, 'lastName'),
+            }),
+        },
+        view: (_, c) => (
+            <div id={c.id}>
+                <div>First Name: <c.children.firstNameEdit.View /></div>
+                <div>Last Name: <c.children.lastNameEdit.View /></div>
+                <div>Full Name: {m.fullName}</div>
+                {m.trackingEnabled
+                    ? <button onClick={() => { m.trackingEnabled = false; }}>Pause</button>
+                    : <button onClick={() => { m.trackingEnabled = true; }}>Resume</button>
+                }
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
 };
 ```
+
+In this example the `trackNameChanges` effect accesses `m.firstName` and `m.lastName`, so it re-runs whenever either changes. Clicking **Pause** calls `c.effects.trackNameChanges.pause()`, which suspends the auto-tracking — edits to the name fields no longer update `fullName` until **Resume** is clicked.
 
 ## Examples (React)
 
@@ -1895,7 +2175,6 @@ The framework provides standard message channels for common operations:
 - `$AUTH_ENSURE` - Ensure user is authenticated
 
 #### Access Control
-- `$ACL_GET` - Get access control list
 
 ### Component Lifecycle
 

@@ -1,6 +1,14 @@
 import React from 'react';
 import { MsgBus } from '@actdim/msgmesh/contracts';
-import { isObservable, runInAction, toJS, autorun, IReactionDisposer, observable } from 'mobx';
+import {
+    isObservable,
+    runInAction,
+    toJS,
+    autorun,
+    IReactionDisposer,
+    observable,
+    onReactionError,
+} from 'mobx';
 import type {
     Binding,
     Component,
@@ -17,7 +25,11 @@ import type {
     ValueConverter,
 } from './contracts';
 import { $isBinding, ComponentMsgFilter } from './contracts';
-import { isPlainObject } from 'mobx/dist/internal';
+// import { isPlainObject } from 'mobx/dist/internal';
+
+// onReactionError((err, derivation) => {
+//     console.error(`Reaction "${derivation.name_}" error:`, err);
+// });
 
 const blankView = () => null;
 
@@ -345,7 +357,7 @@ export function createEffect<
                     }
                 },
                 {
-                    name: `effect:${name}`,
+                    name: `${component.id}/effects/${name}`,
                 },
             );
         });
@@ -370,7 +382,7 @@ export function createEffect<
 
     start();
 
-    return { run, pause, resume, stop };
+    return { pause, resume, stop };
 }
 
 // TODO: move to utico

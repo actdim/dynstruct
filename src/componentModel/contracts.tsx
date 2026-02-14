@@ -1,3 +1,4 @@
+// import { FC, PropsWithChildren, ReactNode } from 'react';
 import {
     $CG_IN,
     $CG_OUT,
@@ -10,7 +11,6 @@ import {
     OutStruct,
 } from '@actdim/msgmesh/contracts';
 import { HasKeys, MaybeKeyOf, MaybePromise, Require, Skip } from '@actdim/utico/typeCore';
-import { FC, PropsWithChildren, ReactNode } from 'react';
 
 export type BaseContext<
     TMsgStruct extends MsgStruct = MsgStruct,
@@ -216,6 +216,8 @@ export type ComponentPropSource<T> = T | Binding<T>;
 
 export type ComponentPropParams<TPropStruct extends ComponentPropStruct> = {
     [P in keyof TPropStruct]?: ComponentPropSource<TPropStruct[P]>;
+} & {
+    key?: string | number | null | undefined;
 };
 
 // export const $ON_PROP_CHANGING = "onPropChanging" as const;
@@ -243,12 +245,17 @@ export type ValueChangeHandler<T = any> = (value: T) => void;
 export type ComponentEvents<TStruct extends ComponentStruct = ComponentStruct> = {
     onPropChanging?: PropValueChangingHandler<keyof TStruct['props']>;
     onPropChange?: PropValueChangeHandler<keyof TStruct['props']>;
+    // onPreMount
     onInit?: (component: Component<TStruct>) => void;
-    onLayout?: (component: Component<TStruct>) => void;
+    // onMount
+    onLayoutReady?: (component: Component<TStruct>) => void;
+    // onPostMount
     onReady?: (component: Component<TStruct>) => void;
+    // onPreUnmount
     onLayoutDestroy?: (component: Component<TStruct>) => void; // onLayoutCleanup
+    // onUnmount
     onDestroy?: (component: Component<TStruct>) => void; // onDispose/onCleanup
-    onError?: (component: Component<TStruct>, error: any) => void;
+    onError?: (component: Component<TStruct>, error: unknown, info?: unknown) => unknown; // ReactNode
 } & {
     [P in keyof TStruct['props'] as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
 } & {
@@ -265,16 +272,18 @@ export type ComponentEvents<TStruct extends ComponentStruct = ComponentStruct> =
 
 export type ComponentViewProps = {
     render?: boolean;
-} & PropsWithChildren;
+    // children?: ReactNode | undefined;
+    children?: unknown;
+};
 
 // ComponentRenderImplFn
 export type ComponentViewImplFn<
     TStruct extends ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
-> = (props: ComponentViewProps, component?: Component<TStruct, TMsgHeaders>) => ReactNode; // JSX.Element
+> = (props: ComponentViewProps, component?: Component<TStruct, TMsgHeaders>) => any; // ReactNode
 
 // ComponentRenderFn
-export type ComponentViewFn = (props: ComponentViewProps) => ReactNode; // JSX.Element
+export type ComponentViewFn = (props: ComponentViewProps) => any; // ReactNode
 
 export type ComponentMsgBroker<
     TStruct extends ComponentStruct,
@@ -311,6 +320,8 @@ export type ComponentDef<
     msgBroker?: ComponentMsgBroker<TStruct, TMsgHeaders>;
     msgBus?: MsgBus<TStruct['msg'], TMsgHeaders>;
     view?: ComponentViewImplFn<TStruct, TMsgHeaders>;
+    // useErrorFallback/catchErrors
+    useErrorBoundary?: boolean;
 };
 
 export type ComponentDefChildren<TRefStruct extends ComponentRefStruct> = Require<
@@ -326,12 +337,17 @@ export type ComponentDefChildren<TRefStruct extends ComponentRefStruct> = Requir
     HasKeys<TRefStruct>
 >;
 
+export type RenderFn<P> = {
+    (props: P): any; // ReactNode | Promise<ReactNode>
+    displayName?: string | undefined;
+};
+
 export type ComponentChildren<TRefStruct extends ComponentRefStruct> = {
     readonly [P in keyof TRefStruct as TRefStruct[P] extends Function
         ? `${Capitalize<P & string>}`
         : P]: TRefStruct[P] extends (params: infer TParams) => infer T
         ? T extends ComponentStruct
-            ? FC<ComponentParams<T> & TParams>
+            ? RenderFn<ComponentParams<T> & TParams>
             : never
         : TRefStruct[P] extends ComponentStruct
           ? Component<TRefStruct[P]>
@@ -400,8 +416,6 @@ export type ComponentParams<TStruct extends ComponentStruct = ComponentStruct> =
         }; // & PropsWithChildren?
 
 export type EffectController = {
-    // execute/apply
-    run: () => void;
     pause: () => void;
     resume: () => void;
     stop: () => void;

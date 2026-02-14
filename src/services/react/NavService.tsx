@@ -91,7 +91,7 @@ export const useNavService = (params: ComponentParams<Struct>) => {
             },
         },
         events: {
-            onLayout: (c) => {
+            onLayoutReady: (c) => {
                 const history = m.history;
                 if (history) {
                     const ctx = {
