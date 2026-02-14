@@ -33,10 +33,6 @@ import { $isBinding, ComponentMsgFilter } from './contracts';
 
 const blankView = () => null;
 
-export function isBinding(obj: any): obj is Binding {
-    return obj[$isBinding] === true;
-}
-
 export function bind<T, TFrom = any>(
     get: () => T,
     set?: (value: T) => void,
@@ -392,3 +388,9 @@ export function createEffect<
 //         return result;
 //     };
 // }
+
+// TODO: simple JSX factory as child component
+// TODO: Support async resources via msgbus (TanStack Query/SWR + Suspense)
+// TODO: Support control persistence (with providers)
+// TODO: request cancelation in msgbus
+// TODO: control requestCount via msgbus (for busy state indicator)

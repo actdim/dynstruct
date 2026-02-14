@@ -8,7 +8,7 @@ Build scalable applications with dynamic structured components, explicit wiring,
 
 ## Overview
 
-**@actdim/dynstruct** is a sophisticated TypeScript-based component system and architectural framework for building large-scale, modular applications. It provides a structure-first, declarative approach to component design with:
+**@actdim/dynstruct** is a TypeScript-based component system and architectural framework for building large-scale, modular applications. It provides a structure-first, declarative approach to component design with:
 
 - **Type-safe component model** with explicit dependency wiring
 - **Decoupled messaging architecture** using a message bus for inter-component communication
@@ -389,7 +389,7 @@ function TodoList({ todos }) {
 
 ### MobX Reactivity Pitfalls
 
-While MobX is powerful, it has subtle issues that cause unexpected re-renders and are hard to debug:
+While MobX is capable, it has subtle issues that cause unexpected re-renders and are hard to debug:
 
 #### Problem 1: Computed Returns New Object
 
@@ -731,7 +731,7 @@ Traditional React development offers **too many choices** for managing state and
 - **Personal taste** - "I prefer this pattern because it looks cleaner to me"
 - **Laziness** - "This is faster to write, even if it's not optimal"
 
-When your component architecture is built on **many different principles** and becomes **sophisticated**, understanding where a problem is hiding becomes extremely difficult. Different components use different approaches, making the codebase inconsistent and hard to reason about.
+When your component architecture is built on **many different principles** and becomes **complex**, understanding where a problem is hiding becomes extremely difficult. Different components use different approaches, making the codebase inconsistent and hard to reason about.
 
 **When Problems Surface:**
 - ❌ **Hard to detect** - Inconsistent patterns mask the root cause
@@ -1033,7 +1033,7 @@ children: {
 
 ### Message Bus Communication
 
-dynstruct integrates with **[@actdim/msgmesh](https://www.npmjs.com/package/@actdim/msgmesh)**, a powerful type-safe message bus library that enables decoupled component communication.
+dynstruct integrates with **[@actdim/msgmesh](https://www.npmjs.com/package/@actdim/msgmesh)**, a type-safe message bus library that enables decoupled component communication.
 
 #### Key Benefits
 
@@ -1434,6 +1434,130 @@ const parentId = component.getParent();
 const ancestors = component.getChainUp();
 const descendants = component.getChainDown();
 ```
+
+### Dynamic Content
+
+Not all children need to be full dynstruct components. The `children` field supports three patterns for embedding dynamic content, ranging from lightweight React wrappers to parameterized component factories.
+
+#### 1. React.FC Wrapper
+
+The simplest approach: declare a child as `React.FC` in the structure and provide a plain function returning JSX in the definition. This is useful for small inline fragments that need access to the parent's reactive model but don't require their own component structure.
+
+In the structure, the child type is `React.FC`. In the view, it is accessed with a **capitalized** name (because it's a function type): `<c.children.Summary />`.
+
+```typescript
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+        counter: number;
+    };
+    children: {
+        summary: React.FC;  // standard React functional component
+    };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: { counter: 0 },
+    children: {
+        // Plain function returning JSX — has access to the parent model
+        summary: () => {
+            return <div>Counter: {m.counter}</div>;
+        },
+    },
+    view: (_, c) => (
+        <div>
+            {/* Capitalized because it's a function type */}
+            <c.children.Summary />
+        </div>
+    ),
+};
+```
+
+#### 2. DynamicContent Component
+
+When you need typed data and a render function inside a proper dynstruct component, use `DynamicContentStruct` / `useDynamicContent`. This gives you a component with a reactive `data` prop and a `render` callback, so the content re-renders when the data changes.
+
+```typescript
+import { DynamicContentStruct, useDynamicContent } from '@actdim/dynstruct/componentModel/DynamicContent';
+
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+        text: string;
+    };
+    children: {
+        content: DynamicContentStruct<string, AppMsgStruct>;
+    };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: { text: 'hello' },
+    children: {
+        content: useDynamicContent<string>({
+            // Bind data to a parent property
+            data: bindProp(() => m, 'text'),
+            // Render function — can access the component's own model
+            render: () => {
+                return <>{c.children.content.model.data}</>;
+            },
+        }),
+    },
+    view: (_, c) => (
+        <div>
+            <c.children.content.View />
+        </div>
+    ),
+};
+```
+
+`DynamicContentStruct` is generic: `DynamicContentStruct<TData, TMsgStruct>`. The `data` prop holds typed data (bound to a parent property or passed directly), and `render` produces the JSX.
+
+#### 3. Factory Function (Parameterized Children)
+
+When you need to create multiple instances of a child component dynamically (e.g. in a loop), declare the child as a factory function in the structure. The function accepts parameters and returns a component structure type.
+
+In the view, factory children are also accessed with a **capitalized** name and can receive props (including a `key`):
+
+```typescript
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+        counter: number;
+        text: string;
+    };
+    children: {
+        dynEdit: (props: { value?: string }) => SimpleEditStruct;
+    };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: { counter: 0, text: 'bar' },
+    children: {
+        // Factory: called each time <c.children.DynEdit /> is rendered
+        dynEdit: (params) => {
+            return useSimpleEdit({
+                value: bindProp(() => m, 'text'),
+            });
+        },
+    },
+    view: (_, c) => (
+        <ul>
+            {Array.from({ length: m.counter }).map((_, i) => (
+                <li key={i}>
+                    <c.children.DynEdit key={i} />
+                </li>
+            ))}
+        </ul>
+    ),
+};
+```
+
+#### Summary
+
+| Pattern | Structure type | Access in view | Use case |
+|---|---|---|---|
+| React.FC wrapper | `React.FC` | `<c.children.Name />` | Small inline fragments with access to parent model |
+| DynamicContent | `DynamicContentStruct<TData>` | `<c.children.name.View />` | Typed reactive data with custom render function |
+| Factory function | `(params) => ChildStruct` | `<c.children.Name key={...} />` | Multiple dynamic instances, parameterized creation |
+
+> **Naming convention:** Children declared as function types (`React.FC`, factory functions) are accessed with a **capitalized** name in the view (`c.children.Summary`, `c.children.DynEdit`). Children declared as component structures use their original name (`c.children.content`).
 
 ### Component Events
 
@@ -2174,8 +2298,6 @@ The framework provides standard message channels for common operations:
 - `$AUTH_REFRESH` - Refresh authentication token
 - `$AUTH_ENSURE` - Ensure user is authenticated
 
-#### Access Control
-
 ### Component Lifecycle
 
 Components go through the following lifecycle stages:
@@ -2258,12 +2380,13 @@ npm run storybook
 ```
 
 Available stories:
-- **SimpleComponent** - Basic reactive component with props and children
-- **ConnectionExample** - Message bus producer/consumer pattern
-- **ParentChildConnectionExample** - Parent-child component messaging
-- **ApiCallExample** - HTTP request integration with service adapters
-- **LocalMsgStructExample** - Local message structure with todo list
-- **StorageServiceExample** - Storage service provider usage
+- **dynstruct / Basics / SimpleComponent** - Basic reactive component with props and children
+- **dynstruct / Basics / Api Call Example** - HTTP request integration with service adapters
+- **dynstruct / Basics / Effect Demo** - Auto-tracking reactive effects with pause/resume
+- **dynstruct / Basics / Local Msg Struct** - Local message structure with todo list
+- **dynstruct / Basics / Storage Service** - Storage service provider usage
+- **dynstruct / Connection / Basics** - Message bus producer/consumer pattern
+- **dynstruct / Connection / Parent/Child** - Parent-child component messaging
 
 ## Development
 

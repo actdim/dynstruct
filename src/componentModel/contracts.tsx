@@ -111,7 +111,10 @@ export type ComponentMethodStruct = Record<string, Function>;
 
 // export type ComponentRefStruct = Record<string, ComponentStruct<TMsgStruct, T>>;
 export type ComponentRefStruct = {
-    [name: string]: ComponentStruct | ((params: any) => ComponentStruct);
+    [name: string]:
+        | ComponentStruct
+        | ((params: unknown) => ComponentStruct)
+        | ((params: unknown) => unknown);
 };
 
 export type ComponentStructBase<
@@ -211,6 +214,10 @@ export type Binding<T = any, TFrom = any> = {
     readonly readOnly?: boolean;
     [$isBinding]: true;
 };
+
+export function isBinding(obj: any): obj is Binding {
+    return typeof obj == 'object' && obj && obj[$isBinding] === true;
+}
 
 export type ComponentPropSource<T> = T | Binding<T>;
 
@@ -329,7 +336,7 @@ export type ComponentDefChildren<TRefStruct extends ComponentRefStruct> = Requir
         [P in keyof TRefStruct]: TRefStruct[P] extends (params: infer TParams) => infer T
             ? T extends ComponentStruct
                 ? (params: TParams) => Component<T>
-                : never
+                : (params: TParams) => T // ReactNode for example
             : TRefStruct[P] extends ComponentStruct
               ? Component<TRefStruct[P]>
               : never;
@@ -348,7 +355,7 @@ export type ComponentChildren<TRefStruct extends ComponentRefStruct> = {
         : P]: TRefStruct[P] extends (params: infer TParams) => infer T
         ? T extends ComponentStruct
             ? RenderFn<ComponentParams<T> & TParams>
-            : never
+            : (params: TParams) => T // ReactNode for example
         : TRefStruct[P] extends ComponentStruct
           ? Component<TRefStruct[P]>
           : never;
@@ -361,12 +368,14 @@ export type ComponentMsgStruct<TStruct extends ComponentStruct = ComponentStruct
     | MaybeKeyOf<TStruct['msg'], TStruct['msgScope']['publish']>
 >;
 
+export const $isComponent = Symbol('isComponent'); // brand
 // style?: CSSProperties;
 // classNames?: string[];
 export type ComponentBase<
     TStruct extends ComponentStruct = ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = {
+    readonly [$isComponent]: true;
     readonly id: string;
     readonly key: string;
     readonly regType: string;
@@ -390,6 +399,10 @@ export type ComponentBase<
     readonly View: ComponentViewFn;
     readonly [Symbol.dispose]: () => void;
 };
+
+export function isComponent(obj: any): obj is ComponentBase {
+    return typeof obj == 'object' && obj && obj[$isComponent] === true;
+}
 
 export type ComponentModel<TStruct extends ComponentStruct = ComponentStruct> = TStruct['props'] &
     Readonly<TStruct['actions']>;

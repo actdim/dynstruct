@@ -6,7 +6,7 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
 import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
@@ -23,11 +23,12 @@ type Struct = ComponentStruct<
             text: string;
         };
         children: {
+            summary: React.FC;
             button: SimpleButtonStruct;
             edit: SimpleEditStruct;
             content: DynamicContentStruct<string, AppMsgStruct>;
             dynEdit: (props: { value?: string }) => SimpleEditStruct;
-        };        
+        };
     }
 >;
 
@@ -41,6 +42,9 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
             text: 'bar',
         },
         children: {
+            summary: () => {
+                return <div>Counter: {m.counter}</div>;
+            },
             button: useSimpleButton({
                 content: 'Add input',
                 onClick: () => {
@@ -75,15 +79,15 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
         view: (_, c) => {
             return (
                 <div id={c.id}>
-                    <div>Counter: {m.counter}</div>
+                    <c.children.Summary />
                     <div>
-                        Button: <c.children.button.View></c.children.button.View>
+                        Button: <c.children.button.View />
                     </div>
                     <div>
-                        Edit: <c.children.edit.View></c.children.edit.View>
+                        Edit: <c.children.edit.View />
                     </div>
                     <div>
-                        Content: <c.children.content.View></c.children.content.View>
+                        Content: <c.children.content.View />
                     </div>
                     <ul>
                         {Array.from({ length: m.counter }).map((_, i) => (
@@ -99,7 +103,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
 
     c = useComponent(def, params);
     m = c.model;
-    
+
     return c;
 };
 

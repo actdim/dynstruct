@@ -6,6 +6,7 @@ import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
 import { ReactComponentContext, useComponentContext } from './componentContext';
 import {
+    $isComponent,
     Binding,
     Component,
     ComponentChildren,
@@ -20,17 +21,18 @@ import {
     ComponentViewProps,
     EffectController,
     EffectFn,
+    isBinding,
+    isComponent,
     ValueChangeHandler,
     ValueChangingHandler,
 } from './contracts';
-import { $ON_CHANGE, $ON_CHANGING, $ON_GET, $isBinding, ComponentMsgFilter } from './contracts';
+import { $ON_CHANGE, $ON_CHANGING, $ON_GET, ComponentMsgFilter } from './contracts';
 import { lazy } from '@actdim/utico/utils';
 import {
     createEffect,
     createRecursiveProxy,
     getComponentSourceByCaller,
     getComponentMsgBus,
-    isBinding,
     ProxyEventHandlers,
     registerMsgBroker,
     toHtmlId,
@@ -265,7 +267,12 @@ function createComponent<
                 const view = value as (params: any) => Component;
                 const ChildViewFC: ComponentViewImplFn<TStruct> = (props) => {
                     const c = view(props);
-                    return <c.View />;
+                    if (isComponent(c) && c.View) {
+                        return <c.View />;
+                    } else {
+                        return c;
+                    }
+
                     // if (typeof c.view === "function") {
                     //     return c.view(props);
                     // }
@@ -378,6 +385,7 @@ function createComponent<
     model = createRecursiveProxy(model, bindings, proxyEventHandlers);
 
     component = {
+        [$isComponent]: true,
         id: params.$id,
         key: params.$key,
         regType: regType,
