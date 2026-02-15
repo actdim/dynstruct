@@ -11,15 +11,16 @@ import { appMsgBus, AppMsgStruct } from './bootstrap'; // appDomain
 import { DataItem, TestApiClient } from './TestApiClient';
 import { KeysOf } from '@actdim/utico/typeCore';
 import { ClientBase } from '@/net/client';
-import {
-    BaseServiceSuffix,
-    ToMsgStruct,
-    ToMsgChannelPrefix,
-    MsgProviderAdapter,
-    getMsgChannelSelector,
-} from '@/componentModel/adapters';
+
 import { ServiceProvider } from '@/services/react/ServiceProvider';
 import { createServiceProvider } from '@/services/ServiceProvider';
+import {
+    BaseServiceSuffix,
+    getMsgChannelSelector,
+    MsgProviderAdapter,
+    ToMsgChannelPrefix,
+    ToMsgStruct,
+} from '@actdim/msgmesh/adapters';
 
 type ServiceSuffix = BaseServiceSuffix;
 type BaseApiPrefix = 'API';
@@ -76,37 +77,37 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
+    async function loadData() {
+        const msg = await c.msgBus.request({
+            channel: 'API.TEST.GETDATAITEMS',
+            payloadFn: (fn) => fn([1, 2], ['first', 'second']),
+            // payload: [
+            //     [1, 2],
+            //     ['first', 'second'],
+            // ],
+        });
+        m.dataItems = msg.payload;
+    }
+
+    async function clear() {
+        m.dataItems.length = 0;
+    }
+
     const def: ComponentDef<Struct> = {
         regType: 'ApiCallExample',
         props: {
             dataItems: [],
         },
-
+        events: {
+            onReady: (c) => {
+                loadData();
+            },
+        },
         view: (_, c) => {
             return (
                 <div id={c.id}>
-                    <button
-                        onClick={async () => {
-                            const msg = await c.msgBus.request({
-                                channel: 'API.TEST.GETDATAITEMS',
-                                payloadFn: (fn) => fn([1, 2], ['first', 'second']),
-                                // payload: [
-                                //     [1, 2],
-                                //     ['first', 'second'],
-                                // ],
-                            });
-                            m.dataItems = msg.payload;
-                        }}
-                    >
-                        Request
-                    </button>
-                    <button
-                        onClick={() => {
-                            m.dataItems = [];
-                        }}
-                    >
-                        Clear
-                    </button>
+                    <button onClick={loadData}>Load data</button>
+                    <button onClick={clear}>Clear</button>
                     <ul>
                         {m.dataItems.map((item) => (
                             <li>

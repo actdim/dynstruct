@@ -6,6 +6,30 @@ Build scalable applications with dynamic structured components, explicit wiring,
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Framework Support](#framework-support)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [How It Works](#how-it-works)
+- [Installation](#installation)
+- [Getting Started (React)](#getting-started-react)
+- [Key Advantages (React Examples)](#key-advantages-react-examples)
+- [Core Concepts](#core-concepts)
+- [More Examples (React)](#more-examples-react)
+- [Architecture](#architecture)
+- [API Reference](#api-reference)
+- [Storybook Examples](#storybook-examples)
+- [Development](#development)
+- [Package Management](#package-management)
+- [Contributing](#contributing)
+- [License](#license)
+- [Author](#author)
+- [Repository](#repository)
+- [Issues](#issues)
+- [Keywords](#keywords)
+
 ## Overview
 
 **@actdim/dynstruct** is a TypeScript-based component system and architectural framework for building large-scale, modular applications. It provides a structure-first, declarative approach to component design with:
@@ -76,6 +100,7 @@ npm install @actdim/dynstruct
 ### Peer Dependencies
 
 This package requires the following peer dependencies:
+For message bus functionality, install [@actdim/msgmesh](https://www.npmjs.com/package/@actdim/msgmesh).
 
 ```bash
 npm install react react-dom mobx mobx-react-lite mobx-utils \
@@ -92,7 +117,7 @@ pnpm add @actdim/dynstruct @actdim/msgmesh @actdim/utico \
   jwt-decode http-status
 ```
 
-## Quick Start (React)
+## Getting Started (React)
 
 > **Note:** All examples below are for the **React** implementation. SolidJS and Vue.js versions will have similar structure with framework-specific adapters.
 
@@ -824,7 +849,7 @@ type Struct = ComponentStruct<
 
         // List of effect names that will be available in this component.
         // Effect implementations are defined in ComponentDef (see below).
-        effects: ['loadData', 'syncState'];
+        effects: ['computeSummary', 'trackCounter'];
     }
 >;
 ```
@@ -870,23 +895,24 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
         },
 
         effects: {
-            // Effect implementations. Effects are methods similar to actions
-            // (or they simply call actions), but they run automatically as
-            // soon as any property accessed within the effect implementation
-            // changes.
+            // Effect implementations. Effects are auto-tracking reactive
+            // functions that re-run automatically whenever any reactive
+            // property accessed inside them changes.
             //
             // Effects are accessed on the component instance by name via
-            // the `effects` property (e.g. c.effects.loadData).
+            // the `effects` property (e.g. c.effects.computeSummary).
             //
             // An effect runs immediately when the component is created and
             // can later be manually paused, resumed, or stopped entirely.
-            loadData: (component) => {
-                console.log('Items count:', m.items.length);
+            computeSummary: (component) => {
+                // Re-runs whenever m.items changes
+                m.message = `Total items: ${m.items.length}`;
                 // Return an optional cleanup function
                 return () => { /* cleanup */ };
             },
-            syncState: (component) => {
-                console.log('Counter is', m.counter);
+            trackCounter: (component) => {
+                // Re-runs whenever m.counter changes
+                if (m.counter > 100) m.message = 'Counter is high!';
             },
         },
 
@@ -1719,18 +1745,18 @@ const useForm = (params: ComponentParams<FormStruct>) => {
             isValid: false
         },
         events: {
-            // Validate email when it changes
-            onChangeEmail: (oldValue, newValue) => {
+            // Validate email after it changes — onChange receives only the new value
+            onChangeEmail: (value) => {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                m.isValid = emailRegex.test(newValue) && m.password.length >= 6;
+                m.isValid = emailRegex.test(value) && m.password.length >= 6;
             },
 
-            // Validate password when it changes
-            onChangePassword: (oldValue, newValue) => {
-                m.isValid = m.email.includes('@') && newValue.length >= 6;
+            // Validate password after it changes
+            onChangePassword: (value) => {
+                m.isValid = m.email.includes('@') && value.length >= 6;
             },
 
-            // Sanitize input before setting
+            // Sanitize input before setting — onChanging receives (oldValue, newValue)
             onChangingEmail: (oldValue, newValue) => {
                 return newValue.toLowerCase().trim();
             }
@@ -1854,113 +1880,117 @@ const useEffectDemo = (params: ComponentParams<Struct>) => {
 
 In this example the `trackNameChanges` effect accesses `m.firstName` and `m.lastName`, so it re-runs whenever either changes. Clicking **Pause** calls `c.effects.trackNameChanges.pause()`, which suspends the auto-tracking — edits to the name fields no longer update `fullName` until **Resume** is clicked.
 
-## Examples (React)
+## More Examples (React)
 
-> **Note:** All examples below are for the **React** implementation.
+> **Note:** For basic examples (simple component, parent-child, bindings, events, effects) see the [Getting Started](#getting-started-react) and [Core Concepts](#core-concepts) sections above.
 
-### Example 1: Simple Counter Component
+### Service Integration (API Calls)
+
+dynstruct integrates with the **service adapter** system from [@actdim/msgmesh](https://github.com/actdim/msgmesh/?tab=readme-ov-file#service-adapters). Adapters automatically register any service class (e.g. an API client) as a message bus provider — channel names, payload types, and return types are all derived from the service class at compile time.
+
+#### 1. Define an API client
 
 ```typescript
-// React implementation
-import { ComponentStruct, ComponentDef, ComponentParams } from '@actdim/dynstruct/componentModel/contracts';
-import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react';
-import { AppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
+export type DataItem = { id: number; name: string };
 
-type CounterStruct = ComponentStruct<AppMsgStruct, {
-    props: { count: number };
-    actions: { increment: () => void; decrement: () => void };
-}>;
+export class TestApiClient {
+    static readonly name = 'TestApiClient' as const;
+    readonly name = 'TestApiClient' as const;
 
-const useCounter = (params: ComponentParams<CounterStruct>) => {
-    const def: ComponentDef<CounterStruct> = {
-        props: { count: params.count ?? 0 },
-        actions: {
-            increment: () => { c.model.count++; },
-            decrement: () => { c.model.count--; }
-        },
-        view: (_, c) => (
-            <div>
-                <h2>Counter: {c.model.count}</h2>
-                <button onClick={c.actions.increment}>+</button>
-                <button onClick={c.actions.decrement}>-</button>
-            </div>
-        )
-    };
-
-    const c = useComponent(def, params);
-    return c;
-};
-
-export const Counter = toReact(useCounter);
+    getDataItems(param1: number[], param2: string[]): Promise<DataItem[]> {
+        return fetch('/api/data').then(r => r.json());
+    }
+}
 ```
 
-### Example 2: Component with Children
+#### 2. Set up adapters and service provider
+
+Type utilities from [`@actdim/msgmesh/adapters`](https://www.npmjs.com/package/@actdim/msgmesh) transform the service class into a typed bus structure. Each public method becomes a channel (e.g. `getDataItems` → `API.TEST.GETDATAITEMS`). See [@actdim/msgmesh — Service Adapters](https://github.com/actdim/msgmesh/?tab=readme-ov-file#service-adapters) for details on how the type transformation works.
 
 ```typescript
-// React implementation
-import { ComponentStruct, ComponentDef, ComponentParams } from '@actdim/dynstruct/componentModel/contracts';
-import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react';
-import { AppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
+import {
+    BaseServiceSuffix, getMsgChannelSelector, MsgProviderAdapter,
+    ToMsgChannelPrefix, ToMsgStruct,
+} from '@actdim/msgmesh/adapters';
+import { ServiceProvider } from '@actdim/dynstruct/services/react/ServiceProvider';
 
-// Child component
-type ButtonStruct = ComponentStruct<AppMsgStruct, {
-    props: { label: string; onClick: () => void };
-}>;
+// "TestApiClient" → remove suffix "Client" → uppercase → "API.TEST."
+type ApiPrefix = 'API';
+type TestApiChannelPrefix = ToMsgChannelPrefix<
+    typeof TestApiClient.name, ApiPrefix, BaseServiceSuffix
+>;
 
-const useButton = (params: ComponentParams<ButtonStruct>) => {
-    const def: ComponentDef<ButtonStruct> = {
-        props: {
-            label: params.label ?? 'Click',
-            onClick: params.onClick ?? (() => {})
-        },
-        view: (_, c) => (
-            <button onClick={c.model.onClick}>{c.model.label}</button>
-        )
-    };
-    return useComponent(def, params);
+// Transform service methods into a bus struct
+type ApiMsgStruct = ToMsgStruct<TestApiClient, TestApiChannelPrefix>;
+
+// Create adapter instances
+const services: Record<TestApiChannelPrefix, any> = {
+    'API.TEST.': new TestApiClient(),
 };
 
-// Parent component with children
-type PanelStruct = ComponentStruct<AppMsgStruct, {
-    props: { title: string; clickCount: number };
-    children: {
-        okButton: ButtonStruct;
-        cancelButton: ButtonStruct;
+const msgProviderAdapters = Object.entries(services).map(
+    ([_, service]) => ({
+        service,
+        channelSelector: getMsgChannelSelector(services),
+    }) as MsgProviderAdapter,
+);
+
+// React provider component — wraps children with registered adapters
+export const ApiServiceProvider = () => ServiceProvider({ adapters: msgProviderAdapters });
+```
+
+#### 3. Use in a component
+
+Data loading is a plain async function — it has nothing to do with effects. Call it from an event handler (`onReady`) or directly from a button click.
+
+```typescript
+type Struct = ComponentStruct<ApiMsgStruct, {
+    props: {
+        dataItems: DataItem[];
+    };
+    msgScope: {
+        subscribe: ComponentMsgChannels<'API.TEST.GETDATAITEMS'>;
+        publish: ComponentMsgChannels<'API.TEST.GETDATAITEMS'>;
     };
 }>;
 
-const usePanel = (params: ComponentParams<PanelStruct>) => {
-    let c: Component<PanelStruct>;
-    let m: ComponentModel<PanelStruct>;
+const useApiCallExample = (params: ComponentParams<Struct>) => {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
 
-    const def: ComponentDef<PanelStruct> = {
+    // Plain async function — not an effect, not an action
+    async function loadData() {
+        const msg = await c.msgBus.request({
+            channel: 'API.TEST.GETDATAITEMS',
+            payloadFn: (fn) => fn([1, 2], ['first', 'second']),
+        });
+        m.dataItems = msg.payload;
+    }
+
+    async function clear() {
+        m.dataItems.length = 0;
+    }
+
+    const def: ComponentDef<Struct> = {
+        regType: 'ApiCallExample',
         props: {
-            title: params.title ?? 'Panel',
-            clickCount: 0
+            dataItems: [],
         },
-        children: {
-            okButton: useButton({
-                label: 'OK',
-                onClick: () => {
-                    m.clickCount++; // Reactive property update
-                    console.log('OK clicked');
-                }
-            }),
-            cancelButton: useButton({
-                label: 'Cancel',
-                onClick: () => console.log('Cancel clicked')
-            })
+        events: {
+            // Load data when the component is ready
+            onReady: () => { loadData(); },
         },
         view: (_, c) => (
-            <div className="panel">
-                <h3>{m.title}</h3>
-                <p>Clicks: {m.clickCount}</p>
-                <div className="buttons">
-                    <c.children.okButton.View />
-                    <c.children.cancelButton.View />
-                </div>
+            <div id={c.id}>
+                <button onClick={loadData}>Load data</button>
+                <button onClick={clear}>Clear</button>
+                <ul>
+                    {m.dataItems.map((item) => (
+                        <li key={item.id}>{item.id}: {item.name}</li>
+                    ))}
+                </ul>
             </div>
-        )
+        ),
     };
 
     c = useComponent(def, params);
@@ -1968,188 +1998,10 @@ const usePanel = (params: ComponentParams<PanelStruct>) => {
     return c;
 };
 
-export const Panel = toReact(usePanel);
+export const ApiCallExample = toReact(useApiCallExample);
 ```
 
-### Example 3: Message Bus Producer/Consumer
-
-```typescript
-// React implementation
-import { ComponentStruct, ComponentDef, ComponentParams, Component, ComponentModel } from '@actdim/dynstruct/componentModel/contracts';
-import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react';
-import { AppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
-
-// Producer Component
-type ProducerStruct = ComponentStruct<AppMsgStruct, {
-    msgScope: {
-        provide: {
-            'EVENT-FIRED': { timestamp: number; data: string };
-        };
-    };
-}>;
-
-const useProducer = (params: ComponentParams<ProducerStruct>) => {
-    const def: ComponentDef<ProducerStruct> = {
-        // msgBroker is part of ComponentDef
-        msgBroker: {
-            provide: {
-                'EVENT-FIRED': {
-                    callback: () => ({
-                        timestamp: Date.now(),
-                        data: 'Event fired from producer'
-                    })
-                }
-            }
-        },
-        view: (_, c) => (
-            <button onClick={() => {
-                // Use component's msgBus to send
-                c.msgBus.send({
-                    channel: 'EVENT-FIRED',
-                    payload: {}
-                });
-            }}>
-                Fire Event
-            </button>
-        )
-    };
-    return useComponent(def, params);
-};
-
-export const Producer = toReact(useProducer);
-
-// Consumer Component
-type ConsumerStruct = ComponentStruct<AppMsgStruct, {
-    props: { lastEvent: string };
-    msgScope: {
-        subscribe: {
-            'EVENT-FIRED': { timestamp: number; data: string };
-        };
-    };
-}>;
-
-const useConsumer = (params: ComponentParams<ConsumerStruct>) => {
-    let c: Component<ConsumerStruct>;
-    let m: ComponentModel<ConsumerStruct>;
-
-    const def: ComponentDef<ConsumerStruct> = {
-        props: { lastEvent: 'No events yet' },
-        // msgBroker subscribes to messages
-        msgBroker: {
-            subscribe: {
-                'EVENT-FIRED': {
-                    callback: (msg) => {
-                        // Update reactive property
-                        m.lastEvent = `${msg.payload.data} at ${new Date(msg.payload.timestamp).toLocaleTimeString()}`;
-                    }
-                }
-            }
-        },
-        view: (_, c) => (
-            <div>
-                <p>Last Event: {m.lastEvent}</p>
-            </div>
-        )
-    };
-
-    c = useComponent(def, params);
-    m = c.model; // Properties are now reactive
-    return c;
-};
-
-export const Consumer = toReact(useConsumer);
-```
-
-### Example 4: Service Integration (API Calls)
-
-```typescript
-// React implementation
-import { ComponentStruct, ComponentDef, ComponentParams, Component, ComponentModel } from '@actdim/dynstruct/componentModel/contracts';
-import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react';
-import { AppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
-import { ClientBase } from '@actdim/dynstruct/net/client';
-import { MsgProviderAdapter } from '@actdim/dynstruct/componentModel/adapters';
-import { ServiceProvider } from '@actdim/dynstruct/services/ServiceProvider';
-
-// Define API client
-class UserApiClient extends ClientBase {
-    constructor() {
-        super({ baseUrl: 'https://api.example.com' });
-    }
-
-    async getUsers() {
-        return this.get<User[]>('/users');
-    }
-
-    async createUser(data: CreateUserDto) {
-        return this.post<User>('/users', data);
-    }
-
-    async deleteUser(id: string) {
-        return this.delete(`/users/${id}`);
-    }
-}
-
-// Create adapter
-const userApiAdapter: MsgProviderAdapter<UserApiClient> = {
-    service: new UserApiClient(),
-    channelSelector: (service, method) => `API.USERS.${method.toUpperCase()}`
-};
-
-// Register in app provider
-export const ApiServiceProvider = () =>
-    ServiceProvider({ adapters: [userApiAdapter] });
-
-// Use in component
-type AppStruct = ComponentStruct<AppMsgStruct, {
-    props: { users: User[]; loading: boolean };
-}>;
-
-const useApp = (params: ComponentParams<AppStruct>) => {
-    let c: Component<AppStruct>;
-    let m: ComponentModel<AppStruct>;
-
-    const def: ComponentDef<AppStruct> = {
-        props: {
-            users: [],
-            loading: false
-        },
-        effects: {
-            'loadUsers': async (component) => {
-                m.loading = true; // Reactive update
-                const response = await component.msgBus.request({
-                    channel: 'API.USERS.GETUSERS',
-                    payload: {}
-                });
-                m.users = response.payload; // Reactive update
-                m.loading = false;
-            }
-        },
-        view: (_, c) => (
-            <div>
-                <h2>Users</h2>
-                {m.loading ? (
-                    <p>Loading...</p>
-                ) : (
-                    <ul>
-                        {m.users.map(user => (
-                            <li key={user.id}>{user.name}</li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-        )
-    };
-
-    c = useComponent(def, params);
-    m = c.model; // Properties are reactive after useComponent
-    return c;
-};
-
-export const App = toReact(useApp);
-```
-
-### Example 5: Navigation
+### Navigation
 
 ```typescript
 // React implementation
@@ -2196,7 +2048,7 @@ const usePage = (params: ComponentParams<PageStruct>) => {
 export const Page = toReact(usePage);
 ```
 
-### Example 6: Authentication & Security
+### Authentication & Security
 
 ```typescript
 // React implementation
@@ -2321,9 +2173,11 @@ Messages can be filtered by source using `ComponentMsgFilter`:
 msgBroker: {
     subscribe: {
         'MY-EVENT': {
-            filter: { FromAncestors: true },
-            callback: (msg) => {
-                // Only triggered by parent components
+            in: {
+                callback: (msg, component) => {
+                    // Only triggered by parent/ancestor components
+                },
+                componentFilter: ComponentMsgFilter.FromAncestors
             }
         }
     }

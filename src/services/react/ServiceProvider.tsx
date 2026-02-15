@@ -1,6 +1,6 @@
 import { useComponentContext } from '@/componentModel/componentContext';
+import { MsgProviderAdapter, registerAdapters } from '@actdim/msgmesh/adapters';
 import { createContext, PropsWithChildren, useLayoutEffect } from 'react';
-import { MsgProviderAdapter, registerAdapters } from '../../componentModel/adapters';
 import React from 'react';
 
 const ReactContext = createContext<{

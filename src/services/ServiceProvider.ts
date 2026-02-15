@@ -1,5 +1,5 @@
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
-import { MsgProviderAdapter, registerAdapters } from '../componentModel/adapters';
+import { MsgProviderAdapter, registerAdapters } from '@actdim/msgmesh/adapters';
 import { MsgBus } from '@actdim/msgmesh/contracts';
 
 export function createServiceProvider(msgBus: MsgBus<BaseAppMsgStruct>, adapters?: MsgProviderAdapter[], abortSignal?: AbortSignal) {
