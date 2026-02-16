@@ -1,4 +1,4 @@
-import { $C_ERROR, MsgStructBase, MsgStructFactory } from "@actdim/msgmesh/contracts";
+import { $C_ERROR, MsgStruct, MsgStructBase } from "@actdim/msgmesh/contracts";
 import { BaseSecurityDomainConfig as BaseSecurityDomainConfig, BaseSecurityMsgStruct } from "@/appDomain/security/securityContracts";
 import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";
@@ -124,7 +124,7 @@ export type AppError = {
 
 // Base(App)ApiMsgStruct
 export type BaseApiMsgStruct = BaseSecurityMsgStruct &
-    MsgStructFactory<{
+    MsgStruct<{
         // "GET-VERSION"?: {
         //     in: any;
         // };
@@ -155,7 +155,7 @@ export type Severity =
 
 // BaseAppMsgStruct
 export type BaseAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes> = BaseApiMsgStruct &
-    MsgStructFactory<
+    MsgStruct<
         {
             [$NOTICE]: {
                 in: {

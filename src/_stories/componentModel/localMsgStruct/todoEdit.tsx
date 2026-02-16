@@ -29,10 +29,10 @@ export const useTodoEdit = (params: ComponentParams<Struct>) => {
     const def: ComponentDef<Struct, LocalMsgHeaders> = {
         props: {
             item: { id: 1, name: 'Wake Up' },
-            priority: undefined,
+            priority: 0,
         },
 
-        view: (_, c) => {
+        view: () => {
             return (
                 <>
                     <p>
@@ -56,7 +56,7 @@ export const useTodoEdit = (params: ComponentParams<Struct>) => {
                         ></input>
                     </p>
                     <p>
-                        Category:
+                        Priority:
                         <input
                             type="text"
                             value={m.priority}

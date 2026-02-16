@@ -1,14 +1,5 @@
-import React from 'react';
-import { MsgBus } from '@actdim/msgmesh/contracts';
-import {
-    isObservable,
-    runInAction,
-    toJS,
-    autorun,
-    IReactionDisposer,
-    observable,
-    onReactionError,
-} from 'mobx';
+import { MsgBus, MsgSubOptions, PromiseOptions } from '@actdim/msgmesh/contracts';
+import { isObservable, runInAction, toJS, autorun, IReactionDisposer, observable } from 'mobx';
 import type {
     Binding,
     Component,
@@ -201,26 +192,21 @@ export function getComponentNameByCaller(depth = 2): string | null {
 
 export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStruct>(
     component: Component<TStruct>,
-    abortController: AbortController,
 ) {
-    const abortSignal = AbortSignal.any([
-        component.msgBroker.abortController.signal,
-        abortController.signal,
-    ]);
     const providers = component?.msgBroker.provide;
     if (providers) {
         for (const [channel, providerGroups] of Object.entries(providers)) {
             for (const [g, p] of Object.entries(providerGroups)) {
-                const provider = p as MsgChannelGroupProviderParams;
-                const callback = provider.callback;
+                const providerParams = p as MsgChannelGroupProviderParams;
+                const callback = providerParams.callback;
                 if (callback) {
-                    provider.callback = (msg, headers) => {
+                    providerParams.callback = (msg, headers) => {
                         return callback(msg, headers, component);
                     };
                 }
-                const filter = provider.filter;
-                const componentFilter = provider.componentFilter || ComponentMsgFilter.None;
-                provider.filter = (msg) => {
+                const filter = providerParams.filter;
+                const componentFilter = providerParams.componentFilter || ComponentMsgFilter.None;
+                providerParams.filter = (msg) => {
                     let result = true;
                     if (componentFilter & ComponentMsgFilter.FromAncestors) {
                         const ancestorIds = component.getChainUp();
@@ -240,9 +226,6 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
                     ...p,
                     channel: channel,
                     group: g,
-                    options: {
-                        abortSignal: abortController.signal,
-                    },
                 });
             }
         }
@@ -251,16 +234,16 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
     if (subscribers) {
         for (const [channel, subscriberGroups] of Object.entries(subscribers)) {
             for (const [g, s] of Object.entries(subscriberGroups)) {
-                const subscriber = s as MsgChannelGroupSubscriberParams;
-                const callback = subscriber.callback;
+                const subscriberParams = s as MsgChannelGroupSubscriberParams;
+                const callback = subscriberParams.callback;
                 if (callback) {
-                    subscriber.callback = (msg) => {
+                    subscriberParams.callback = (msg) => {
                         return callback(msg, component);
                     };
                 }
-                const filter = subscriber.filter;
-                const componentFilter = subscriber.componentFilter || ComponentMsgFilter.None;
-                subscriber.filter = (msg) => {
+                const filter = subscriberParams.filter;
+                const componentFilter = subscriberParams.componentFilter || ComponentMsgFilter.None;
+                subscriberParams.filter = (msg) => {
                     let result = true;
                     if (componentFilter & ComponentMsgFilter.FromAncestors) {
                         const ancestorIds = component.getChainUp();
@@ -280,9 +263,6 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
                     ...s,
                     channel: channel,
                     group: g,
-                    options: {
-                        abortSignal: abortController.signal,
-                    },
                 });
             }
         }
@@ -292,38 +272,53 @@ export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStr
 export function getComponentMsgBus<
     TStruct extends ComponentStruct = ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
->(msgBus: MsgBus<TStruct['msg'], TMsgHeaders>, headerSetter: (headers?: TMsgHeaders) => void) {
-    const updateParams = (params: { payload?: any; headers?: TMsgHeaders }) => {
-        if (params.payload != undefined) {
-            params.payload = structuredClone(toJS(params.payload)); // always?
-        }
-        if (!params.headers) {
+>(
+    msgBus: MsgBus<TStruct['msg'], TMsgHeaders>,
+    globalAbortSignal: AbortSignal,
+    headerSetter: (headers?: TMsgHeaders) => void,
+) {
+    type OpParams = {
+        headers?: TMsgHeaders;
+        options?: PromiseOptions | MsgSubOptions;
+        payload?: unknown;
+    };
+    function getParams<TParams extends OpParams>(params: TParams, hasHeaders = false) {
+        if (hasHeaders && !params.headers) {
             params.headers = {} as TMsgHeaders;
         }
         headerSetter?.(params.headers);
-    };
+        if (params.payload != undefined) {
+            params.payload = structuredClone(toJS(params.payload));
+        }
+        if (!params.options) {
+            params.options = {};
+        }
+        let abortSignal = globalAbortSignal;
+        if (params.options.abortSignal) {
+            abortSignal = AbortSignal.any([params.options.abortSignal, globalAbortSignal]);
+        }
+        params.options.abortSignal = abortSignal;
+        return params;
+    }
     return {
         config: msgBus.config,
         on: (params) => {
-            return msgBus.on(params);
+            return msgBus.on(getParams(params, false));
         },
         once: (params) => {
-            return msgBus.once(params);
+            return msgBus.once(getParams(params, false));
         },
         stream: (params) => {
-            return msgBus.stream(params);
+            return msgBus.stream(getParams(params, false));
         },
         provide: (params) => {
-            updateParams(params);
-            return msgBus.provide(params);
+            return msgBus.provide(getParams(params, true));
         },
         send: (params) => {
-            updateParams(params);
-            return msgBus.send(params);
+            return msgBus.send(getParams(params, true));
         },
         request: (params) => {
-            updateParams(params);
-            return msgBus.request(params);
+            return msgBus.request(getParams(params, true));
         },
     } as MsgBus<TStruct['msg'], TMsgHeaders>;
 }

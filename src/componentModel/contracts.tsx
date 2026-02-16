@@ -93,9 +93,7 @@ export type MsgBrokerScope<
     TKeysToPublish extends keyof TStruct = keyof TStruct,
 > = {
     provide?: TKeysToProvide;
-    // consume
     subscribe?: TKeysToSubscribe;
-    // produce
     publish?: TKeysToPublish;
 };
 
@@ -279,8 +277,7 @@ export type ComponentEvents<TStruct extends ComponentStruct = ComponentStruct> =
 
 export type ComponentViewProps = {
     render?: boolean;
-    // children?: ReactNode | undefined;
-    children?: unknown;
+    children?: unknown; // ReactNode | undefined
 };
 
 // ComponentRenderImplFn
@@ -288,9 +285,6 @@ export type ComponentViewImplFn<
     TStruct extends ComponentStruct,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = (props: ComponentViewProps, component?: Component<TStruct, TMsgHeaders>) => any; // ReactNode
-
-// ComponentRenderFn
-export type ComponentViewFn = (props: ComponentViewProps) => any; // ReactNode
 
 export type ComponentMsgBroker<
     TStruct extends ComponentStruct,
@@ -368,6 +362,16 @@ export type ComponentMsgStruct<TStruct extends ComponentStruct = ComponentStruct
     | MaybeKeyOf<TStruct['msg'], TStruct['msgScope']['publish']>
 >;
 
+export type ComponentParams<TStruct extends ComponentStruct = ComponentStruct> =
+    ComponentPropParams<TStruct['props']> &
+        ComponentEvents<TStruct> & {
+            $id?: string;
+            $key?: string;
+        }; // & PropsWithChildren?
+
+// ComponentRenderFn
+export type ComponentViewFn = (props: ComponentViewProps) => any; // ReactNode
+
 export const $isComponent = Symbol('isComponent'); // brand
 // style?: CSSProperties;
 // classNames?: string[];
@@ -420,13 +424,6 @@ export type PropEventHandlers = {
     onChanging?: (oldValue: any, newValue: any) => boolean;
     onChange?: (value: any) => void;
 };
-
-export type ComponentParams<TStruct extends ComponentStruct = ComponentStruct> =
-    ComponentPropParams<TStruct['props']> &
-        ComponentEvents<TStruct> & {
-            $id?: string;
-            $key?: string;
-        }; // & PropsWithChildren?
 
 export type EffectController = {
     pause: () => void;

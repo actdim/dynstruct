@@ -1,5 +1,5 @@
-import { MsgBus, MsgStruct, MsgStructBase } from "@actdim/msgmesh/contracts";
-import { RequireExtends, Skip } from "@actdim/utico/typeCore";
+import { MsgStruct } from "@actdim/msgmesh/contracts";
+import { Skip } from "@actdim/utico/typeCore";
 // abstract
 export enum AccessLevel {
     None = 0,
@@ -38,7 +38,7 @@ export type SecurityTokens = {
 };
 
 // Base(App)SecurityMsgStruct
-export type BaseSecurityMsgStruct = RequireExtends<
+export type BaseSecurityMsgStruct = MsgStruct<
     {
         [$AUTH_SIGNIN]: {
             in: UserCredentials;
@@ -80,8 +80,7 @@ export type BaseSecurityMsgStruct = RequireExtends<
             in: void;
             out: BaseSecurityDomainConfig;
         };
-    } & MsgStructBase,
-    MsgStruct
+    }
 >;
 
 export type ISecurable = {

@@ -979,8 +979,15 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
         // (accessed via component.children.*.View).
         // This function is intended to be compact since all wiring
         // and initialization code is distributed across other
-        // definition areas. Inline capability exists but is mainly
-        // for embedding dynstruct components into regular ones.
+        // definition areas. Inline props should be used only in a
+        // functional wrapper component created via toReact (or a
+        // similar adapter) to integrate dynstruct into regular
+        // components (for example, at the app root level). Using such
+        // components directly inside dynstruct view functions
+        // keeps child parameter wiring mixed into render code instead
+        // of a dedicated children block, reduces compactness and
+        // readability, increases side-effect risk, and harms
+        // predictable reactivity.
         view: (_, c) => (
             <div>
                 <h3>{m.message}</h3>
@@ -1006,8 +1013,8 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
 | `effects` | Effect implementations — methods that run automatically when any property accessed within them changes. An effect runs on component creation and can be paused, resumed, or stopped via `c.effects.<name>`. Returns an optional cleanup function. |
 | `children` | Child component instances created via hook-constructors (`use*`). Properties can be initialized with values or bindings; external event handlers can be assigned. |
 | `events` | Component event handlers (lifecycle, property changes). See [Component Events](#component-events). |
-| `msgBroker` | Message bus handlers for channels declared in the structure. Contains `provide` (response providers) and `subscribe` (message handlers) sections. |
-| `msgBus` | Explicit message bus instance. If omitted, the bus from the component model context is used. Must be compatible with the declared message structure. |
+| `msgBroker` | Message bus handlers for channels declared in the structure. Contains `provide` (response providers) and `subscribe` (message handlers) sections. Handlers are registered through the component-scoped `msgBus`, so unmount cleanup semantics are applied to broker channels as well. |
+| `msgBus` | Explicit message bus instance. If omitted, the bus from the component model context is used. Must be compatible with the declared message structure. The component uses a lifecycle-scoped `msgBus` wrapper: on unmount, subscriptions are automatically canceled and pending requests are aborted via `AbortSignal`. |
 | `view` | Render function producing the component's JSX view. Child components are rendered via `c.children.<name>.View`. Intended to be compact — logic is distributed across other definition areas. |
 
 ### Reactive Properties
@@ -1075,13 +1082,13 @@ dynstruct integrates with **[@actdim/msgmesh](https://www.npmjs.com/package/@act
 First, declare message channels at the application (or domain) level with full typing:
 
 ```typescript
-import { MsgStructFactory, MsgBus } from '@actdim/msgmesh/contracts';
+import { MsgStruct, MsgBus } from '@actdim/msgmesh/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { BaseAppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
 
 // Define your application's message structure
 export type AppMsgStruct = BaseAppMsgStruct<AppRoutes> &
-    MsgStructFactory<{
+    MsgStruct<{
         // Event message (fire-and-forget)
         'USER-CLICKED': {
             in: { buttonId: string; timestamp: number };
@@ -1293,6 +1300,8 @@ const validationResult = await c.msgBus.request(
     { timeout: 5000 }
 );
 ```
+
+> **Unmount safety:** `c.msgBus` is bound to component lifecycle. When the component is unmounted, active subscriptions are automatically unsubscribed and pending `request(...)` calls are aborted. This prevents updating state of an already destroyed component from late async responses.
 
 #### Message Filtering
 
@@ -1599,7 +1608,7 @@ The full set of supported events is defined by the `ComponentEvents<TStruct>` ty
 | `onLayoutReady` | mount | The HTML representation is ready and inserted into the DOM tree, but the frame has not been painted yet. |
 | `onReady` | postMount | The HTML representation has already been rendered and is visible to the user. The component is fully ready for interaction. |
 | `onLayoutDestroy` | preUnmount | The component's HTML representation is about to be removed from the DOM. |
-| `onDestroy` | unmount | The component is destroyed. All resources should be released. |
+| `onDestroy` | unmount | The component is destroyed. All resources should be released. The component-scoped `msgBus` abort signal is triggered, which safely terminates broker subscriptions/providers and pending `request(...)` operations. |
 | `onError` | — | An error occurred during component operation. Receives the error object and optional info. |
 
 ```typescript

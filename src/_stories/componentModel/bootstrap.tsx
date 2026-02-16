@@ -6,7 +6,7 @@ import type {
     ComponentMsgHeaders,
     ComponentRegistryContext,
 } from '@/componentModel/contracts';
-import { MsgBus, MsgStructFactory } from '@actdim/msgmesh/contracts';
+import { MsgBus, MsgStruct } from '@actdim/msgmesh/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { KeysOf } from '@actdim/utico/typeCore';
 import React, { PropsWithChildren } from 'react';
@@ -31,7 +31,7 @@ export type AppRoutes = typeof appRoutes;
 export type ApiMsgStruct = BaseApiMsgStruct;
 
 export type AppMsgStruct = BaseAppMsgStruct<AppRoutes> &
-    MsgStructFactory<{
+    MsgStruct<{
         'TEST-EVENT': {
             in: string;
         };

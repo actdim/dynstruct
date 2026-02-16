@@ -11,7 +11,6 @@ import {
     Component,
     ComponentChildren,
     ComponentDef,
-    ComponentEvents,
     ComponentModel,
     ComponentMsgHeaders,
     ComponentParams,
@@ -26,6 +25,7 @@ import {
     ValueChangeHandler,
     ValueChangingHandler,
 } from './contracts';
+
 import { $ON_CHANGE, $ON_CHANGING, $ON_GET, ComponentMsgFilter } from './contracts';
 import { lazy } from '@actdim/utico/utils';
 import {
@@ -85,13 +85,7 @@ function createComponent<
 
     const bindings = new Map<PropertyKey, Binding>();
 
-    const componentMsgBus = lazy(() => {
-        return getComponentMsgBus(msgBus, (headers) => {
-            if (headers?.sourceId == undefined) {
-                headers.sourceId = component.id;
-            }
-        });
-    });
+    const abortController = new AbortController();
 
     let msgBroker = {
         ...def.msgBroker,
@@ -100,6 +94,18 @@ function createComponent<
     if (!msgBroker.abortController) {
         msgBroker.abortController = new AbortController();
     }
+
+    const componentMsgBus = lazy(() => {
+        const globalAbortSignal = AbortSignal.any([
+            component.msgBroker.abortController.signal,
+            abortController.signal,
+        ]);
+        return getComponentMsgBus(msgBus, globalAbortSignal, (headers) => {
+            if (headers && headers.sourceId == undefined) {
+                headers.sourceId = component.id;
+            }
+        });
+    });
 
     const initEffects = () => {
         if (def.effects) {
@@ -173,9 +179,8 @@ function createComponent<
         }, [def, params, context]);
 
         useEffect(() => {
-            const abortController = new AbortController();
             try {
-                registerMsgBroker(component, abortController);
+                registerMsgBroker(component);
                 def.events?.onReady?.(component);
                 params.onReady?.(component);
                 if (getGlobalFlags().debug) {

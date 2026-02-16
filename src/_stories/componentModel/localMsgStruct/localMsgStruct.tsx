@@ -1,10 +1,10 @@
 import { ComponentMsgHeaders } from '@/componentModel/contracts';
-import { MsgStructFactory } from '@actdim/msgmesh/contracts';
+import { MsgStruct } from '@actdim/msgmesh/contracts';
 import { KeysOf } from '@actdim/utico/typeCore';
 
 export type TodoItem = { id: number; name: string };
 
-export type LocalMsgStruct = MsgStructFactory<{
+export type LocalMsgStruct = MsgStruct<{
     'ADD-TODO-ITEM': {
         in: TodoItem;
         out: void;
