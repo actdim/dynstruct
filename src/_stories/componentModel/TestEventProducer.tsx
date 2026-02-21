@@ -31,7 +31,7 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
             value: 'foo',
         },
 
-        view: (_, c) => {
+        view: () => {
             return (
                 <>
                     <input

@@ -26,7 +26,7 @@ type Struct = ComponentStruct<
         msgScope: {
             subscribe: AppMsgChannels<'TEST-EVENT'>;
             provide: AppMsgChannels<'LOCAL-EVENT'>;
-        };        
+        };
     }
 >;
 
@@ -35,7 +35,6 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
     let m: ComponentModel<Struct>;
 
     const def: ComponentDef<Struct> = {
-        
         props: {
             text: undefined,
         },
@@ -82,7 +81,7 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
             }),
         },
 
-        view: (_, c) => {
+        view: () => {
             return (
                 <div id={c.id}>
                     <p>Text: {m.text}</p>

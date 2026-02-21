@@ -46,7 +46,7 @@ export const useTestEventConsumer = (params: ComponentParams<Struct>) => {
             },
         },
 
-        view: (_, c) => {
+        view: () => {
             return (
                 <>
                     <input type="text" value={m.value}></input>

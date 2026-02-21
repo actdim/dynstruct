@@ -32,7 +32,7 @@ export function useDynamicContent<TData = any>(
             render: undefined,
             data: undefined,
         },
-        view: (_, c) => {
+        view: () => {
             return m.render();
         },
     };

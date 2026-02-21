@@ -76,7 +76,7 @@ export const useLocalMsgStructExample = (params: ComponentParams<Struct>) => {
             todoList: useTodoList({}),
         },
 
-        view: (_, c) => {
+        view: () => {
             return (
                 <>
                     Edit:

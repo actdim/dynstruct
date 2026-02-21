@@ -384,8 +384,8 @@ export function createEffect<
 //     };
 // }
 
-// TODO: simple JSX factory as child component
 // TODO: Support async resources via msgbus (TanStack Query/SWR + Suspense)
 // TODO: Support control persistence (with providers)
-// TODO: request cancelation in msgbus
 // TODO: control requestCount via msgbus (for busy state indicator)
+// TODO: component type (resource-boundary/layout/UI) support
+// TODO: visibility (visible/none/hidden) & interaction (disabled/readOnly) support (security etc) with fallback view

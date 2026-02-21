@@ -57,7 +57,7 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
             },
         },
 
-        view: (_, c) => {
+        view: () => {
             return (
                 <ul>
                     {m.list.map((item) => (

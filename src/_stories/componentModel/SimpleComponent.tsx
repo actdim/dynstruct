@@ -76,7 +76,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
             },
         },
 
-        view: (_, c) => {
+        view: () => {
             return (
                 <div id={c.id}>
                     <c.children.Summary />

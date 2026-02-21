@@ -7,13 +7,10 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { appMsgBus, AppMsgStruct } from './bootstrap'; // appDomain
 import { DataItem, TestApiClient } from './TestApiClient';
 import { KeysOf } from '@actdim/utico/typeCore';
-import { ClientBase } from '@/net/client';
 
 import { ServiceProvider } from '@/services/react/ServiceProvider';
-import { createServiceProvider } from '@/services/ServiceProvider';
 import {
     BaseServiceSuffix,
     getMsgChannelSelector,
@@ -103,7 +100,7 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
                 loadData();
             },
         },
-        view: (_, c) => {
+        view: () => {
             return (
                 <div id={c.id}>
                     <button onClick={loadData}>Load data</button>

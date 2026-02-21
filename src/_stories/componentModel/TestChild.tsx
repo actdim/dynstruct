@@ -31,7 +31,7 @@ export const useTestChild = (params: ComponentParams<Struct>) => {
             value: 'foo',
         },
 
-        view: (_, c) => {
+        view: () => {
             return (
                 <>
                     <input

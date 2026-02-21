@@ -196,7 +196,7 @@ export class SecurityProvider {
                 key: this.storageKeys.accessToken
             }
         });
-        this.accessToken = msg.payload.data?.value;
+        this.accessToken = msg.payload.data?.value as string;
 
         msg = await this.msgBus.request({
             channel: $STORE_GET,
@@ -204,7 +204,7 @@ export class SecurityProvider {
                 key: this.storageKeys.refreshToken
             }
         });
-        this.refreshToken = msg.payload.data?.value;
+        this.refreshToken = msg.payload.data?.value as string;
 
         msg = await this.msgBus.request({
             channel: $STORE_GET,
@@ -212,7 +212,7 @@ export class SecurityProvider {
                 key: this.storageKeys.userCredentials
             }
         });
-        this.userCredentials = msg.payload.data?.value || {
+        this.userCredentials = msg.payload.data?.value as UserCredentials || {
             userName: null,
             password: null
         };

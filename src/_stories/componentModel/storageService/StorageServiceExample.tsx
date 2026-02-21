@@ -22,7 +22,7 @@ export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
     const def: ComponentDef<Struct> = {
-        view: (_, c) => {
+        view: () => {
             return (
                 <>
                     <button

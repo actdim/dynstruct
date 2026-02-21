@@ -66,7 +66,7 @@ export const useEffectDemo = (params: ComponentParams<Struct>) => {
                 value: bindProp(() => m, 'lastName'),
             }),
         },
-        view: (_, c) => {
+        view: () => {
             return (
                 <div id={c.id}>
                     <div>

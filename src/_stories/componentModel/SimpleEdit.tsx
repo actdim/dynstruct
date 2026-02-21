@@ -28,7 +28,7 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
         props: {
             value: "foo",
         },
-        view: (_, c) => {
+        view: () => {
             return (
                 <div id={c.id}>
                     <input
