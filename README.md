@@ -2064,16 +2064,16 @@ export const Page = toReact(usePage);
 import { ComponentStruct, ComponentDef, ComponentParams, Component, ComponentModel } from '@actdim/dynstruct/componentModel/contracts';
 import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react';
 import { AppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
-import { SecurityProvider } from '@actdim/dynstruct/appDomain/security/securityProvider';
+import { SecurityService } from '@actdim/dynstruct/services/react/SecurityService';
 import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/componentContext';
 
 // In your app root
 <ComponentContextProvider>
-    <SecurityProvider>
+    <SecurityService>
         <ApiServiceProvider>
             <App />
         </ApiServiceProvider>
-    </SecurityProvider>
+    </SecurityService>
 </ComponentContextProvider>
 
 // Use in component
@@ -2203,7 +2203,9 @@ msgBroker: {
 - **componentModel/componentContext** - Component registry and hierarchy
 - **appDomain/appContracts** - Application message structures
 - **appDomain/navigation** - Navigation utilities
-- **appDomain/security/securityProvider** - Security and authentication
+- **appDomain/securityContracts** - Security type contracts and auth message channels
+- **appDomain/commonContracts** - Common message channels (store, nav, config, fetch, DI)
+- **services/react/SecurityService** - Security and authentication service component
 - **net/client** - HTTP client base class
 - **services/ServiceProvider** - Service provider factory
 

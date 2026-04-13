@@ -27,7 +27,10 @@ Use public package paths (or equivalent local source paths in this repo):
 - `@actdim/dynstruct/componentModel/react`
 - `@actdim/dynstruct/componentModel/core`
 - `@actdim/dynstruct/appDomain/appContracts`
+- `@actdim/dynstruct/appDomain/commonContracts` — common channels: store, nav, config, fetch, DI
+- `@actdim/dynstruct/appDomain/securityContracts` — auth channels and security types
 - `@actdim/dynstruct/services/react/ServiceProvider`
+- `@actdim/dynstruct/services/react/SecurityService`
 - `@actdim/msgmesh/contracts`
 - `@actdim/msgmesh/core`
 - `@actdim/msgmesh/adapters`
