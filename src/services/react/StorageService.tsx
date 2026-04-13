@@ -4,11 +4,14 @@ import {
     Component,
     ComponentModel,
     ComponentDef,
+    ComponentImpl,
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { PropsWithChildren } from 'react';
+import { $STORE_GET, $STORE_REMOVE, $STORE_SET } from '@/appDomain/commonContracts';
+import { AsyncMutex } from '@actdim/utico/asyncMutex';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -17,24 +20,30 @@ type Struct = ComponentStruct<
             storeName?: string;
         };
         msgScope: {
-            provide: BaseAppMsgChannels<'APP.STORE.GET' | 'APP.STORE.SET' | 'APP.STORE.REMOVE'>;
+            provide: BaseAppMsgChannels<
+                typeof $STORE_GET | typeof $STORE_SET | typeof $STORE_REMOVE
+            >;
         };
     }
 >;
 
-export const useStorageService = (params: ComponentParams<Struct>) => {
-    let c: Component<Struct>;
+const mutex = new AsyncMutex();
+
+export const useStorageService = (params: ComponentParams<Struct>): Component<Struct> => {
+    type Internals = {
+        store?: PersistentStore;
+    };
+
+    let c: ComponentImpl<Struct, Internals>;
     let m: ComponentModel<Struct>;
 
-    async function _updateStore() {
-        store = await PersistentStore.open(m.storeName);
+    async function init(forceUpdate = false) {
+        await mutex.dispatch(async () => {
+            if (!c.internals.store || forceUpdate) {
+                c.internals.store = await PersistentStore.open(m.storeName);
+            }
+        });
     }
-
-    let store: PersistentStore;
-    let ready: () => void;
-    const init = new Promise<void>((res) => {
-        ready = res;
-    });
 
     const def: ComponentDef<Struct> = {
         props: {
@@ -42,20 +51,20 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
         },
         msgBroker: {
             provide: {
-                'APP.STORE.GET': {
+                [$STORE_GET]: {
                     in: {
                         callback: async (msg) => {
-                            await init;
-                            const item = await store.get(msg.payload.key);                            
+                            await init();
+                            const item = await c.internals.store.get(msg.payload.key);
                             return item;
                         },
                     },
                 },
-                'APP.STORE.SET': {
+                [$STORE_SET]: {
                     in: {
                         callback: async (msg) => {
-                            await init;
-                            await store.set(
+                            await init();
+                            await c.internals.store.set(
                                 {
                                     key: msg.payload.key,
                                 },
@@ -64,26 +73,29 @@ export const useStorageService = (params: ComponentParams<Struct>) => {
                         },
                     },
                 },
-                'APP.STORE.REMOVE': {
+                [$STORE_REMOVE]: {
                     in: {
                         callback: async (msg) => {
-                            await init;
-                            await store.delete(msg.payload.key);
+                            await init();
+                            await c.internals.store.delete(msg.payload.key);
                         },
                     },
                 },
             },
         },
         events: {
-            onChangeStoreName: () => {
-                _updateStore();
+            onInit: () => {},
+            onReady: async () => {
+                await init();
+            },
+            onChangeStoreName: async () => {
+                await init(true);
             },
         },
     };
 
-    c = useComponent(def, params);
+    c = useComponent(def, params, {} as Internals);
     m = c.model;
-    _updateStore().then(() => ready());
     return c;
 };
 

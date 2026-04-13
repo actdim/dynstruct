@@ -1,12 +1,7 @@
 import { useComponentContext } from '@/componentModel/componentContext';
 import { MsgProviderAdapter, registerAdapters } from '@actdim/msgmesh/adapters';
-import { createContext, PropsWithChildren, useLayoutEffect } from 'react';
+import { PropsWithChildren, useEffect } from 'react';
 import React from 'react';
-
-const ReactContext = createContext<{
-    adapters: MsgProviderAdapter[];
-    abortSignal?: AbortSignal;
-}>(undefined);
 
 export function ServiceProvider(
     props: PropsWithChildren<{
@@ -15,26 +10,18 @@ export function ServiceProvider(
     }>,
 ) {
     const context = useComponentContext();
-    const abortController = new AbortController();
-    let abortSignal = props.abortSignal;
-    if (abortSignal) {
-        abortSignal = AbortSignal.any([abortSignal, abortController.signal]);
-    }
-    useLayoutEffect(() => {
+
+    useEffect(() => {
+        const abortController = new AbortController();
+        const abortSignal = props.abortSignal
+            ? AbortSignal.any([abortController.signal, props.abortSignal])
+            : abortController.signal;
+
         registerAdapters(context.msgBus, props.adapters, abortSignal);
         return () => {
             abortController.abort();
         };
     }, [context.msgBus, props.adapters]);
 
-    return (
-        <ReactContext.Provider
-            value={{
-                adapters: props.adapters,
-                abortSignal: abortSignal,
-            }}
-        >
-            {props.children}
-        </ReactContext.Provider>
-    );
+    return <>{props.children}</>;
 }

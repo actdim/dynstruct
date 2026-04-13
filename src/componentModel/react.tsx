@@ -11,6 +11,7 @@ import {
     Component,
     ComponentChildren,
     ComponentDef,
+    ComponentImpl,
     ComponentModel,
     ComponentMsgHeaders,
     ComponentParams,
@@ -96,11 +97,11 @@ function createComponent<
     }
 
     const componentMsgBus = lazy(() => {
-        const globalAbortSignal = AbortSignal.any([
+        const combinedAbortSignal = AbortSignal.any([
             component.msgBroker.abortController.signal,
             abortController.signal,
         ]);
-        return getComponentMsgBus(msgBus, globalAbortSignal, (headers) => {
+        return getComponentMsgBus(msgBus, combinedAbortSignal, (headers) => {
             if (headers && headers.sourceId == undefined) {
                 headers.sourceId = component.id;
             }
@@ -431,12 +432,23 @@ function createComponent<
 
 export function useComponent<
     TStruct extends ComponentStruct = ComponentStruct,
+    TInternals = unknown,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
->(componentDef: ComponentDef<TStruct, TMsgHeaders>, params: ComponentParams<TStruct>) {
+>(
+    componentDef: ComponentDef<TStruct, TMsgHeaders>,
+    params: ComponentParams<TStruct>,
+    internals?: TInternals,
+) {
     const context = useComponentContext() as ComponentRegistryContext<TStruct['msg'], TMsgHeaders>;
-    const ref = useLazyRef(() =>
-        createComponent<TStruct, TMsgHeaders>(componentDef, context, params),
-    );
+    const ref = useLazyRef(() => {
+        const component = createComponent<TStruct, TMsgHeaders>(
+            componentDef,
+            context,
+            params,
+        ) as ComponentImpl<TStruct, TInternals, TMsgHeaders>;
+        component.internals = internals;
+        return component;
+    });
     useLayoutEffect(() => {
         return () => {
             ref.current = null;
@@ -445,8 +457,11 @@ export function useComponent<
     return ref.current;
 }
 
-export function toReact<TStruct extends ComponentStruct>(
-    factoryHook: (params: ComponentParams<TStruct>) => Component<TStruct>,
+export function toReact<
+    TStruct extends ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(
+    factoryHook: (params: ComponentParams<TStruct>) => Component<TStruct, TMsgHeaders>,
 ): React.FC<ComponentParams<TStruct>> {
     const result = (params: ComponentParams<TStruct> & React.PropsWithChildren) => {
         // componentFactory
@@ -456,6 +471,3 @@ export function toReact<TStruct extends ComponentStruct>(
     };
     return result;
 }
-
-// TODO:
-// do not observe props with "_", "$" prefixes

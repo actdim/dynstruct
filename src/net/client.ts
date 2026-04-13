@@ -2,9 +2,10 @@ import { v4 as uuid } from "uuid";
 import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
 import { ApiError } from "./apiError";
-import { BaseAppMsgStruct, BaseAppContext, $CONFIG_GET, BaseApiConfig } from "@/appDomain/appContracts";
-import { MsgBus } from "@actdim/msgmesh/contracts";
-import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $CONTEXT_GET } from "@/appDomain/security/securityContracts";
+import { BaseAppMsgStruct, BaseAppContext, BaseApiConfig, BaseAppDomainConfig } from "@/appDomain/appContracts";
+import { MsgBus, MsgSubOptions } from "@actdim/msgmesh/contracts";
+import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_SESSION_GET } from "@/appDomain/securityContracts";
+import { $CONFIG_CHANGED, $CONFIG_GET } from "@/appDomain/commonContracts";
 
 export function extractApiName(name: string, suffixes: string[]): string | null {
     if (!name) {
@@ -26,6 +27,8 @@ const API_SUFFIXES = ["api", "controller", "client", "fetcher"];
 export class ClientBase {
     public baseUrl: string;
 
+    public accessToken: string;
+
     public name: string;
 
     public apiId: string;
@@ -36,8 +39,6 @@ export class ClientBase {
     private fetcher: IFetcher;
 
     private msgBus: MsgBus<BaseAppMsgStruct>;
-
-    private accessToken: string;
 
     private apiSuffixes: string[];
 
@@ -57,7 +58,17 @@ export class ClientBase {
         }
         const abortSignal = AbortSignal.any(abortSignals);
 
-        // + $CONFIG_SET/$CONFIG_UPDATE?
+        const options: MsgSubOptions = {
+            abortSignal
+        };
+
+        this.msgBus.on({
+            channel: $CONFIG_CHANGED,
+            callback: async (msg) => {
+                await this.updateApiConfig(msg.payload);
+            }, options
+        });
+
         this.msgBus.on({
             channel: $AUTH_SIGNIN,
             group: "out",
@@ -65,9 +76,7 @@ export class ClientBase {
                 this.accessToken = msg.payload.accessToken;
                 // this.updateSecurity();
             },
-            options: {
-                abortSignal
-            }
+            options
         });
 
     }
@@ -85,11 +94,13 @@ export class ClientBase {
         }
     }
 
-    protected async updateApiConfig() {
-        const msg = await this.msgBus.request({
-            channel: $CONFIG_GET
-        });
-        const config = msg.payload;
+    protected async updateApiConfig(config?: BaseAppDomainConfig) {
+        if (!config) {
+            const msg = await this.msgBus.request({
+                channel: $CONFIG_GET
+            });
+            config = msg.payload;
+        }
         let apiId = this.apiId;
         if (!apiId) {
             this.apiId = apiId = extractApiName(this.name, this.apiSuffixes);
@@ -104,7 +115,7 @@ export class ClientBase {
 
     private async updateSecurity() {
         const msg = await this.msgBus.request({
-            channel: $CONTEXT_GET
+            channel: $AUTH_SESSION_GET
         });
         this.accessToken = msg.payload.accessToken;
         return this.accessToken;

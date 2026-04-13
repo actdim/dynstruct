@@ -1,6 +1,7 @@
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
-import { $STORE_GET, $STORE_REMOVE, $STORE_SET, BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { MsgBus } from '@actdim/msgmesh/contracts';
+import { $STORE_GET, $STORE_REMOVE, $STORE_SET } from '@/appDomain/commonContracts';
 
 export async function createStorageService(msgBus: MsgBus<BaseAppMsgStruct>, storeName: string, abortSignal?: AbortSignal) {
 

@@ -1,4 +1,5 @@
-import { BaseApiMsgStruct, BaseAppMsgStruct, NavRoutes } from '@/appDomain/appContracts';
+import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { NavRoutes } from '@/appDomain/commonContracts';
 import { createNavigationRoute } from '@/appDomain/navigation';
 import { ComponentContextProvider, useComponentContext } from '@/componentModel/componentContext';
 import type {
@@ -28,8 +29,6 @@ export const appRoutes = {
 
 export type AppRoutes = typeof appRoutes;
 
-export type ApiMsgStruct = BaseApiMsgStruct;
-
 export type AppMsgStruct = BaseAppMsgStruct<AppRoutes> &
     MsgStruct<{
         'TEST-EVENT': {
@@ -39,8 +38,7 @@ export type AppMsgStruct = BaseAppMsgStruct<AppRoutes> &
             in: string;
             out: string;
         };
-    }> &
-    ApiMsgStruct;
+    }>;
 
 export type AppMsgHeaders = ComponentMsgHeaders;
 

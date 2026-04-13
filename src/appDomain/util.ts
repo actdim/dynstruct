@@ -1,4 +1,4 @@
-import { $isAppError, AppError } from "./appContracts";
+import { $isAppError, AppError } from "./commonContracts";
 
 export function toAppError(err: any, source?: string, timestamp?: string, properties?: Record<string | number, any>): AppError {
     if (!timestamp) {

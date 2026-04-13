@@ -7,10 +7,10 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { LocalMsgChannels, LocalMsgHeaders, LocalMsgStruct, TodoItem } from './localMsgStruct';
+import { CustomMsgChannels, CustomMsgHeaders, CustomMsgStruct, TodoItem } from './CustomMsgStruct';
 
 type Struct = ComponentStruct<
-    LocalMsgStruct,
+    CustomMsgStruct,
     {
         props: {
             item: TodoItem;
@@ -18,15 +18,15 @@ type Struct = ComponentStruct<
         };
 
         msgScope: {
-            publish: LocalMsgChannels<'ADD-TODO-ITEM' | 'CLEAR-TODO-ITEMS' | 'GET-TODO-ITEMS'>;
+            publish: CustomMsgChannels<'ADD-TODO-ITEM' | 'CLEAR-TODO-ITEMS' | 'GET-TODO-ITEMS'>;
         };
     }
 >;
 
 export const useTodoEdit = (params: ComponentParams<Struct>) => {
-    let c: Component<Struct, LocalMsgHeaders>;
+    let c: Component<Struct, CustomMsgHeaders>;
     let m: ComponentModel<Struct>;
-    const def: ComponentDef<Struct, LocalMsgHeaders> = {
+    const def: ComponentDef<Struct, CustomMsgHeaders> = {
         props: {
             item: { id: 1, name: 'Wake Up' },
             priority: 0,

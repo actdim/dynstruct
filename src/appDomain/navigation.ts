@@ -1,5 +1,5 @@
 import { compile, match } from "path-to-regexp";
-import { NavRoute, NavRouteParams } from "./appContracts";
+import { NavRoute, NavRouteParams } from "./commonContracts";
 import { ReactNode } from "react";
 // createAppRoute
 export function createNavigationRoute<TParams extends NavRouteParams = NavRouteParams>(options: {

@@ -7,12 +7,12 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { TodoEditStruct, useTodoEdit } from './todoEdit';
-import { TodoListStruct, useTodoList } from './todoList';
-import { LocalMsgChannels, LocalMsgHeaders, LocalMsgStruct, TodoItem } from './localMsgStruct';
+import { TodoEditStruct, useTodoEdit } from './TodoEdit';
+import { TodoListStruct, useTodoList } from './TodoList';
+import { CustomMsgChannels, CustomMsgHeaders, CustomMsgStruct, TodoItem } from './CustomMsgStruct';
 
 type Struct = ComponentStruct<
-    LocalMsgStruct,
+    CustomMsgStruct,
     {
         props: {
             data: TodoItem[];
@@ -22,15 +22,15 @@ type Struct = ComponentStruct<
             todoList: TodoListStruct;
         };
         msgScope: {
-            provide: LocalMsgChannels<'ADD-TODO-ITEM' | 'CLEAR-TODO-ITEMS' | 'GET-TODO-ITEMS'>;
+            provide: CustomMsgChannels<'ADD-TODO-ITEM' | 'CLEAR-TODO-ITEMS' | 'GET-TODO-ITEMS'>;
         };
     }
 >;
 
-export const useLocalMsgStructExample = (params: ComponentParams<Struct>) => {
-    let c: Component<Struct, LocalMsgHeaders>;
+export const useCustomMsgStructExample = (params: ComponentParams<Struct>) => {
+    let c: Component<Struct, CustomMsgHeaders>;
     let m: ComponentModel<Struct>;
-    const def: ComponentDef<Struct, LocalMsgHeaders> = {
+    const def: ComponentDef<Struct, CustomMsgHeaders> = {
         props: {
             data: [],
         },
@@ -93,5 +93,5 @@ export const useLocalMsgStructExample = (params: ComponentParams<Struct>) => {
     return c;
 };
 
-export type LocalMsgStructExampleStruct = Struct;
-export const LocalMsgStructExample = toReact(useLocalMsgStructExample);
+export type CustomMsgStructExampleStruct = Struct;
+export const CustomMsgStructExample = toReact(useCustomMsgStructExample);

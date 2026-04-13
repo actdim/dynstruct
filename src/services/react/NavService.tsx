@@ -9,8 +9,6 @@ import {
 import {
     BaseAppMsgChannels,
     BaseAppMsgStruct,
-    NavContext,
-    NavRoutes,
 } from '@/appDomain/appContracts';
 import type {
     Component,
@@ -21,6 +19,7 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import { PropsWithChildren } from 'react';
+import { NavContext, NavRoutes } from '@/appDomain/commonContracts';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -83,7 +82,11 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                 'APP.NAV.HISTORY.READ': {
                     in: {
                         callback: (msg) => {
-                            return m.history[m.history.length - 1];
+                            let shift = msg.payload ? msg.payload : -1;
+                            if (shift > 0) {
+                                shift *= -1;
+                            }
+                            return m.history[m.history.length + shift];
                         },
                     },
                 },

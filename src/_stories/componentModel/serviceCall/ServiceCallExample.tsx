@@ -7,7 +7,7 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { DataItem, TestApiClient } from './TestApiClient';
+import { DataItem, TestApiClient } from '../TestApiClient';
 import { KeysOf } from '@actdim/utico/typeCore';
 
 import { ServiceProvider } from '@/services/react/ServiceProvider';
@@ -70,7 +70,7 @@ type Struct = ComponentStruct<
     }
 >;
 
-export const useApiCallExample = (params: ComponentParams<Struct>) => {
+export const useServiceCallExample = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
@@ -91,7 +91,7 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
     }
 
     const def: ComponentDef<Struct> = {
-        regType: 'ApiCallExample',
+        regType: 'ServiceCallExample',
         props: {
             dataItems: [],
         },
@@ -123,5 +123,5 @@ export const useApiCallExample = (params: ComponentParams<Struct>) => {
     return c;
 };
 
-export type ApiCallExampleStruct = Struct;
-export const ApiCallExample = toReact(useApiCallExample);
+export type ServiceCallExampleStruct = Struct;
+export const ServiceCallExample = toReact(useServiceCallExample);

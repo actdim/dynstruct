@@ -12,33 +12,117 @@ import React from 'react';
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
     {
+        props: {
+            writeKey: string;
+            valueToStore: string;
+            status: string;
+            readKey: string;
+            valueFromStore: string;
+        };
         msgScope: {
-            provide: BaseAppMsgChannels<'APP.STORE.SET'>;
+            provide: BaseAppMsgChannels<'APP.STORE.SET' | 'APP.STORE.GET'>;
         };
     }
 >;
+
+const row: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    margin: '6px 0',
+};
+
+const labelStyle: React.CSSProperties = {
+    width: 48,
+    textAlign: 'right',
+    color: '#888',
+    fontSize: 12,
+};
 
 export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
     const def: ComponentDef<Struct> = {
+        props: {
+            writeKey: 'test',
+            valueToStore: 'Example',
+            status: '',
+            readKey: 'test',
+            valueFromStore: '',
+        },
         view: () => {
             return (
-                <>
-                    <button
-                        onClick={() => {
-                            c.msgBus.send({
-                                channel: 'APP.STORE.SET',
-                                payload: {
-                                    key: 'test',
-                                    value: 'foo',
-                                },
-                            });
-                        }}
-                    >
-                        Send
-                    </button>
-                </>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <details open>
+                        <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Write</summary>
+                        <div style={row}>
+                            <span style={labelStyle}>Key</span>
+                            <input
+                                type="text"
+                                value={m.writeKey}
+                                onChange={(e) => (m.writeKey = e.target.value)}
+                            />
+                        </div>
+                        <div style={row}>
+                            <span style={labelStyle}>Value</span>
+                            <input
+                                type="text"
+                                value={m.valueToStore}
+                                onChange={(e) => {
+                                    m.status = '';
+                                    m.valueToStore = e.target.value;
+                                }}
+                            />
+                        </div>
+                        <div style={{ ...row, marginTop: 10 }}>
+                            <button
+                                onClick={() => {
+                                    c.msgBus.send({
+                                        channel: 'APP.STORE.SET',
+                                        payload: { key: m.writeKey, value: m.valueToStore },
+                                    });
+                                    m.valueToStore = '';
+                                    m.status = 'OK';
+                                }}
+                            >
+                                Write
+                            </button>
+                            {m.status && (
+                                <span style={{ color: 'green', fontStyle: 'italic', fontSize: 12 }}>
+                                    {m.status}
+                                </span>
+                            )}
+                        </div>
+                    </details>
+                    <details open>
+                        <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Read</summary>
+                        <div style={row}>
+                            <span style={labelStyle}>Key</span>
+                            <input
+                                type="text"
+                                value={m.readKey}
+                                onChange={(e) => (m.readKey = e.target.value)}
+                            />
+                        </div>
+                        <div style={{ ...row, marginTop: 10 }}>
+                            <button
+                                onClick={async () => {
+                                    const msg = await c.msgBus.request({
+                                        channel: 'APP.STORE.GET',
+                                        payload: { key: m.readKey },
+                                    });
+                                    m.valueFromStore = msg.payload.data.value as string;
+                                }}
+                            >
+                                Read
+                            </button>
+                        </div>
+                        <div style={row}>
+                            <span style={labelStyle}>Value</span>
+                            <input type="text" value={m.valueFromStore} readOnly={true} />
+                        </div>
+                    </details>
+                </div>
             );
         },
     };

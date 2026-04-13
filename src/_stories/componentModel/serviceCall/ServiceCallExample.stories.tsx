@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
-import { AppContextProvider, appMsgBus } from './bootstrap';
-import { ApiCallExample, ApiServiceProvider } from './ApiCallExample';
+import { AppContextProvider, appMsgBus } from '../bootstrap';
+import { ServiceCallExample, ApiServiceProvider } from './ServiceCallExample';
 
-const meta: Meta<typeof ApiCallExample> = {
+const meta: Meta<typeof ServiceCallExample> = {
     title: 'dynstruct/Basics',
-    component: ApiCallExample,
+    component: ServiceCallExample,
     decorators: [
         (Story) => (
             <AppContextProvider value={{ msgBus: appMsgBus }}>
@@ -24,13 +24,13 @@ const meta: Meta<typeof ApiCallExample> = {
 
 export default meta;
 
-type Story = StoryObj<typeof ApiCallExample>;
+type Story = StoryObj<typeof ServiceCallExample>;
 
-export const ApiCallExampleStory: Story = {
+export const ServiceCallExampleStory: Story = {
     args: {},
-    name: 'Api Call Example',
+    name: 'Service (Api) Call Example',
     render: (args, context) => {
         // console.log('loaded:', context.loaded);
-        return <ApiCallExample />;
+        return <ServiceCallExample />;
     },
 };

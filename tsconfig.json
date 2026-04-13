@@ -17,12 +17,11 @@
         "forceConsistentCasingInFileNames": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        // "moduleResolution": "Node",
-        "moduleResolution": "Bundler",
-        // "moduleResolution": "Bundler", // no!
-        // "moduleResolution": "NodeNext", // no!
-        "target": "ESNext",
-        "module": "ESNext",
+        // "moduleResolution": "node",
+        "moduleResolution": "bundler",
+        // "moduleResolution": "nodenext", // no!
+        "target": "esnext",
+        "module": "esnext",
         // "module": "NodeNext", // no!
         "lib": ["ESNext", "DOM"],
         "types": ["mocha", "chai"],

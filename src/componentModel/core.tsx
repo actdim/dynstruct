@@ -190,9 +190,10 @@ export function getComponentNameByCaller(depth = 2): string | null {
     return fnName;
 }
 
-export function registerMsgBroker<TStruct extends ComponentStruct = ComponentStruct>(
-    component: Component<TStruct>,
-) {
+export function registerMsgBroker<
+    TStruct extends ComponentStruct = ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(component: Component<TStruct, TMsgHeaders>) {
     const providers = component?.msgBroker.provide;
     if (providers) {
         for (const [channel, providerGroups] of Object.entries(providers)) {
@@ -274,7 +275,7 @@ export function getComponentMsgBus<
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 >(
     msgBus: MsgBus<TStruct['msg'], TMsgHeaders>,
-    globalAbortSignal: AbortSignal,
+    abortSignal: AbortSignal,
     headerSetter: (headers?: TMsgHeaders) => void,
 ) {
     type OpParams = {
@@ -293,9 +294,8 @@ export function getComponentMsgBus<
         if (!params.options) {
             params.options = {};
         }
-        let abortSignal = globalAbortSignal;
         if (params.options.abortSignal) {
-            abortSignal = AbortSignal.any([params.options.abortSignal, globalAbortSignal]);
+            abortSignal = AbortSignal.any([params.options.abortSignal, abortSignal]);
         }
         params.options.abortSignal = abortSignal;
         return params;
@@ -384,8 +384,10 @@ export function createEffect<
 //     };
 // }
 
-// TODO: Support async resources via msgbus (TanStack Query/SWR + Suspense)
-// TODO: Support control persistence (with providers)
+// TODO: support async resources via msgbus (TanStack Query/SWR + Suspense)
+// TODO: support control persistence (with providers)
 // TODO: control requestCount via msgbus (for busy state indicator)
+// TODO: support asyn validation
 // TODO: component type (resource-boundary/layout/UI) support
+// TODO: add skeleton/not-ready state support
 // TODO: visibility (visible/none/hidden) & interaction (disabled/readOnly) support (security etc) with fallback view

@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
-import { LocalMsgStructExample } from './LocalMsgStructExample';
-import { AppContextProvider, appMsgBus } from '../bootstrap';
 
-const meta: Meta<typeof LocalMsgStructExample> = {
+import { AppContextProvider, appMsgBus } from '../bootstrap';
+import { CustomMsgStructExample } from './CustomMsgStructExample';
+
+const meta: Meta<typeof CustomMsgStructExample> = {
     title: 'dynstruct/Basics',
-    component: LocalMsgStructExample,
+    component: CustomMsgStructExample,
     decorators: [
         (Story) => (
             <AppContextProvider value={{ msgBus: appMsgBus }}>
@@ -18,9 +19,9 @@ const meta: Meta<typeof LocalMsgStructExample> = {
 
 export default meta;
 
-type Story = StoryObj<typeof LocalMsgStructExample>;
+type Story = StoryObj<typeof CustomMsgStructExample>;
 
-export const LocalMsgStructStory: Story = {
-    name: 'Local Msg Struct',
+export const CustomMsgStructStory: Story = {
+    name: 'Custom Msg Struct',
     args: {},
 };

@@ -247,20 +247,27 @@ export type ValueChangingHandler<T = any> = (oldValue: T, newValue: T) => boolea
 // ValueSetHandler
 export type ValueChangeHandler<T = any> = (value: T) => void;
 
-export type ComponentEvents<TStruct extends ComponentStruct = ComponentStruct> = {
+export type ComponentEvents<
+    TStruct extends ComponentStruct = ComponentStruct,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = {
     onPropChanging?: PropValueChangingHandler<keyof TStruct['props']>;
     onPropChange?: PropValueChangeHandler<keyof TStruct['props']>;
     // onPreMount
-    onInit?: (component: Component<TStruct>) => void;
+    onInit?: (component: Component<TStruct, TMsgHeaders>) => void;
     // onMount
-    onLayoutReady?: (component: Component<TStruct>) => void;
+    onLayoutReady?: (component: Component<TStruct, TMsgHeaders>) => void;
     // onPostMount
-    onReady?: (component: Component<TStruct>) => void;
+    onReady?: (component: Component<TStruct, TMsgHeaders>) => void;
     // onPreUnmount
-    onLayoutDestroy?: (component: Component<TStruct>) => void; // onLayoutCleanup
+    onLayoutDestroy?: (component: Component<TStruct, TMsgHeaders>) => void; // onLayoutCleanup
     // onUnmount
-    onDestroy?: (component: Component<TStruct>) => void; // onDispose/onCleanup
-    onError?: (component: Component<TStruct>, error: unknown, info?: unknown) => unknown; // ReactNode
+    onDestroy?: (component: Component<TStruct, TMsgHeaders>) => void; // onDispose/onCleanup
+    onError?: (
+        component: Component<TStruct, TMsgHeaders>,
+        error: unknown,
+        info?: unknown,
+    ) => unknown; // ReactNode
 } & {
     [P in keyof TStruct['props'] as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
 } & {
@@ -316,7 +323,7 @@ export type ComponentDef<
               EffectFn<TStruct, TMsgHeaders>
           >;
     children?: ComponentDefChildren<TStruct['children']>;
-    events?: ComponentEvents<TStruct>;
+    events?: ComponentEvents<TStruct, TMsgHeaders>;
     // msgs?
     msgBroker?: ComponentMsgBroker<TStruct, TMsgHeaders>;
     msgBus?: MsgBus<TStruct['msg'], TMsgHeaders>;
@@ -418,6 +425,14 @@ export type Component<
     readonly model: ComponentModel<TStruct>;
     readonly children: ComponentChildren<TStruct['children']>;
 } & ComponentBase<TStruct, TMsgHeaders>;
+
+export type ComponentImpl<
+    TStruct extends ComponentStruct = ComponentStruct,
+    TInternals = unknown,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = Component<TStruct, TMsgHeaders> & {
+    internals?: TInternals;
+};
 
 export type PropEventHandlers = {
     onGet?: () => any;

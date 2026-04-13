@@ -7,33 +7,33 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { LocalMsgChannels, LocalMsgHeaders, LocalMsgStruct, TodoItem } from './localMsgStruct';
+import { CustomMsgChannels, CustomMsgHeaders, CustomMsgStruct, TodoItem } from './CustomMsgStruct';
 
 type Struct = ComponentStruct<
-    LocalMsgStruct,
+    CustomMsgStruct,
     {
         props: {
             list: TodoItem[];
         };
         msgScope: {
-            publish: LocalMsgChannels<'GET-TODO-ITEMS'>;
-            subscribe: LocalMsgChannels<'ADD-TODO-ITEM' | 'CLEAR-TODO-ITEMS'>;
+            publish: CustomMsgChannels<'GET-TODO-ITEMS'>;
+            subscribe: CustomMsgChannels<'ADD-TODO-ITEM' | 'CLEAR-TODO-ITEMS'>;
         };
     }
 >;
 
 export const useTodoList = (params: ComponentParams<Struct>) => {
-    let c: Component<Struct, LocalMsgHeaders>;
+    let c: Component<Struct, CustomMsgHeaders>;
     let m: ComponentModel<Struct>;
 
-    async function _update() {
+    async function update() {
         const msg = await c.msgBus.request({
             channel: 'GET-TODO-ITEMS',
         });
         m.list = msg.payload;
     }
 
-    const def: ComponentDef<Struct, LocalMsgHeaders> = {
+    const def: ComponentDef<Struct, CustomMsgHeaders> = {
         props: {
             list: [],
         },
@@ -43,14 +43,14 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
                 'ADD-TODO-ITEM': {
                     out: {
                         callback: async () => {
-                            await _update();
+                            await update();
                         },
                     },
                 },
                 'CLEAR-TODO-ITEMS': {
                     out: {
                         callback: async () => {
-                            await _update();
+                            await update();
                         },
                     },
                 },

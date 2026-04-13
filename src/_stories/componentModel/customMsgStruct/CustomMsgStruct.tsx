@@ -4,7 +4,7 @@ import { KeysOf } from '@actdim/utico/typeCore';
 
 export type TodoItem = { id: number; name: string };
 
-export type LocalMsgStruct = MsgStruct<{
+export type CustomMsgStruct = MsgStruct<{
     'ADD-TODO-ITEM': {
         in: TodoItem;
         out: void;
@@ -19,6 +19,6 @@ export type LocalMsgStruct = MsgStruct<{
     };
 }>; // & AppMsgStruct ...
 
-export type LocalMsgChannels<TChannel extends keyof LocalMsgStruct | Array<keyof LocalMsgStruct>> =
-    KeysOf<LocalMsgStruct, TChannel>;
-export type LocalMsgHeaders = ComponentMsgHeaders & { priority: number };
+export type CustomMsgChannels<TChannel extends keyof CustomMsgStruct | Array<keyof CustomMsgStruct>> =
+    KeysOf<CustomMsgStruct, TChannel>;
+export type CustomMsgHeaders = ComponentMsgHeaders & { priority: number };
