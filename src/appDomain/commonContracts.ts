@@ -259,17 +259,35 @@ export type BaseApiConfig = {
     versions?: string[];
 };
 
+// Base(App)Security(Domain)Config
+export type BaseSecurityDomainConfig = {
+    id: string;
+    name?: string;
+    authType?: string;
+    // endpoints
+    routes: {
+        authSignIn: string;
+        authSignOut: string;
+        authRefresh?: string;
+        // RFC 8414 (OIDC) — "OAuth 2.0 Authorization Server Metadata"
+        // https://datatracker.ietf.org/doc/html/rfc8414
+        authService?: string;
+        authSignInPage: string;
+        authSignOutPage: string;
+    };
+};
+
 // BaseApp(Domain)Options
 export type BaseAppDomainConfig<
     TApiConfig extends BaseApiConfig = BaseApiConfig,
-    TSecurityDomainConfig = any
+    TSecurityConfig extends BaseSecurityDomainConfig = BaseSecurityDomainConfig
 > = {
     id: string;
     name?: string;
-    baseUrl: string;
-    security: TSecurityDomainConfig;
+    baseUrl?: string;
+    security: TSecurityConfig;
     defaultApi?: string;
-    apis: Record<string, TApiConfig>;
+    apis?: Record<string, TApiConfig>;
     // HATEOAS? (React Admin)
 };
 

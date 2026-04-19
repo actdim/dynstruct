@@ -1,13 +1,16 @@
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { NavRoutes } from '@/appDomain/commonContracts';
 import { createNavigationRoute } from '@/appDomain/navigation';
-import { ComponentContextProvider, useComponentContext } from '@/componentModel/componentContext';
+import {
+    ComponentContextProvider,
+    useComponentContext,
+} from '@/componentModel/react/componentContext';
 import type {
     BaseContext,
     ComponentMsgHeaders,
     ComponentRegistryContext,
 } from '@/componentModel/contracts';
-import { MsgBus, MsgStruct } from '@actdim/msgmesh/contracts';
+import { $C_INHERIT, MsgBus, MsgStruct } from '@actdim/msgmesh/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { KeysOf } from '@actdim/utico/typeCore';
 import React, { PropsWithChildren } from 'react';
@@ -45,7 +48,32 @@ export type AppMsgHeaders = ComponentMsgHeaders;
 export type AppMsgBus = MsgBus<AppMsgStruct, AppMsgHeaders>;
 
 export function createAppMsgBus() {
-    const msgBus = createMsgBus<AppMsgStruct, AppMsgHeaders>({});
+    const msgBus = createMsgBus<AppMsgStruct, AppMsgHeaders>({
+        [$C_INHERIT]: {
+            mandatoryProvider: true,
+        },
+    });
+    msgBus.on({
+        channel: 'MSGBUS.ERROR',
+        topic: 'msgbus',
+        callback: (msg) => {
+            console.error(msg.payload);
+        },
+    });
+    msgBus.on({
+        channel: 'APP.ERROR',
+        topic: 'msgbus',
+        callback: (msg) => {
+            console.error(msg.payload);
+        },
+    });
+    msgBus.on({
+        channel: 'APP.SECURITY.AUTH.SESSION.GET',
+        group: 'error',
+        callback: (msg) => {
+            console.error(msg.payload);
+        },
+    });
     return msgBus;
 }
 

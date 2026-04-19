@@ -9,46 +9,46 @@ importers:
   .:
     dependencies:
       '@actdim/msgmesh':
-        specifier: ^1.3.8
-        version: 1.3.8(@actdim/utico@1.1.5(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
+        specifier: '>=1.4.0'
+        version: 1.4.0(@actdim/utico@1.1.5(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
       '@actdim/utico':
-        specifier: ^1.1.5
+        specifier: '>=1.1.5'
         version: 1.1.5(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0)
       http-status:
-        specifier: ^2.1.0
+        specifier: '>=2.1.0'
         version: 2.1.0
       jwt-decode:
-        specifier: ^4.0.0
+        specifier: '>=4.0.0'
         version: 4.0.0
       mobx:
-        specifier: ^6.15.0
+        specifier: '>=6.15.0'
         version: 6.15.0
       mobx-react-lite:
-        specifier: ^4.1.1
+        specifier: '>=4.1.1'
         version: 4.1.1(mobx@6.15.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       mobx-utils:
-        specifier: ^6.1.1
+        specifier: '>=6.1.1'
         version: 6.1.1(mobx@6.15.0)
       path-to-regexp:
-        specifier: ^8.3.0
+        specifier: '>=8.3.0'
         version: 8.3.0
       react:
-        specifier: ^19.2.0
+        specifier: '>=19.2.0'
         version: 19.2.0
       react-dom:
-        specifier: ^19.2.0
+        specifier: '>=19.2.0'
         version: 19.2.0(react@19.2.0)
       react-router:
-        specifier: ^7.9.3
+        specifier: '>=7.9.3'
         version: 7.9.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react-router-dom:
-        specifier: ^7.9.4
+        specifier: '>=7.9.4'
         version: 7.9.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       rxjs:
-        specifier: ^7.8.2
+        specifier: '>=7.8.2'
         version: 7.8.2
       uuid:
-        specifier: ^13.0.0
+        specifier: '>=13.0.0'
         version: 13.0.0
     devDependencies:
       '@storybook/addon-docs':
@@ -156,8 +156,8 @@ importers:
 
 packages:
 
-  '@actdim/msgmesh@1.3.8':
-    resolution: {integrity: sha512-LU9qvyxHDTGbr3nyvtpTxsUtrylL9PY2flQeHwTX7vpYrKJRdekP8bNFe7LJAXpH2WCS0TAxKuYnMo2uC38ZWA==}
+  '@actdim/msgmesh@1.4.0':
+    resolution: {integrity: sha512-ISdrgphqpr/iedPQYsgeH8FWHn+u6bRdiioO7i8lRUrRUebLfInlau9ieu+AazgJgn2DLQCnl1fMO2n+yw6Aww==}
     peerDependencies:
       '@actdim/utico': '>=1.1.5'
       rxjs: '>=7.8.0'
@@ -2870,7 +2870,7 @@ packages:
 
 snapshots:
 
-  '@actdim/msgmesh@1.3.8(@actdim/utico@1.1.5(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
+  '@actdim/msgmesh@1.4.0(@actdim/utico@1.1.5(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
     dependencies:
       '@actdim/utico': 1.1.5(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0)
       rxjs: 7.8.2

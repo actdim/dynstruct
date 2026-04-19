@@ -157,7 +157,8 @@ export interface IRequestParams<TResult = any> extends RequestInit {
     // accepts: string[]; // https://developer.mozilla.org/ru/docs/Web/HTTP/Headers/Accept
     // TODO: support
     crossDomain?: boolean;
-    contentType?: MimeType; // dataType
+    // contentType?: MimeType;
+    contentType?: string;
     httpOnly?: boolean;
     // transportType: ...;
     callbacks?: IRequestCallbacks<TResult>;

@@ -1,5 +1,6 @@
 import { MsgStruct } from "@actdim/msgmesh/contracts";
 import { Skip } from "@actdim/utico/typeCore";
+import { BaseSecurityDomainConfig } from "./commonContracts";
 // abstract
 export enum AccessLevel {
     None = 0,
@@ -114,22 +115,4 @@ export type AuthSession = {
     // authExpiresAt/sessionExpiresAt
     tokenExpiresAt?: string; // for proactive refresh
     // acl?: any;
-};
-
-// Base(App)Security(Domain)Config
-export type BaseSecurityDomainConfig = {
-    id: string;
-    name?: string;
-    authType: string;
-    // endpoints
-    routes: {
-        authSignIn: string;
-        authSignOut: string;
-        authRefresh: string;
-        // RFC 8414 (OIDC) — "OAuth 2.0 Authorization Server Metadata"
-        // https://datatracker.ietf.org/doc/html/rfc8414        
-        authService: string;
-        authSignInPage: string;
-        authSignOutPage: string;
-    };
 };

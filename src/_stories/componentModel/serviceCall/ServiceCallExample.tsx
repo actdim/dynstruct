@@ -7,65 +7,19 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { DataItem, TestApiClient } from '../TestApiClient';
-import { KeysOf } from '@actdim/utico/typeCore';
+import { DataItem, TestApiClient } from './TestApiClient';
 
-import { ServiceProvider } from '@/services/react/ServiceProvider';
-import {
-    BaseServiceSuffix,
-    getMsgChannelSelector,
-    MsgProviderAdapter,
-    ToMsgChannelPrefix,
-    ToMsgStruct,
-} from '@actdim/msgmesh/adapters';
-
-type ServiceSuffix = BaseServiceSuffix;
-type BaseApiPrefix = 'API';
-type TestApiChannelPrefix = ToMsgChannelPrefix<
-    typeof TestApiClient.name,
-    BaseApiPrefix,
-    ServiceSuffix
->;
-
-type ApiMsgStruct = ToMsgStruct<
-    TestApiClient,
-    TestApiChannelPrefix,
-    'extraMethod'
-    // 'extraMethod' | keyof ClientBase
->;
-
-export const services: Record<TestApiChannelPrefix, any> = {
-    'API.TEST.': new TestApiClient(),
-};
-
-export const msgProviderAdapters = Object.entries(services).map(
-    (entry) =>
-        ({
-            service: entry[1],
-            channelSelector: getMsgChannelSelector(services),
-        }) as MsgProviderAdapter,
-);
-
-// AppMsgStruct &
-export type ComponentMsgStruct = ApiMsgStruct;
-
-export type ComponentMsgChannels<
-    TChannel extends keyof ComponentMsgStruct | Array<keyof ComponentMsgStruct>,
-> = KeysOf<ComponentMsgStruct, TChannel>;
-
-export const ApiServiceProvider = () => ServiceProvider({ adapters: msgProviderAdapters });
-// global provider
-// export const apiServiceProvider =  createServiceProvider(appMsgBus, msgProviderAdapters);
+import { CustomMsgChannels, CustomMsgStruct } from './ApiServiceProvider';
 
 type Struct = ComponentStruct<
-    ComponentMsgStruct,
+    CustomMsgStruct,
     {
         props: {
             dataItems: DataItem[];
         };
         msgScope: {
-            subscribe: ComponentMsgChannels<'API.TEST.GETDATAITEMS'>;
-            publish: ComponentMsgChannels<'API.TEST.GETDATAITEMS'>;
+            subscribe: CustomMsgChannels<'API.TEST.GETDATAITEMS'>;
+            publish: CustomMsgChannels<'API.TEST.GETDATAITEMS'>;
         };
     }
 >;

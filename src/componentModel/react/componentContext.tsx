@@ -3,8 +3,8 @@
 //##############################################################################
 
 import React, { createContext, PropsWithChildren, useContext, useRef } from 'react';
-import { BaseContext, ComponentRegistryContext, ComponentTreeNode } from './contracts';
-import { toHtmlId } from './core';
+import { BaseContext, ComponentRegistryContext, ComponentTreeNode } from '@/componentModel/contracts';
+import { toHtmlId } from '@/componentModel/core';
 
 export const ReactComponentContext = createContext<ComponentRegistryContext>(undefined);
 

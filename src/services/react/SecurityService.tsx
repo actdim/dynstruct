@@ -1,5 +1,4 @@
 import {
-    BaseSecurityDomainConfig,
     UserCredentials,
     AuthSession,
     $AUTH_SIGNIN,
@@ -18,7 +17,13 @@ import { getValuePrefixer } from '@actdim/utico/typeCore';
 import { jwtDecode } from 'jwt-decode';
 import { getResponseResult, IRequestParams, IRequestState, IResponseState } from '@/net/request';
 import { ApiError } from '@/net/apiError';
-import { $STORE_GET, $STORE_REMOVE, $STORE_SET, $NAV_GOTO } from '@/appDomain/commonContracts';
+import {
+    $STORE_GET,
+    $STORE_REMOVE,
+    $STORE_SET,
+    $NAV_GOTO,
+    BaseSecurityDomainConfig,
+} from '@/appDomain/commonContracts';
 
 const userNameClaim = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name';
 
@@ -29,7 +34,7 @@ type TokenPayload = {
 
 // Access denied
 // Insufficient privileges to perform this operation
-const defaultAccessDeniedReason = 'Insufficient privileges. Contact your system Administrator.';
+// const defaultAccessDeniedReason = 'Insufficient privileges. Contact your system Administrator.';
 
 const baseStorageKeys = {
     accessToken: 'ACCESS_TOKEN',
@@ -168,7 +173,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 key: c.internals.storageKeys.accessToken,
             },
         });
-        c.internals.accessToken = msg.payload.data?.value as string;
+        c.internals.accessToken = msg.payload?.data.value as string;
 
         msg = await c.msgBus.request({
             channel: $STORE_GET,
@@ -176,7 +181,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 key: c.internals.storageKeys.refreshToken,
             },
         });
-        c.internals.refreshToken = msg.payload.data?.value as string;
+        c.internals.refreshToken = msg.payload?.data.value as string;
 
         msg = await c.msgBus.request({
             channel: $STORE_GET,
@@ -184,7 +189,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 key: c.internals.storageKeys.userCredentials,
             },
         });
-        c.internals.userCredentials = (msg.payload.data?.value as UserCredentials) || {
+        c.internals.userCredentials = (msg.payload?.data.value as UserCredentials) || {
             userName: null,
             password: null,
         };
@@ -195,7 +200,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 key: c.internals.storageKeys.authInfo,
             },
         });
-        c.internals.authInfo = msg.payload.data?.value;
+        c.internals.authInfo = msg.payload?.data.value;
 
         msg = await c.msgBus.request({
             channel: $STORE_GET,
@@ -203,7 +208,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 key: c.internals.storageKeys.acl,
             },
         });
-        c.internals.acl = msg.payload.data?.value || null;
+        c.internals.acl = msg.payload?.data.value || null;
 
         if (c.internals.accessToken) {
             const context = await getSession();
@@ -353,7 +358,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
     async function signIn(credentials: UserCredentials) {
         await init();
 
-        if (m.useConventions) {
+        if (!m.useConventions) {
             let url = c.internals.domainConfig.routes?.authSignIn;
 
             url = url.replace(/[?&]$/, '');
@@ -410,7 +415,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
     async function signOut(accessToken1?: string) {
         await init();
 
-        if (m.useConventions) {
+        if (!m.useConventions) {
             let url = c.internals.domainConfig.routes?.authSignOut;
             if (url) {
                 url = url.replace(/[?&]$/, '');
@@ -451,7 +456,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
     async function refreshAuth(refreshToken1?: string) {
         await init();
 
-        if (m.useConventions) {
+        if (!m.useConventions) {
             let url = c.internals.domainConfig.routes?.authRefresh;
             if (url) {
                 url = url.replace(/[?&]$/, '');
@@ -515,7 +520,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
 
     const def: ComponentDef<Struct> = {
         props: {
-            useConventions: false,
+            useConventions: true,
         },
         msgBroker: {
             subscribe: {
@@ -552,7 +557,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 [$AUTH_REFRESH]: {
                     in: {
                         callback: (msg) => {
-                            return refreshAuth(msg.payload.refreshToken);
+                            return refreshAuth(msg.payload?.refreshToken);
                         },
                     },
                 },
@@ -568,7 +573,9 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         events: {},
     };
 
-    c = useComponent(def, params, {} as Internals);
+    c = useComponent(def, params, {
+        storageKeys: { ...baseStorageKeys },
+    } as Internals);
     m = c.model;
     return c;
 };

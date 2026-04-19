@@ -4,7 +4,10 @@ import { observer } from 'mobx-react-lite';
 import { action, observable } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
-import { ReactComponentContext, useComponentContext } from './componentContext';
+import {
+    ReactComponentContext,
+    useComponentContext,
+} from '@/componentModel/react/componentContext';
 import {
     $isComponent,
     Binding,
@@ -27,7 +30,7 @@ import {
     ValueChangingHandler,
 } from './contracts';
 
-import { $ON_CHANGE, $ON_CHANGING, $ON_GET, ComponentMsgFilter } from './contracts';
+import { $ON_CHANGE, $ON_CHANGING, $ON_GET } from './contracts';
 import { lazy } from '@actdim/utico/utils';
 import {
     createEffect,

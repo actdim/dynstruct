@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
 import { AppContextProvider, appMsgBus } from '../bootstrap';
-import { ServiceCallExample, ApiServiceProvider } from './ServiceCallExample';
+import { ServiceCallExample } from './ServiceCallExample';
+import { ApiServiceProvider } from './ApiServiceProvider';
 
 const meta: Meta<typeof ServiceCallExample> = {
-    title: 'dynstruct/Basics',
+    title: 'dynstruct/Integration',
     component: ServiceCallExample,
     decorators: [
         (Story) => (

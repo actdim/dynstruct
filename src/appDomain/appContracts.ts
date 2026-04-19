@@ -1,5 +1,5 @@
 import { $C_ERROR, ErrorPayload, MsgStruct } from "@actdim/msgmesh/contracts";
-import { BaseSecurityDomainConfig, BaseSecurityMsgStruct, SecurityTypeRegistry } from "@/appDomain/securityContracts";
+import { BaseSecurityMsgStruct, SecurityTypeRegistry } from "@/appDomain/securityContracts";
 import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";
 import { BaseContext } from "@/componentModel/contracts";
@@ -18,22 +18,6 @@ export type BaseApiConfig = {
     versions?: string[];
 };
 
-// BaseApp(Domain)Options
-export type BaseAppDomainConfig<
-    TSecurityDomainConfig extends BaseSecurityDomainConfig = BaseSecurityDomainConfig,
-    TApiConfig extends BaseApiConfig = BaseApiConfig
-> = {
-    id: string;
-    name?: string;
-    baseUrl: string;
-    security: TSecurityDomainConfig;
-    defaultApi?: string;
-    apis: Record<string, TApiConfig>;
-    // HATEOAS? (React Admin)
-};
-
 export type BaseAppMsgChannels<TChannel extends keyof BaseAppMsgStruct | Array<keyof BaseAppMsgStruct>> = KeysOf<BaseAppMsgStruct, TChannel>;
 
-export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> = BaseContext<TMsgStruct> & {
-    // securityProvider: SecurityProvider;        
-};
+export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> = BaseContext<TMsgStruct>;

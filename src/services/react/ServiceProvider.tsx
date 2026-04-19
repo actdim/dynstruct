@@ -1,4 +1,4 @@
-import { useComponentContext } from '@/componentModel/componentContext';
+import { useComponentContext } from '@/componentModel/react/componentContext';
 import { MsgProviderAdapter, registerAdapters } from '@actdim/msgmesh/adapters';
 import { PropsWithChildren, useEffect } from 'react';
 import React from 'react';

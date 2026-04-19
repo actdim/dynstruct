@@ -2,10 +2,10 @@ import { v4 as uuid } from "uuid";
 import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
 import { ApiError } from "./apiError";
-import { BaseAppMsgStruct, BaseAppContext, BaseApiConfig, BaseAppDomainConfig } from "@/appDomain/appContracts";
+import { BaseAppMsgStruct, BaseAppContext, BaseApiConfig } from "@/appDomain/appContracts";
 import { MsgBus, MsgSubOptions } from "@actdim/msgmesh/contracts";
 import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_SESSION_GET } from "@/appDomain/securityContracts";
-import { $CONFIG_CHANGED, $CONFIG_GET } from "@/appDomain/commonContracts";
+import { $CONFIG_CHANGED, $CONFIG_GET, BaseAppDomainConfig } from "@/appDomain/commonContracts";
 
 export function extractApiName(name: string, suffixes: string[]): string | null {
     if (!name) {
@@ -25,6 +25,7 @@ export function extractApiName(name: string, suffixes: string[]): string | null 
 const API_SUFFIXES = ["api", "controller", "client", "fetcher"];
 // App(Api)ClientBase
 export class ClientBase {
+
     public baseUrl: string;
 
     public accessToken: string;
@@ -33,7 +34,7 @@ export class ClientBase {
 
     public apiId: string;
 
-    // private requestStates
+    // requestStateStore
     private requestStateMap: Map<string, IRequestState>;
 
     private fetcher: IFetcher;
@@ -244,7 +245,7 @@ export class ClientBase {
     }
 
     // T extends IApiResponse
-    public async fetchAsync<T>(requestParams: IRequestParams): Promise<T> {
+    protected async fetchAsync<T>(requestParams: IRequestParams): Promise<T> {
         await this.init;
 
         const defaultParams: Partial<IRequestParams> = {
