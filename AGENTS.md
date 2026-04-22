@@ -60,11 +60,14 @@ Use hook-constructors as the primary component format:
 
 - Keep mutable UI state in `def.props` / `c.model`.
 - Use `events` for controlled side effects on property changes:
-- `onChangingX` to validate/sanitize before set
-- `onChangeX` after set
-- `onPropChanging`/`onPropChange` for generic handlers
+  - `onChangingX` to validate/sanitize before set
+  - `onChangeX` after set
+  - `onPropChanging`/`onPropChange` for generic handlers
+  - `onCatch` (not `onError`) for error handling — signature: `(component, error, info?) => void`
+  - Lifecycle handlers (`onInit`, `onReady`, `onDestroy`, etc.) may be `async`.
 - Use `effects` for derived/auto-tracked behavior; pause/resume/stop through `c.effects.<name>`.
 - Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child.
+- Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches an error.
 
 Avoid:
 - introducing local `useState`/`useReducer` for state that belongs to component model
@@ -75,13 +78,15 @@ Avoid:
 
 - Define channels in message struct first.
 - Narrow component responsibilities with `msgScope`:
-- `subscribe`
-- `publish`
-- `provide`
+  - `subscribe`
+  - `publish`
+  - `provide`
+- `msgScope` channels are validated at the TypeScript type-alias level: using a non-existent channel name produces a compile-time error immediately in the `type Struct = ComponentStruct<...>` declaration.
 - Register handlers in `msgBroker` and use `componentFilter` when source scoping is required.
+- Standard channel constants are exported from `appDomain/commonContracts` (navigation, storage, config, fetch) and `appDomain/securityContracts` (auth). Use the constants — not raw strings — in channel references.
 - Use:
-- `c.msgBus.send(...)` for fire-and-forget
-- `c.msgBus.request(...)` for request-response
+  - `c.msgBus.send(...)` for fire-and-forget
+  - `c.msgBus.request(...)` for request-response
 
 For service APIs:
 - use `@actdim/msgmesh/adapters` to transform service class methods into typed channels
@@ -96,9 +101,15 @@ For service APIs:
 ## File and Story Conventions
 
 - Framework internals: `src/componentModel/*`
+- React-specific internals: `src/componentModel/react/*` (e.g. `componentContext.tsx`)
 - App domain contracts/utilities: `src/appDomain/*`
 - Services: `src/services/*`
 - Examples/stories: `src/_stories/componentModel/*`
+  - `basicCommunication/` — producer/consumer pattern
+  - `serviceCall/` — API adapter integration
+  - `securityService/` — auth flow
+  - `storageService/` — storage service
+- Shared story styles: `src/_stories/componentModel/styles.ts` (`row`, `labelStyle`, `detailsStyle`)
 
 When adding a feature:
 - update or add Storybook example if behavior is user-visible

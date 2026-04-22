@@ -1016,6 +1016,7 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
 | `msgBroker` | Message bus handlers for channels declared in the structure. Contains `provide` (response providers) and `subscribe` (message handlers) sections. Handlers are registered through the component-scoped `msgBus`, so unmount cleanup semantics are applied to broker channels as well. |
 | `msgBus` | Explicit message bus instance. If omitted, the bus from the component model context is used. Must be compatible with the declared message structure. The component uses a lifecycle-scoped `msgBus` wrapper: on unmount, subscriptions are automatically canceled and pending requests are aborted via `AbortSignal`. |
 | `view` | Render function producing the component's JSX view. Child components are rendered via `c.children.<name>.View`. Intended to be compact — logic is distributed across other definition areas. |
+| `fallbackView` | Optional error fallback render function. Rendered instead of `view` when `useErrorBoundary: true` is set and the component catches an error. Receives the same `(props, component)` signature as `view`. |
 
 ### Reactive Properties
 
@@ -1162,7 +1163,7 @@ type UserPanelStruct = ComponentStruct<
 
 🎯 **Local Namespace** - Component only sees relevant channels, not the entire global list
 📋 **Clear Responsibilities** - Message scope documents component's communication surface
-🔒 **Type Safety** - TypeScript ensures only declared channels can be used in msgBroker
+🔒 **Type Safety** - TypeScript ensures only declared channels can be used in `msgBroker`. Using a channel not present in `AppMsgStruct` produces a compile-time error at the type alias definition.
 👀 **Better Project Visibility** - Easy to understand component's external dependencies
 🔗 **Communication Map** - Shows how components connect, alongside children references
 
@@ -1602,6 +1603,8 @@ The full set of supported events is defined by the `ComponentEvents<TStruct>` ty
 
 #### Lifecycle Events
 
+All lifecycle handlers accept `async` functions (return `MaybePromise<void>`).
+
 | Event | Phase | Description |
 |---|---|---|
 | `onInit` | preMount | Initialization event. Called after props and children are set up, but before the HTML representation is inserted into the DOM. |
@@ -1609,7 +1612,7 @@ The full set of supported events is defined by the `ComponentEvents<TStruct>` ty
 | `onReady` | postMount | The HTML representation has already been rendered and is visible to the user. The component is fully ready for interaction. |
 | `onLayoutDestroy` | preUnmount | The component's HTML representation is about to be removed from the DOM. |
 | `onDestroy` | unmount | The component is destroyed. All resources should be released. The component-scoped `msgBus` abort signal is triggered, which safely terminates broker subscriptions/providers and pending `request(...)` operations. |
-| `onError` | — | An error occurred during component operation. Receives the error object and optional info. |
+| `onCatch` | — | An error occurred during component operation. Receives the error object and optional info. |
 
 ```typescript
 const def: ComponentDef<Struct> = {
@@ -1640,7 +1643,7 @@ const def: ComponentDef<Struct> = {
         },
 
         // Error during component operation
-        onError: (component, error) => {
+        onCatch: (component, error) => {
             console.error('Component error:', error);
         }
     }
@@ -2029,13 +2032,13 @@ const usePage = (params: ComponentParams<PageStruct>) => {
         actions: {
             navigateToHome: () => {
                 c.msgBus.send({
-                    channel: '$NAV_GOTO',
+                    channel: 'APP.NAV.GOTO',
                     payload: { path: '/' }
                 });
             },
             navigateToProfile: (userId: string) => {
                 c.msgBus.send({
-                    channel: '$NAV_GOTO',
+                    channel: 'APP.NAV.GOTO',
                     payload: { path: `/profile/${userId}` }
                 });
             }
@@ -2065,7 +2068,7 @@ import { ComponentStruct, ComponentDef, ComponentParams, Component, ComponentMod
 import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react';
 import { AppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
 import { SecurityService } from '@actdim/dynstruct/services/react/SecurityService';
-import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/componentContext';
+import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/react/componentContext';
 
 // In your app root
 <ComponentContextProvider>
@@ -2091,14 +2094,14 @@ const useSecurePage = (params: ComponentParams<SecurePageStruct>) => {
         actions: {
             signIn: async (credentials) => {
                 await c.msgBus.request({
-                    channel: '$AUTH_SIGNIN',
+                    channel: 'APP.SECURITY.AUTH.SIGNIN',
                     payload: credentials
                 });
                 m.isAuthenticated = true; // Reactive update
             },
             signOut: async () => {
                 await c.msgBus.request({
-                    channel: '$AUTH_SIGNOUT',
+                    channel: 'APP.SECURITY.AUTH.SIGNOUT',
                     payload: {}
                 });
                 m.isAuthenticated = false; // Reactive update
@@ -2129,35 +2132,41 @@ export const SecurePage = toReact(useSecurePage);
 
 ### Message Channels
 
-The framework provides standard message channels for common operations:
+The framework provides standard message channels for common operations. Constants are exported from `appDomain/commonContracts` and `appDomain/securityContracts`.
 
 #### Navigation
-- `$NAV_GOTO` - Navigate to a path
-- `$NAV_CONTEXT_GET` - Get current navigation context
-- `$NAV_CONTEXT_CHANGED` - Navigation context changed event
+- `APP.NAV.GOTO` — Navigate to a path
+- `APP.NAV.CONTEXT.GET` — Get current navigation context
+- `APP.NAV.CONTEXT.CHANGED` — Navigation context changed event
+- `APP.NAV.HISTORY.READ` — Read history entry
+- `APP.NAV.HISTORY.BACK` / `APP.NAV.HISTORY.FORWARD` — Navigate history
 
 #### Notifications
-- `$NOTICE` - Display user notification
+- `APP.NOTICE` — Display user notification
 
 #### Errors
-- `$ERROR` - Global error handler
+- `APP.ERROR` — Global error handler
 
 #### HTTP
-- `$FETCH` - HTTP request
+- `APP.FETCH` — HTTP request
 
 #### Storage
-- `$STORE_GET` - Get item from storage
-- `$STORE_SET` - Set item in storage
-- `$STORE_REMOVE` - Remove item from storage
+- `APP.STORE.GET` — Get item from storage
+- `APP.STORE.SET` — Set item in storage
+- `APP.STORE.REMOVE` — Remove item from storage
 
 #### Configuration
-- `$CONFIG_GET` - Get configuration value
+- `APP.CONFIG.GET` — Get app configuration
+- `APP.SECURITY.CONFIG.GET` — Get security configuration
 
 #### Authentication
-- `$AUTH_SIGNIN` - Sign in user
-- `$AUTH_SIGNOUT` - Sign out user
-- `$AUTH_REFRESH` - Refresh authentication token
-- `$AUTH_ENSURE` - Ensure user is authenticated
+- `APP.SECURITY.AUTH.SIGNIN` — Sign in user (broadcast after successful sign-in)
+- `APP.SECURITY.AUTH.SIGNIN.REQUEST` — Request sign-in (provider handles credentials)
+- `APP.SECURITY.AUTH.SIGNOUT` — Sign out user
+- `APP.SECURITY.AUTH.SIGNOUT.REQUEST` — Request sign-out
+- `APP.SECURITY.AUTH.REFRESH` — Refresh authentication token
+- `APP.SECURITY.AUTH.ENSURE` — Ensure user is authenticated (triggers login flow if not)
+- `APP.SECURITY.AUTH.SESSION.GET` — Get current auth session
 
 ### Component Lifecycle
 
@@ -2245,13 +2254,20 @@ npm run storybook
 ```
 
 Available stories:
-- **dynstruct / Basics / SimpleComponent** - Basic reactive component with props and children
-- **dynstruct / Basics / Api Call Example** - HTTP request integration with service adapters
-- **dynstruct / Basics / Effect Demo** - Auto-tracking reactive effects with pause/resume
-- **dynstruct / Basics / Local Msg Struct** - Local message structure with todo list
-- **dynstruct / Basics / Storage Service** - Storage service provider usage
-- **dynstruct / Connection / Basics** - Message bus producer/consumer pattern
-- **dynstruct / Connection / Parent/Child** - Parent-child component messaging
+
+**Basics:**
+- **Simple Component** — Reactive props, child components, dynamic content, factory children
+- **Effects** — Auto-tracking reactive effects with pause/resume lifecycle control
+- **Custom Msg Struct** — Custom message structures with typed headers
+
+**Communication:**
+- **Basic Communication** — Message bus producer/consumer pattern
+- **Parent/Child** — Parent intercepts child events, provides local request/response service
+
+**Integration:**
+- **Service (Api) Call Example** — HTTP API integration via service adapters and message bus
+- **Security Service Example** — Sign-in/sign-out flow and secure API access
+- **Storage Service** — Storage service provider usage
 
 ## Development
 
