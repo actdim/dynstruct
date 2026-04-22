@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, ReactNode, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useMemo, ReactNode } from 'react';
 import React from 'react';
 import { MaybePromise, Mutable } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
@@ -91,7 +91,7 @@ function createComponent<
     }
 
     const view = def.view;
-    
+
     let msgBus = def.msgBus;
 
     const bindings = new Map<PropertyKey, Binding>();
