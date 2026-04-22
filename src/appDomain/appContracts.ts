@@ -1,9 +1,5 @@
-import { $C_ERROR, ErrorPayload, MsgStruct } from "@actdim/msgmesh/contracts";
 import { BaseSecurityMsgStruct, SecurityTypeRegistry } from "@/appDomain/securityContracts";
-import { ReactNode } from "react";
 import { KeysOf } from "@actdim/utico/typeCore";
-import { BaseContext } from "@/componentModel/contracts";
-import { StoreItem } from "@actdim/utico/store/storeContracts";
 import { TypeRegistry } from "@/di/diContracts";
 import { CommonAppMsgStruct, NavRoutes } from "./commonContracts";
 
@@ -19,5 +15,3 @@ export type BaseApiConfig = {
 };
 
 export type BaseAppMsgChannels<TChannel extends keyof BaseAppMsgStruct | Array<keyof BaseAppMsgStruct>> = KeysOf<BaseAppMsgStruct, TChannel>;
-
-export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> = BaseContext<TMsgStruct>;

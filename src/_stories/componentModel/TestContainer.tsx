@@ -12,6 +12,7 @@ import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap'; // appDomain
 import { TestChildStruct, useTestChild } from './TestChild';
 import { bind } from '@/componentModel/core';
+import { detailsStyle, labelStyle, row } from './styles';
 
 type Struct = ComponentStruct<
     AppMsgStruct,
@@ -83,17 +84,17 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
 
         view: () => {
             return (
-                <div id={c.id}>
-                    <p>Text: {m.text}</p>
-                    <p>
-                        <div style={{ padding: '4px' }}>
-                            <c.children.child1.View></c.children.child1.View>
-                        </div>
-                        <div style={{ padding: '4px' }}>
-                            <c.children.child2.View></c.children.child2.View>
-                        </div>
-                    </p>
-                </div>
+                <details open style={detailsStyle}>
+                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Container</summary>
+                    <div style={row}>
+                        <span style={labelStyle}>Received</span>
+                        <input type="text" value={m.text ?? ''} readOnly />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                        <c.children.child1.View />
+                        <c.children.child2.View />
+                    </div>
+                </details>
             );
         },
     };

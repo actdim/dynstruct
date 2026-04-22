@@ -6,7 +6,7 @@ import React, { createContext, PropsWithChildren, useContext, useRef } from 'rea
 import { BaseContext, ComponentRegistryContext, ComponentTreeNode } from '@/componentModel/contracts';
 import { toHtmlId } from '@/componentModel/core';
 
-export const ReactComponentContext = createContext<ComponentRegistryContext>(undefined);
+export const ReactComponentContext = createContext<ComponentRegistryContext<any, any>>(undefined);
 
 // ComponentRegistry(Context)Provider
 export function ComponentContextProvider(

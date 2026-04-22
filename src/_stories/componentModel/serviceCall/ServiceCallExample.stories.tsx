@@ -30,8 +30,14 @@ type Story = StoryObj<typeof ServiceCallExample>;
 export const ServiceCallExampleStory: Story = {
     args: {},
     name: 'Service (Api) Call Example',
-    render: (args, context) => {
-        // console.log('loaded:', context.loaded);
-        return <ServiceCallExample />;
-    },
+    render: (args, context) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <p style={{ margin: 0, color: '#555', fontSize: 13 }}>
+                Demonstrates <b>API service calls</b> via the message bus. Clicking{' '}
+                <i>Load data</i> sends a typed request through the bus and renders the response
+                list below.
+            </p>
+            <ServiceCallExample />
+        </div>
+    ),
 };

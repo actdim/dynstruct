@@ -1,7 +1,12 @@
+import { MaybePromise } from '@actdim/utico/typeCore';
 import React, { PropsWithChildren } from 'react';
 
+export type ErrorBoundaryProps = {
+    fallback?: (error: unknown) => React.ReactNode;
+    onCatch?: (error: unknown, info?: unknown) => MaybePromise<void>;
+} & PropsWithChildren;
 export class ErrorBoundary extends React.Component<
-    { onError?: (error: unknown, info?: unknown) => React.ReactNode } & PropsWithChildren,
+    ErrorBoundaryProps,
     { hasError: boolean; error: unknown }
 > {
     state = { hasError: false, error: null };
@@ -11,16 +16,20 @@ export class ErrorBoundary extends React.Component<
     }
 
     componentDidCatch(error: unknown, info: any) {
-        // console.error('ErrorBoundary caught:', { error, info });
-        this.props.onError?.(error, info);
+        if (this.props.onCatch) {
+            this.props.onCatch(error, info);
+        } else {
+            // info has componentStack
+            console.error('ErrorBoundary caught:', { error, info });
+        }
     }
 
     render() {
         let content: React.ReactNode;
         if (this.state.hasError) {
             const error = this.state.error;
-            if (this.props.onError) {
-                content = this.props.onError?.(error);
+            if (this.props.fallback) {
+                content = this.props.fallback(error);
             }
             if (content == undefined) {
                 content = (

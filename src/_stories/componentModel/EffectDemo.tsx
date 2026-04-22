@@ -10,8 +10,7 @@ import React from 'react';
 import { AppMsgStruct } from './bootstrap';
 import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
 import { bind, bindProp } from '@/componentModel/core';
-
-// import './simpleComponent.css';
+import { detailsStyle, labelStyle, row } from './styles';
 
 type Struct = ComponentStruct<
     AppMsgStruct,
@@ -66,36 +65,28 @@ export const useEffectDemo = (params: ComponentParams<Struct>) => {
                 value: bindProp(() => m, 'lastName'),
             }),
         },
-        view: () => {
-            return (
-                <div id={c.id}>
-                    <div>
-                        First Name: <c.children.firstNameEdit.View></c.children.firstNameEdit.View>
-                    </div>
-                    <div>
-                        Last Name: <c.children.lastNameEdit.View></c.children.lastNameEdit.View>
-                    </div>
-                    <div>Full Name: {m.fullName}</div>
-                    {m.trackingEnabled ? (
-                        <button
-                            onClick={() => {
-                                m.trackingEnabled = false;
-                            }}
-                        >
-                            Pause
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => {
-                                m.trackingEnabled = true;
-                            }}
-                        >
-                            Resume
-                        </button>
-                    )}
+        view: () => (
+            <details open style={detailsStyle}>
+                <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Effects</summary>
+                <div style={row}>
+                    <span style={labelStyle}>First</span>
+                    <c.children.firstNameEdit.View />
                 </div>
-            );
-        },
+                <div style={row}>
+                    <span style={labelStyle}>Last</span>
+                    <c.children.lastNameEdit.View />
+                </div>
+                <div style={row}>
+                    <span style={labelStyle}>Full name</span>
+                    <input type="text" value={m.fullName ?? ''} readOnly />
+                </div>
+                <div style={{ ...row, marginTop: 10 }}>
+                    <button onClick={() => (m.trackingEnabled = !m.trackingEnabled)}>
+                        {m.trackingEnabled ? 'Pause' : 'Resume'}
+                    </button>
+                </div>
+            </details>
+        ),
     };
 
     c = useComponent(def, params);

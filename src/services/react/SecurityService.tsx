@@ -146,16 +146,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         await restoreData();
     }
 
-    async function init() {
-        await mutex.dispatch(async () => {
-            if (!c.internals.domainConfig) {
-                await updateConfig();
-            }
-        });
-    }
-
-    async function getSession(): Promise<AuthSession> {
-        await init();
+    function getSessionInternal(): AuthSession {
         return {
             accessToken: c.internals.accessToken,
             refreshToken: c.internals.refreshToken,
@@ -164,6 +155,28 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             domain: c.internals.domain,
             tokenExpiresAt: c.internals.tokenExpiresAt,
         };
+    }
+
+    async function init() {
+        await mutex.dispatch(async () => {
+            if (!c.internals.domainConfig) {
+                await updateConfig();
+            }
+        });
+
+        if (c.internals.accessToken) {
+            const session = getSessionInternal();
+            c.msgBus.send({
+                channel: $AUTH_SIGNIN,
+                group: 'out',
+                payload: session,
+            });
+        }
+    }
+
+    async function getSession(): Promise<AuthSession> {
+        await init();
+        return getSessionInternal();
     }
 
     async function restoreData() {
@@ -209,15 +222,6 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             },
         });
         c.internals.acl = msg.payload?.data.value || null;
-
-        if (c.internals.accessToken) {
-            const context = await getSession();
-            c.msgBus.send({
-                channel: $AUTH_SIGNIN,
-                group: 'out',
-                payload: context,
-            });
-        }
     }
 
     // removeSavedData
@@ -331,7 +335,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         });
     }
 
-    function loadAuthInfo(json: string) {
+    function loadAuthInfo(json: unknown) {
         c.internals.authInfo = json;
 
         const accessToken = json['access_token'] || json['accessToken'] || json['token'];
@@ -342,7 +346,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
 
         c.internals.accessToken = accessToken;
         c.internals.refreshToken = refreshToken;
-        // acl = ...;
+        // c.internals.acl = ...;
     }
 
     // setSession
@@ -412,7 +416,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         return await getSession();
     }
 
-    async function signOut(accessToken1?: string) {
+    async function signOut(accessToken?: string) {
         await init();
 
         if (!m.useConventions) {
@@ -550,7 +554,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 [$AUTH_SIGNOUT]: {
                     in: {
                         callback: (msg) => {
-                            return signOut(msg.payload.accessToken);
+                            return signOut(msg.payload?.accessToken);
                         },
                     },
                 },

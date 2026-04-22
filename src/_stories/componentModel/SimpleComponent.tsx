@@ -12,8 +12,7 @@ import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
 import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
 import { DynamicContentStruct, useDynamicContent } from '../../componentModel/DynamicContent';
 import { bind, bindProp } from '@/componentModel/core';
-
-// import './simpleComponent.css';
+import { detailsStyle, labelStyle, row } from './styles';
 
 type Struct = ComponentStruct<
     AppMsgStruct,
@@ -78,25 +77,32 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
 
         view: () => {
             return (
-                <div id={c.id}>
-                    <c.children.Summary />
-                    <div>
-                        Button: <c.children.button.View />
+                <details open style={detailsStyle}>
+                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Simple Component</summary>
+                    <div style={row}>
+                        <span style={labelStyle}>Counter</span>
+                        <c.children.Summary />
                     </div>
-                    <div>
-                        Edit: <c.children.edit.View />
+                    <div style={row}>
+                        <span style={labelStyle}>Button</span>
+                        <c.children.button.View />
                     </div>
-                    <div>
-                        Content: <c.children.content.View />
+                    <div style={row}>
+                        <span style={labelStyle}>Edit</span>
+                        <c.children.edit.View />
                     </div>
-                    <ul>
+                    <div style={row}>
+                        <span style={labelStyle}>Content</span>
+                        <c.children.content.View />
+                    </div>
+                    <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
                         {Array.from({ length: m.counter }).map((_, i) => (
-                            <li>
+                            <li key={i}>
                                 <c.children.DynEdit key={i}></c.children.DynEdit>
                             </li>
                         ))}
                     </ul>
-                </div>
+                </details>
             );
         },
     };

@@ -8,6 +8,7 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
+import { detailsStyle, labelStyle, row } from '../styles';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -25,19 +26,6 @@ type Struct = ComponentStruct<
     }
 >;
 
-const row: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    margin: '6px 0',
-};
-
-const labelStyle: React.CSSProperties = {
-    width: 48,
-    textAlign: 'right',
-    color: '#888',
-    fontSize: 12,
-};
 
 export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
@@ -53,7 +41,7 @@ export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
         view: () => {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <details open>
+                    <details open style={detailsStyle}>
                         <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Write</summary>
                         <div style={row}>
                             <span style={labelStyle}>Key</span>
@@ -94,7 +82,7 @@ export const useStorageServiceExample = (params: ComponentParams<Struct>) => {
                             )}
                         </div>
                     </details>
-                    <details open>
+                    <details open style={detailsStyle}>
                         <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Read</summary>
                         <div style={row}>
                             <span style={labelStyle}>Key</span>

@@ -1,3 +1,4 @@
+import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { ComponentMsgHeaders } from '@/componentModel/contracts';
 import { MsgStruct } from '@actdim/msgmesh/contracts';
 import { KeysOf } from '@actdim/utico/typeCore';
@@ -17,7 +18,7 @@ export type CustomMsgStruct = MsgStruct<{
         in: void;
         out: void;
     };
-}>; // & AppMsgStruct ...
+}> & BaseAppMsgStruct;
 
 export type CustomMsgChannels<TChannel extends keyof CustomMsgStruct | Array<keyof CustomMsgStruct>> =
     KeysOf<CustomMsgStruct, TChannel>;

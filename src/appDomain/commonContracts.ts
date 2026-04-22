@@ -292,5 +292,3 @@ export type BaseAppDomainConfig<
 };
 
 export type CommonAppMsgChannels<TChannel extends keyof CommonAppMsgStruct | Array<keyof CommonAppMsgStruct>> = KeysOf<CommonAppMsgStruct, TChannel>;
-
-export type CommonAppContext<TMsgStruct extends CommonAppMsgStruct = CommonAppMsgStruct> = BaseContext<TMsgStruct>;

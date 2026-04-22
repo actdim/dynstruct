@@ -10,6 +10,7 @@ import React from 'react';
 import { TodoEditStruct, useTodoEdit } from './TodoEdit';
 import { TodoListStruct, useTodoList } from './TodoList';
 import { CustomMsgChannels, CustomMsgHeaders, CustomMsgStruct, TodoItem } from './CustomMsgStruct';
+import { detailsStyle, labelStyle, row } from '../styles';
 
 type Struct = ComponentStruct<
     CustomMsgStruct,
@@ -78,12 +79,10 @@ export const useCustomMsgStructExample = (params: ComponentParams<Struct>) => {
 
         view: () => {
             return (
-                <>
-                    Edit:
-                    <c.children.todoEdit.View></c.children.todoEdit.View>
-                    List:
-                    <c.children.todoList.View></c.children.todoList.View>
-                </>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <c.children.todoEdit.View />
+                    <c.children.todoList.View />
+                </div>
             );
         },
     };

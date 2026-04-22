@@ -7,9 +7,10 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { DataItem, TestApiClient } from './TestApiClient';
+import { DataItem } from './TestApiClient';
 
 import { CustomMsgChannels, CustomMsgStruct } from './ApiServiceProvider';
+import { detailsStyle, row } from '../styles';
 
 type Struct = ComponentStruct<
     CustomMsgStruct,
@@ -56,17 +57,18 @@ export const useServiceCallExample = (params: ComponentParams<Struct>) => {
         },
         view: () => {
             return (
-                <div id={c.id}>
-                    <button onClick={loadData}>Load data</button>
-                    <button onClick={clear}>Clear</button>
-                    <ul>
+                <details open style={detailsStyle}>
+                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>API Call</summary>
+                    <div style={{ ...row, marginTop: 4 }}>
+                        <button onClick={loadData}>Load data</button>
+                        <button onClick={clear}>Clear</button>
+                    </div>
+                    <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
                         {m.dataItems.map((item) => (
-                            <li>
-                                {item.id}: {item.name}
-                            </li>
+                            <li key={item.id}>{item.id}: {item.name}</li>
                         ))}
                     </ul>
-                </div>
+                </details>
             );
         },
     };

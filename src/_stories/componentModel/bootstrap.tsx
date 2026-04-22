@@ -55,23 +55,16 @@ export function createAppMsgBus() {
     });
     msgBus.on({
         channel: 'MSGBUS.ERROR',
-        topic: 'msgbus',
+        topic: '/.*/',
         callback: (msg) => {
-            console.error(msg.payload);
+            console.error(msg);
         },
     });
     msgBus.on({
         channel: 'APP.ERROR',
-        topic: 'msgbus',
+        topic: '/.*/',
         callback: (msg) => {
-            console.error(msg.payload);
-        },
-    });
-    msgBus.on({
-        channel: 'APP.SECURITY.AUTH.SESSION.GET',
-        group: 'error',
-        callback: (msg) => {
-            console.error(msg.payload);
+            console.error(msg);
         },
     });
     return msgBus;

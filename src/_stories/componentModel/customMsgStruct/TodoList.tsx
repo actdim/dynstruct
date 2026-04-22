@@ -8,6 +8,7 @@ import type {
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
 import { CustomMsgChannels, CustomMsgHeaders, CustomMsgStruct, TodoItem } from './CustomMsgStruct';
+import { detailsStyle } from '../styles';
 
 type Struct = ComponentStruct<
     CustomMsgStruct,
@@ -59,13 +60,14 @@ export const useTodoList = (params: ComponentParams<Struct>) => {
 
         view: () => {
             return (
-                <ul>
-                    {m.list.map((item) => (
-                        <li>
-                            <>{item.id}</>:<>{item.name}</>
-                        </li>
-                    ))}
-                </ul>
+                <details open style={detailsStyle}>
+                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Todo List</summary>
+                    <ul style={{ margin: '4px 0', paddingLeft: 20 }}>
+                        {m.list.map((item) => (
+                            <li key={item.id}>{item.id}: {item.name}</li>
+                        ))}
+                    </ul>
+                </details>
             );
         },
     };

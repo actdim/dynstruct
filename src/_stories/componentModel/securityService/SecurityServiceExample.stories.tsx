@@ -63,8 +63,14 @@ type Story = StoryObj<typeof SecurityServiceExample>;
 export const SecurityServiceExampleStory: Story = {
     args: {},
     name: 'Security Service Example',
-    render: (args, context) => {
-        // console.log('loaded:', context.loaded);
-        return <SecurityServiceExample />;
-    },
+    render: (args, context) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <p style={{ margin: 0, color: '#555', fontSize: 13 }}>
+                Demonstrates <b>security service integration</b> — sign-in/sign-out flow and
+                secure API access. Use email <code>admin@mail.com</code> / password{' '}
+                <code>admin</code> to authenticate.
+            </p>
+            <SecurityServiceExample />
+        </div>
+    ),
 };

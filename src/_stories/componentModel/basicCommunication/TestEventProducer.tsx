@@ -7,7 +7,8 @@ import type {
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react';
 import React from 'react';
-import { AppMsgChannels, AppMsgStruct } from './bootstrap';
+import { AppMsgChannels, AppMsgStruct } from '../bootstrap';
+import { detailsStyle, labelStyle, row } from '../styles';
 
 type Struct = ComponentStruct<
     AppMsgStruct,
@@ -22,7 +23,7 @@ type Struct = ComponentStruct<
     }
 >;
 
-export const useTestEventProducer = (params: ComponentParams<Struct>) => {
+export const useTestEventProducer = (params?: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
@@ -30,30 +31,26 @@ export const useTestEventProducer = (params: ComponentParams<Struct>) => {
         props: {
             value: 'foo',
         },
-
-        view: () => {
-            return (
-                <>
+        view: () => (
+            <details open style={detailsStyle}>
+                <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Producer</summary>
+                <div style={row}>
+                    <span style={labelStyle}>Message</span>
                     <input
                         type="text"
-                        onChange={(e) => {
-                            m.value = e.target.value;
-                        }}
                         value={m.value}
-                    ></input>
+                        onChange={(e) => (m.value = e.target.value)}
+                    />
+                </div>
+                <div style={{ ...row, marginTop: 10 }}>
                     <button
-                        onClick={() => {
-                            c.msgBus.send({
-                                channel: 'TEST-EVENT',
-                                payload: m.value,
-                            });
-                        }}
+                        onClick={() => c.msgBus.send({ channel: 'TEST-EVENT', payload: m.value })}
                     >
                         Send
                     </button>
-                </>
-            );
-        },
+                </div>
+            </details>
+        ),
     };
 
     c = useComponent(def, params);

@@ -2,16 +2,16 @@ import type {
     Component,
     ComponentDef,
     ComponentModel,
-    ComponentMsgStruct,
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
+import type { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import React from 'react';
 import { useComponent } from './react';
 
 export type DynamicContentStruct<
     TData = never,
-    TMsgStruct extends ComponentMsgStruct = ComponentMsgStruct,
+    TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct,
 > = ComponentStruct<
     TMsgStruct,
     {

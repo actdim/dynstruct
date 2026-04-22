@@ -1,4 +1,4 @@
-import { BaseAppContext } from "@/appDomain/appContracts";
+import { BaseAppContext } from "@/componentModel/contracts";
 import { ClientBase } from "@/net/client";
 import { IRequestCallbacks } from "@/net/request";
 
@@ -9,7 +9,7 @@ export class SecureApiClient extends ClientBase {
         super(configuration);
     }    
     
-    getData(param: string, callbacks?: IRequestCallbacks<string>): Promise<string[]> {
+    getData(param: string, callbacks?: IRequestCallbacks<string>): Promise<unknown> {
         let url = "https://httpbin.org/post";        
 
         const options_ = {                

@@ -28,19 +28,13 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
         props: {
             value: "foo",
         },
-        view: () => {
-            return (
-                <div id={c.id}>
-                    <input
-                        type="text"
-                        onChange={(e) => {
-                            m.value = e.target.value;
-                        }}
-                        value={m.value}
-                    ></input>
-                </div>
-            );
-        },
+        view: () => (
+            <input
+                type="text"
+                onChange={(e) => (m.value = e.target.value)}
+                value={m.value}
+            />
+        ),
     };
 
     c = useComponent(def, params);

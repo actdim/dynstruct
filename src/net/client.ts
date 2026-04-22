@@ -2,10 +2,11 @@ import { v4 as uuid } from "uuid";
 import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
 import { ApiError } from "./apiError";
-import { BaseAppMsgStruct, BaseAppContext, BaseApiConfig } from "@/appDomain/appContracts";
+import { BaseAppMsgStruct, BaseApiConfig } from "@/appDomain/appContracts";
 import { MsgBus, MsgSubOptions } from "@actdim/msgmesh/contracts";
-import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_SESSION_GET } from "@/appDomain/securityContracts";
+import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_SESSION_GET, $AUTH_SIGNOUT } from "@/appDomain/securityContracts";
 import { $CONFIG_CHANGED, $CONFIG_GET, BaseAppDomainConfig } from "@/appDomain/commonContracts";
+import { BaseAppContext } from "@/componentModel/contracts";
 
 export function extractApiName(name: string, suffixes: string[]): string | null {
     if (!name) {
@@ -75,6 +76,16 @@ export class ClientBase {
             group: "out",
             callback: (msg) => {
                 this.accessToken = msg.payload.accessToken;
+                // this.updateSecurity();
+            },
+            options
+        });
+
+        this.msgBus.on({
+            channel: $AUTH_SIGNOUT,
+            group: "out",
+            callback: (msg) => {
+                this.accessToken = null;
                 // this.updateSecurity();
             },
             options

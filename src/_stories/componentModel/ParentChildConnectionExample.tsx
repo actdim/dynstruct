@@ -3,13 +3,9 @@ import { TestContainer } from './TestContainer';
 
 export const ParentChildConnectionExample = () => {
     return (
-        <>
-            <p>
-                <TestContainer $id="test1"></TestContainer>
-            </p>
-            <p>
-                <TestContainer $id="test2"></TestContainer>
-            </p>
-        </>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <TestContainer $id="test1" />
+            <TestContainer $id="test2" />
+        </div>
     );
 };

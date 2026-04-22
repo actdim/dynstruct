@@ -16,6 +16,9 @@ import type {
     ValueConverter,
 } from './contracts';
 import { $isBinding, ComponentMsgFilter } from './contracts';
+import { lazy } from '@actdim/utico/utils';
+import { Func } from '@actdim/utico/typeCore';
+import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 // import { isPlainObject } from 'mobx/dist/internal';
 
 // onReactionError((err, derivation) => {
@@ -191,7 +194,7 @@ export function getComponentNameByCaller(depth = 2): string | null {
 }
 
 export function registerMsgBroker<
-    TStruct extends ComponentStruct = ComponentStruct,
+    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 >(component: Component<TStruct, TMsgHeaders>) {
     const providers = component?.msgBroker.provide;
@@ -271,18 +274,22 @@ export function registerMsgBroker<
 }
 
 export function getComponentMsgBus<
-    TStruct extends ComponentStruct = ComponentStruct,
+    TStruct extends ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
->(
-    msgBus: MsgBus<TStruct['msg'], TMsgHeaders>,
-    abortSignal: AbortSignal,
-    headerSetter: (headers?: TMsgHeaders) => void,
-) {
+>(component: Component<TStruct, TMsgHeaders>, msgBus: MsgBus<TStruct['msg'], TMsgHeaders>) {
+    const headerSetter = (headers?: TMsgHeaders) => {
+        if (headers && headers.sourceId == undefined) {
+            headers.sourceId = component.id;
+        }
+    };
+
     type OpParams = {
         headers?: TMsgHeaders;
         options?: PromiseOptions | MsgSubOptions;
         payload?: unknown;
+        callback?: Func;
     };
+
     function getParams<TParams extends OpParams>(params: TParams, hasHeaders = false) {
         if (hasHeaders && !params.headers) {
             params.headers = {} as TMsgHeaders;
@@ -294,12 +301,18 @@ export function getComponentMsgBus<
         if (!params.options) {
             params.options = {};
         }
+        let abortSignal = component.abortSignal;
         if (params.options.abortSignal) {
             abortSignal = AbortSignal.any([params.options.abortSignal, abortSignal]);
         }
         params.options.abortSignal = abortSignal;
+        if (params.callback) {
+            const callback = params.callback;
+            params.callback = (...args) => component.run(() => callback(...args), true);
+        }
         return params;
     }
+
     return {
         config: msgBus.config,
         on: (params) => {
@@ -318,13 +331,13 @@ export function getComponentMsgBus<
             return msgBus.send(getParams(params, true));
         },
         request: (params) => {
-            return msgBus.request(getParams(params, true));
+            return component.run(() => msgBus.request(getParams(params, true)), false);
         },
-    } as MsgBus<TStruct['msg'], TMsgHeaders>;
+    } as typeof component.msgBus;
 }
 
 export function createEffect<
-    TStruct extends ComponentStruct,
+    TStruct extends ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 >(
     component: Component<TStruct, TMsgHeaders>,
