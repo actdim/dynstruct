@@ -91,8 +91,8 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
                         <input type="text" value={m.text ?? ''} readOnly />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                        <c.children.child1.View />
-                        <c.children.child2.View />
+                        <c.children.Child1 />
+                        <c.children.Child2 />
                     </div>
                 </details>
             );

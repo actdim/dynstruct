@@ -49,7 +49,7 @@ Use hook-constructors as the primary component format:
 - `events` for lifecycle and property change reactions
 - `effects` for auto-tracked reactive logic
 - `children` for explicit composition
-- `view` for rendering
+- `view` for rendering — use `<c.children.Name />` (Capitalized) for all child types
 4. Instantiate via `useComponent(def, params)`.
 5. Prefer `let c` and `let m` pattern:
 - `c` is component instance
@@ -136,6 +136,7 @@ For service APIs:
 - Prefer parent-child composition via `children` over passing unstable inline objects/functions deep into tree.
 - Keep JSX mostly structural; put behavior in `actions/events/effects`.
 - Reuse existing component structures rather than creating parallel incompatible patterns.
+- In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This works for every child type — `ComponentStruct`, `React.FC`, and factory functions. For `ComponentStruct` children the camelCase name still exists for model/effects access (`c.children.name.model`), but JSX always uses the Capitalized form.
 
 ## File and Story Conventions
 

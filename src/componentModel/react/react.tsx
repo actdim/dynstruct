@@ -287,7 +287,7 @@ function createComponent<
                 const view = value as (params: any) => Component;
                 const ChildViewFC: ComponentViewImplFn<TStruct> = observer((props) => {
                     const c = view(props);
-                    if (isComponent(c) && c.View) {
+                    if (isComponent(c) && c.View) {                        
                         return <c.View />;
                     } else {
                         return c as any;
@@ -301,6 +301,7 @@ function createComponent<
                 Reflect.set(children, capitalize(key), ChildViewFC);
             } else {
                 Reflect.set(children, key, value);
+                Reflect.set(children, capitalize(key), value.View);
             }
         }
     }
@@ -354,14 +355,14 @@ export function useComponent<
     TInternals = unknown,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 >(
-    componentDef: ComponentDef<TStruct, TMsgHeaders>,
+    def: ComponentDef<TStruct, TMsgHeaders>,
     params: ComponentParams<TStruct>,
     internals?: TInternals,
 ) {
     const context = useComponentContext() as ComponentRegistryContext<TStruct['msg'], TMsgHeaders>;
     const ref = useLazyRef(() => {
         const component = createComponent<TStruct, TMsgHeaders>(
-            componentDef,
+            def,
             context,
             params,
         ) as ComponentImpl<TStruct, TInternals, TMsgHeaders>;

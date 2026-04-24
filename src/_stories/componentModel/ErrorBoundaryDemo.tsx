@@ -215,9 +215,9 @@ export const useErrorBoundaryDemo = (params: ComponentParams<DemoStruct>) => {
         },
         view: () => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <c.children.standard.View />
-                <c.children.custom.View />
-                <c.children.asyncError.View />
+                <c.children.Standard />
+                <c.children.Custom />
+                <c.children.AsyncError />
             </div>
         ),
     };

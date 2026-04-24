@@ -87,15 +87,15 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
                     </div>
                     <div style={row}>
                         <span style={labelStyle}>Button</span>
-                        <c.children.button.View />
+                        <c.children.Button />
                     </div>
                     <div style={row}>
                         <span style={labelStyle}>Edit</span>
-                        <c.children.edit.View />
+                        <c.children.Edit />
                     </div>
                     <div style={row}>
                         <span style={labelStyle}>Content</span>
-                        <c.children.content.View />
+                        <c.children.Content />
                     </div>
                     <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
                         {Array.from({ length: m.counter }).map((_, i) => (

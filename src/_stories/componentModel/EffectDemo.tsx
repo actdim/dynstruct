@@ -132,17 +132,17 @@ export const useEffectDemo = (params: ComponentParams<Struct>) => {
                 isReadOnly: true,
             }),
         },
-        view: () => (
+        view: () => (            
             <details open style={detailsStyle}>
                 <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Effects</summary>
                 <c.children.Buttons />
                 <div style={row}>
                     <span style={labelStyle}>First</span>
-                    <c.children.firstNameEdit.View />
+                    <c.children.FirstNameEdit />
                 </div>
                 <div style={row}>
                     <span style={labelStyle}>Last</span>
-                    <c.children.lastNameEdit.View />
+                    <c.children.LastNameEdit />
                 </div>
                 <div style={row}>
                     <span style={labelStyle}>Email</span>
@@ -151,19 +151,17 @@ export const useEffectDemo = (params: ComponentParams<Struct>) => {
                 </div>
                 <div style={row}>
                     <span style={labelStyle}>Full name</span>
-                    <c.children.fullName.View />
+                    <c.children.FullName />
                 </div>
                 <div>
-                    <c.children.contactEdit.View />
+                    <c.children.ContactEdit />
                 </div>
             </details>
         ),
     };
 
     c = useComponent(def, params);
-
     m = c.model;
-
     return c;
 };
 

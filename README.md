@@ -149,16 +149,22 @@ type ButtonStruct = ComponentStruct<AppMsgStruct, {
 
 // Button hook-constructor
 const useButton = (params: ComponentParams<ButtonStruct>) => {
+    let c: Component<ButtonStruct>;
+    let m: ComponentModel<ButtonStruct>;
+
     const def: ComponentDef<ButtonStruct> = {
         props: {
-            label: params.label ?? 'Click',
-            onClick: params.onClick ?? (() => {})
+            label: 'Click',
+            onClick: () => {},
         },
-        view: (_, c) => (
-            <button onClick={c.model.onClick}>{c.model.label}</button>
-        )
+        view: () => (
+            <button onClick={m.onClick}>{m.label}</button>
+        ),
     };
-    return useComponent(def, params);
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
 };
 
 // Input component structure
@@ -171,19 +177,25 @@ type InputStruct = ComponentStruct<AppMsgStruct, {
 
 // Input hook-constructor
 const useInput = (params: ComponentParams<InputStruct>) => {
+    let c: Component<InputStruct>;
+    let m: ComponentModel<InputStruct>;
+
     const def: ComponentDef<InputStruct> = {
         props: {
-            value: params.value ?? '',
-            onChange: params.onChange ?? (() => {})
+            value: '',
+            onChange: (_: string) => {},
         },
-        view: (_, c) => (
+        view: () => (
             <input
-                value={c.model.value}
-                onChange={(e) => c.model.onChange(e.target.value)}
+                value={m.value}
+                onChange={(e) => m.onChange(e.target.value)}
             />
-        )
+        ),
     };
-    return useComponent(def, params);
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
 };
 ```
 
@@ -213,8 +225,8 @@ const useCounterPanel = (params: ComponentParams<CounterPanelStruct>) => {
 
     const def: ComponentDef<CounterPanelStruct> = {
         props: {
-            counter: params.counter ?? 0,
-            message: params.message ?? 'Hello'
+            counter: 0,
+            message: 'Hello',
         },
         // Component events with full IntelliSense support!
         events: {
@@ -245,16 +257,15 @@ const useCounterPanel = (params: ComponentParams<CounterPanelStruct>) => {
                 value: bind(() => m.message, v => { m.message = v; })
             })
         },
-        view: (_, c) => (
+        view: () => (
             <div>
                 <h3>{m.message}</h3>
                 <p>Counter: {m.counter}</p>
-                {/* Use children via c.children.xxx.View */}
-                <c.children.incrementBtn.View />
-                <c.children.resetBtn.View />
-                <c.children.messageInput.View />
+                <c.children.IncrementBtn />
+                <c.children.ResetBtn />
+                <c.children.MessageInput />
             </div>
-        )
+        ),
     };
 
     c = useComponent(def, params);
@@ -379,10 +390,10 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
         regType: 'MyComponent',
 
         props: {
-            // Initial values for properties (types match those declared
-            // in the component structure).
-            counter: params.counter ?? 0,
-            message: params.message ?? 'Hello',
+            // Default values for properties. Provided params are applied
+            // automatically by the framework — no need to read them here.
+            counter: 0,
+            message: 'Hello',
             items: [],
         },
 
@@ -489,13 +500,13 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
         // of a dedicated children block, reduces compactness and
         // readability, increases side-effect risk, and harms
         // predictable reactivity.
-        view: (_, c) => (
+        view: () => (
             <div>
                 <h3>{m.message}</h3>
                 <p>Counter: {m.counter}</p>
-                <c.children.header.View />
-                <c.children.todoList.View />
-                <c.children.footer.View />
+                <c.children.Header />
+                <c.children.TodoList />
+                <c.children.Footer />
             </div>
         ),
     };
@@ -509,15 +520,15 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
 | Field | Description |
 |---|---|
 | `regType` | Component type identifier used when registering in the component tree. Also used to form the instance ID (can be used as HTML `id`). |
-| `props` | Initial property values (types match the component structure). |
+| `props` | Default property values. Provided `params` are applied automatically by the framework on top of these defaults — no manual `params.x ?? default` needed. |
 | `actions` | Method implementations (signatures match the structure). Optimized for batching reactive property changes. |
 | `effects` | Effect implementations — methods that run automatically when any property accessed within them changes. An effect runs on component creation and can be paused, resumed, or stopped via `c.effects.<name>`. Returns an optional cleanup function. |
 | `children` | Child component instances created via hook-constructors (`use*`). Properties can be initialized with values or bindings; external event handlers can be assigned. |
 | `events` | Component event handlers (lifecycle, property changes). See [Component Events](#component-events). |
 | `msgBroker` | Message bus handlers for channels declared in the structure. Contains `provide` (response providers) and `subscribe` (message handlers) sections. Handlers are registered through the component-scoped `msgBus`, so unmount cleanup semantics are applied to broker channels as well. |
 | `msgBus` | Explicit message bus instance. If omitted, the bus from the component model context is used. Must be compatible with the declared message structure. The component uses a lifecycle-scoped `msgBus` wrapper: on unmount, subscriptions are automatically canceled and pending requests are aborted via `AbortSignal`. |
-| `view` | Render function producing the component's JSX view. Child components are rendered via `c.children.<name>.View`. Intended to be compact — logic is distributed across other definition areas. |
-| `fallbackView` | Optional error fallback render function. Rendered instead of `view` when `useErrorBoundary: true` is set and the component catches an error. Receives the same `(props, component)` signature as `view`. |
+| `view` | Render function `() => JSX`. Uses the closed-over `c` and `m` variables declared at the top of the hook-constructor. Children rendered as `<c.children.Name />` (Capitalized). Intended to be compact — logic lives in other definition areas. |
+| `fallbackView` | Optional error fallback `(props, component) => JSX`. Rendered instead of `view` when `useErrorBoundary: true` is set and the component catches an error. |
 
 ### Reactive Properties
 
@@ -826,13 +837,13 @@ const useForm = (params: ComponentParams<FormStruct>) => {
                 value: bind(() => m.password, v => { m.password = v; })
             })
         },
-        view: (_, c) => (
+        view: () => (
             <div>
-                <c.children.emailInput.View />
-                <c.children.passwordInput.View />
+                <c.children.EmailInput />
+                <c.children.PasswordInput />
                 <button disabled={!m.isValid}>Submit</button>
             </div>
-        )
+        ),
     };
 
     c = useComponent(def, params);
@@ -918,10 +929,10 @@ const useEffectDemo = (params: ComponentParams<Struct>) => {
                 value: bindProp(() => m, 'lastName'),
             }),
         },
-        view: (_, c) => (
+        view: () => (
             <div id={c.id}>
-                <div>First Name: <c.children.firstNameEdit.View /></div>
-                <div>Last Name: <c.children.lastNameEdit.View /></div>
+                <div>First Name: <c.children.FirstNameEdit /></div>
+                <div>Last Name: <c.children.LastNameEdit /></div>
                 <div>Full Name: {m.fullName}</div>
                 {m.trackingEnabled
                     ? <button onClick={() => { m.trackingEnabled = false; }}>Pause</button>
@@ -948,7 +959,7 @@ dynstruct is designed to **amplify** JSX, not replace it. The framework delibera
 - **Wiring** (how props, bindings, and state flow between components) belongs in `def.children` — the `useX` hook call for each child component.
 - **Layout** (where components appear) belongs in `def.view` — plain JSX that reads naturally.
 
-This separation keeps the view clean. Because bindings are declared once in the `useX` call inside `children`, the JSX in `view` contains no wiring noise — no `onChange`, no manual `value={...}` threading, no `useCallback`. Each `<c.children.X.View />` is just a named slot. The result is JSX that looks structurally close to HTML while all the reactive coupling lives in one predictable place.
+This separation keeps the view clean. Because bindings are declared once in the `useX` call inside `children`, the JSX in `view` contains no wiring noise — no `onChange`, no manual `value={...}` threading, no `useCallback`. Each `<c.children.Name />` is just a named slot. The result is JSX that looks structurally close to HTML while all the reactive coupling lives in one predictable place.
 
 ```typescript
 // Wiring lives here — free from JSX
@@ -961,9 +972,9 @@ children: {
 // Layout lives here — no binding noise
 view: () => (
     <form>
-        <c.children.firstNameEdit.View />
-        <c.children.lastNameEdit.View />
-        <c.children.emailEdit.View />
+        <c.children.FirstNameEdit />
+        <c.children.LastNameEdit />
+        <c.children.EmailEdit />
     </form>
 ),
 ```
@@ -1066,7 +1077,7 @@ const def: ComponentDef<Struct> = {
             render: (_, dc) => <>{dc.model.data}</>,
         }),
     },
-    view: () => <c.children.content.View />,
+    view: () => <c.children.Content />,
 };
 ```
 
@@ -1078,9 +1089,10 @@ const def: ComponentDef<Struct> = {
 |---|---|---|---|
 | Named JSX fragment | `React.FC` | `<c.children.Name />` | Named inline fragments, keep main view concise |
 | Factory function | `(params) => ChildStruct` | `<c.children.Name key={...} prop={...} />` | Dynamic instances per render (lists, grids) |
-| DynamicContent | `DynamicContentStruct<TData>` | `<c.children.name.View />` | Typed reactive data with typed render callback |
+| DynamicContent | `DynamicContentStruct<TData>` | `<c.children.Name />` | Typed reactive data with typed render callback |
+| Component structure | `SomeChildStruct` | `<c.children.Name />` | Full dynstruct component with its own model and effects |
 
-> **Naming convention:** Children declared as function types (`React.FC` and factory functions) are accessed with a **capitalized** name in the view (`c.children.Summary`, `c.children.DynEdit`). Children declared as component structures use their original camelCase name (`c.children.content.View`).
+> **Naming convention:** All children are rendered in JSX using a **Capitalized** name: `<c.children.Name />`. For component structure children the camelCase name additionally gives access to the full component instance (`c.children.name.model`, `c.children.name.effects`, …). For `React.FC` and factory children only the Capitalized form exists.
 
 ### Component Wiring
 
@@ -1371,8 +1383,8 @@ const useUserPanel = (params: ComponentParams<UserPanelStruct>) => {
 
     const def: ComponentDef<UserPanelStruct> = {
         props: {
-            userId: params.userId ?? '',
-            userData: null
+            userId: '',
+            userData: null,
         },
 
         msgBroker: {
@@ -1451,12 +1463,12 @@ const useUserPanel = (params: ComponentParams<UserPanelStruct>) => {
             })
         },
 
-        view: (_, c) => (
+        view: () => (
             <div>
-                <c.children.emailInput.View />
-                <c.children.submitButton.View />
+                <c.children.EmailInput />
+                <c.children.SubmitButton />
             </div>
-        )
+        ),
     };
 
     c = useComponent(def, params);
@@ -1642,24 +1654,31 @@ expect(sendSpy).toHaveBeenCalledWith({
 Components can access their hierarchy:
 
 ```typescript
-// Define parent with children
-const parentDef: ComponentDef<ParentStruct> = {
-    children: {
-        child1: useChildComponent({ /* params */ }),
-        child2: useChildComponent({ /* params */ })
-    },
-    view: (_, c) => (
-        <div>
-            <c.children.child1.View />
-            <c.children.child2.View />
-        </div>
-    )
+const useParent = (params: ComponentParams<ParentStruct>) => {
+    let c: Component<ParentStruct>;
+
+    const def: ComponentDef<ParentStruct> = {
+        children: {
+            child1: useChildComponent({ /* params */ }),
+            child2: useChildComponent({ /* params */ }),
+        },
+        view: () => (
+            <div>
+                <c.children.Child1 />
+                <c.children.Child2 />
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    return c;
 };
 
-// Access from child component
-const parentId = component.getParent();
-const ancestors = component.getChainUp();
-const descendants = component.getChainDown();
+// Hierarchy access — available after component creation
+// (inside events, effects, actions, view — not inside def.children or onInit)
+const parentId  = c.getParent();
+const ancestors = c.getChainUp();
+const descendants = c.getChainDown();
 ```
 
 ## More Examples (React)
@@ -1762,7 +1781,7 @@ const useApiCallExample = (params: ComponentParams<Struct>) => {
             // Load data when the component is ready
             onReady: () => { loadData(); },
         },
-        view: (_, c) => (
+        view: () => (
             <div id={c.id}>
                 <button onClick={loadData}>Load data</button>
                 <button onClick={clear}>Clear</button>
@@ -1813,14 +1832,14 @@ const usePage = (params: ComponentParams<PageStruct>) => {
                 });
             }
         },
-        view: (_, c) => (
+        view: () => (
             <div>
                 <button onClick={c.actions.navigateToHome}>Home</button>
                 <button onClick={() => c.actions.navigateToProfile('123')}>
                     View Profile
                 </button>
             </div>
-        )
+        ),
     };
 
     c = useComponent(def, params);
@@ -1877,7 +1896,7 @@ const useSecurePage = (params: ComponentParams<SecurePageStruct>) => {
                 m.isAuthenticated = false; // Reactive update
             }
         },
-        view: (_, c) => (
+        view: () => (
             <div>
                 {m.isAuthenticated ? (
                     <button onClick={c.actions.signOut}>Sign Out</button>
@@ -1887,11 +1906,11 @@ const useSecurePage = (params: ComponentParams<SecurePageStruct>) => {
                     </button>
                 )}
             </div>
-        )
+        ),
     };
 
     c = useComponent(def, params);
-    m = c.model; // Model properties are reactive
+    m = c.model;
     return c;
 };
 
@@ -1924,9 +1943,9 @@ The combination of **bindings** (`bind`), **events**, and **`.View` wrappers** c
 <div>
     <h3>{m.message}</h3>
     <p>Counter: {m.counter}</p>
-    <c.children.incrementBtn.View />
-    <c.children.resetBtn.View />
-    <c.children.messageInput.View />
+    <c.children.IncrementBtn />
+    <c.children.ResetBtn />
+    <c.children.MessageInput />
 </div>
 ```
 
@@ -2273,13 +2292,13 @@ const useTodoList = (params: ComponentParams<TodoListStruct>) => {
                 contact: bind(() => m),
             }),
         },
-        view: (_, c) => (
+        view: () => (
             <div>
                 {/* Clean JSX — no inline handlers or binding noise */}
-                <c.children.filterInput.View />
-                <c.children.contactEdit.View />
+                <c.children.FilterInput />
+                <c.children.ContactEdit />
             </div>
-        )
+        ),
     };
 
     c = useComponent(def, params);

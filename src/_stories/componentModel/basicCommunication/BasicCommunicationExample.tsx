@@ -29,8 +29,8 @@ export const useBasicCommunicationExample = (params: ComponentParams<Struct>) =>
         },
         view: () => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <c.children.producer.View />
-                <c.children.consumer.View />
+                <c.children.Producer />
+                <c.children.Consumer />
             </div>
         ),
     };

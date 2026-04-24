@@ -206,7 +206,7 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                             />
                         </div>
                     )}
-                    {m.showLoginDialog && <c.children.loginDialog.View />}
+                    {m.showLoginDialog && <c.children.LoginDialog />}
                 </details>
             );
         },

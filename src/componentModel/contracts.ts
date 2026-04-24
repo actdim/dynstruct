@@ -265,6 +265,10 @@ export type ComponentEvents<
     onDestroy?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<void>; // onDispose/onCleanup
     // onError
     onCatch?: (component: Component<TStruct, TMsgHeaders>, error: unknown, info?: unknown) => void;
+    // TODO:
+    // onFocus
+    // onBlur
+    // onValidate
 } & {
         [P in keyof TStruct['props']as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
     } & {
@@ -348,17 +352,29 @@ export type RenderFn<P> = {
     displayName?: string | undefined;
 };
 
-export type ComponentChildren<TRefStruct extends ComponentRefStruct> = {
-    readonly [P in keyof TRefStruct as TRefStruct[P] extends Function
-    ? `${Capitalize<P & string>}`
-    : P]: TRefStruct[P] extends (params: infer TParams) => infer T
-    ? T extends ComponentStruct<any>
-    ? RenderFn<ComponentParams<T> & TParams>
-    : (params: TParams) => T // ReactNode for example
-    : TRefStruct[P] extends ComponentStruct<any>
-    ? Component<TRefStruct[P]>
-    : never;
-};
+export type ComponentChildren<TRefStruct extends ComponentRefStruct> =
+    // Lowercase keys for ComponentStruct children (full component: .model, .View, .effects, …)
+    // Capitalized keys for Function children (React.FC and factory → RenderFn)
+    {
+        readonly [P in keyof TRefStruct as TRefStruct[P] extends Function
+        ? `${Capitalize<P & string>}`
+        : P]: TRefStruct[P] extends (params: infer TParams) => infer T
+        ? T extends ComponentStruct<any>
+        ? RenderFn<ComponentParams<T> & TParams>
+        : (params: TParams) => T // ReactNode for example
+        : TRefStruct[P] extends ComponentStruct<any>
+        ? Component<TRefStruct[P]>
+        : never;
+    } & {
+        // Capitalized keys for ComponentStruct children → direct View for JSX (<c.children.Name />)
+        readonly [P in keyof TRefStruct as TRefStruct[P] extends Function
+        ? never
+        : TRefStruct[P] extends ComponentStruct<any>
+        ? `${Capitalize<P & string>}`
+        : never]: TRefStruct[P] extends ComponentStruct<any>
+        ? Component<TRefStruct[P]>['View']
+        : never;
+    };
 
 export type ComponentMsgStruct<TStruct extends ComponentStruct<any> = ComponentStruct<any>> = Pick<
     TStruct['msg'],
@@ -419,7 +435,16 @@ export function isComponent(obj: any): obj is ComponentBase {
 }
 
 export type ComponentModel<TStruct extends ComponentStruct<any> = ComponentStruct<any>> =
-    TStruct['props'] & Readonly<TStruct['actions']>;
+    TStruct['props'] & Readonly<TStruct['actions']> & {
+        // TODO:
+        // "$": {
+        //     isBusy: boolean;
+        //     isDisabled: boolean;
+        //     isReadOnly: boolean;
+        //     isVisible: boolean;
+        //     isValid: boolean;
+        // }
+    };
 
 export type Component<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,

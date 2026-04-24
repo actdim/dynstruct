@@ -80,8 +80,8 @@ export const useCustomMsgStructExample = (params: ComponentParams<Struct>) => {
         view: () => {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <c.children.todoEdit.View />
-                    <c.children.todoList.View />
+                    <c.children.TodoEdit />
+                    <c.children.TodoList />
                 </div>
             );
         },
