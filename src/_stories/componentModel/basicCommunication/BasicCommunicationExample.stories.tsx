@@ -31,7 +31,7 @@ export default meta;
 type Story = StoryObj<typeof BasicCommunicationExample>;
 
 export const ConnectionBasicsStory: Story = {
-    name: 'Basic',
+    name: 'Simple',
     args: {},
     render: (args) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

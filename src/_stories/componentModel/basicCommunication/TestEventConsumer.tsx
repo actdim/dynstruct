@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from '../bootstrap';
 import { detailsStyle, labelStyle, row } from '../styles';

@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react/react';
 import React from 'react';
 import { LoginDialogStruct, useLoginDialog } from './LoginDialog';
 import { SecurityDemoMsgChannels, SecurityDemoMsgStruct } from './SecureApiServiceProvider';
@@ -150,28 +150,45 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
         view: () => {
             return (
                 <details open style={detailsStyle}>
-                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Security Service</summary>
+                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
+                        Security Service
+                    </summary>
                     <div style={{ ...row, fontSize: 12, color: '#888', fontStyle: 'italic' }}>
                         Credentials: email "admin@mail.com", password "admin"
                     </div>
                     <div style={row}>
                         <span style={labelStyle}>User</span>
-                        <span>{m.activeUser || <i style={{ color: '#aaa' }}>Not authenticated</i>}</span>
+                        <span>
+                            {m.activeUser || <i style={{ color: '#aaa' }}>Not authenticated</i>}
+                        </span>
                     </div>
                     <div style={{ ...row, marginTop: 8 }}>
                         {!m.activeUser && (
-                            <button onClick={async () => { await c.msgBus.request({ channel: 'APP.SECURITY.AUTH.ENSURE' }); }}>
+                            <button
+                                onClick={async () => {
+                                    await c.msgBus.request({ channel: 'APP.SECURITY.AUTH.ENSURE' });
+                                }}
+                            >
                                 Login
                             </button>
                         )}
                         {m.activeUser && (
-                            <button onClick={async () => { await c.msgBus.request({ channel: 'APP.SECURITY.AUTH.SIGNOUT' }); }}>
+                            <button
+                                onClick={async () => {
+                                    await c.msgBus.request({
+                                        channel: 'APP.SECURITY.AUTH.SIGNOUT',
+                                    });
+                                }}
+                            >
                                 Logout
                             </button>
                         )}
                         <button
                             onClick={async () => {
-                                const msg = await c.msgBus.request({ channel: 'API.SECURE.GETDATA', payloadFn: (r) => r('foo') });
+                                const msg = await c.msgBus.request({
+                                    channel: 'API.SECURE.GETDATA',
+                                    payloadFn: (r) => r('foo'),
+                                });
                                 m.responseData = JSON.stringify(msg.payload);
                             }}
                         >
@@ -181,7 +198,12 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                     {m.responseData && (
                         <div style={row}>
                             <span style={labelStyle}>Data</span>
-                            <textarea name="data" value={m.responseData} readOnly style={{ flex: 1 }} />
+                            <textarea
+                                name="data"
+                                value={m.responseData}
+                                readOnly
+                                style={{ flex: 1 }}
+                            />
                         </div>
                     )}
                     {m.showLoginDialog && <c.children.loginDialog.View />}

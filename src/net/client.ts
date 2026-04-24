@@ -301,7 +301,6 @@ export class ClientBase {
     }
 }
 
-// TODO: check MLWEB-2172
 // TODO: support request cancellation
 // https://stackoverflow.com/questions/31061838/how-do-i-cancel-an-http-fetch-request
 // https://mukeshprajapati0251.medium.com/cancel-rest-api-pending-request-1af65e70366d
@@ -319,8 +318,8 @@ if (status === 404) {
       });
   }
 
-BLOB
+// BLOB
 let reader = new FileReader();
-        reader.onload = event => resolve((event.target as any).result);
-        reader.readAsText(blob);
+reader.onload = event => resolve((event.target as any).result);
+reader.readAsText(blob);
 */

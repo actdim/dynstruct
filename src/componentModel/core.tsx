@@ -1,9 +1,12 @@
 import { MsgBus, MsgSubOptions, PromiseOptions } from '@actdim/msgmesh/contracts';
-import { isObservable, runInAction, toJS, autorun, IReactionDisposer, observable } from 'mobx';
+import { runInAction, toJS, autorun, IReactionDisposer, observable, action } from 'mobx';
 import type {
     Binding,
     Component,
+    ComponentDef,
+    ComponentModel,
     ComponentMsgHeaders,
+    ComponentParams,
     ComponentStruct,
     EffectController,
     EffectFn,
@@ -13,12 +16,20 @@ import type {
     PropValueChangeHandler,
     PropValueChangingHandler,
     Validator,
+    ValueChangeHandler,
+    ValueChangingHandler,
     ValueConverter,
 } from './contracts';
-import { $isBinding, ComponentMsgFilter } from './contracts';
-import { lazy } from '@actdim/utico/utils';
-import { Func } from '@actdim/utico/typeCore';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import {
+    $isBinding,
+    $ON_CHANGE,
+    $ON_CHANGING,
+    $ON_GET,
+    ComponentMsgFilter,
+    isBinding,
+} from './contracts';
+import { Func, MaybePromise, Mutable } from '@actdim/utico/typeCore';
+import { capitalize } from './util';
 // import { isPlainObject } from 'mobx/dist/internal';
 
 // onReactionError((err, derivation) => {
@@ -53,63 +64,172 @@ export function bindProp<T extends object, P extends keyof T>(target: () => T, p
     };
 }
 
-const proxyCache = new WeakMap<object, any>();
-
-export type ProxyEventHandlers = {
+export type ComponentModelEventHandlers = {
     onPropChanging?: PropValueChangingHandler<PropertyKey>;
     onPropChange?: PropValueChangeHandler<PropertyKey>;
 } & Record<PropertyKey, PropEventHandlers>;
 
-export function createRecursiveProxy(
-    target: any,
-    bindings: Map<PropertyKey, Binding>,
-    handlers: ProxyEventHandlers,
+export function createModel<
+    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(
+    component: Component<TStruct, TMsgHeaders>,
+    def: ComponentDef<TStruct, TMsgHeaders>,
+    params?: ComponentParams<TStruct>,
 ) {
-    if (typeof target !== 'object' || target === null) {
-        return target;
+    function runSafe<TFunc extends () => MaybePromise<any>>(handler: TFunc): ReturnType<TFunc> {
+        return component.run(handler, true);
     }
 
-    // isPlainObject
-    if (!isObservable(target)) {
-        return target;
+    let model = {} as Mutable<ComponentModel<TStruct>>;
+
+    if (def.props) {
+        Object.assign(model, def.props);
     }
 
-    if (proxyCache.has(target)) {
-        return proxyCache.get(target);
+    if (def.actions) {        
+        for (const [key, fn] of Object.entries(def.actions)) {
+            Reflect.set(model, key, (...args: any[]) => component.run(() => fn(...args), false));
+        }        
+    }
+    
+    for (const [key, value] of Object.entries(params)) {
+        if (key in model) {
+            if (isBinding(value)) {
+                component.bindings.set(key, value);
+            } else {
+                Reflect.set(model, key, value);
+            }
+        }
     }
 
-    const proxy = new Proxy(target, {
+    const annotationMap: Record<string, any> = {};
+
+    if (def.props) {
+        for (const key of Object.keys(def.props)) {
+            annotationMap[key] = observable.deep;
+        }
+    }
+
+    if (def.actions) {
+        for (const prop of Object.keys(def.actions)) {
+            annotationMap[prop] = action;
+        }
+    }
+
+    model = observable(model, annotationMap, {
+        deep: true,
+    });
+
+    function createEventHandlers() {
+        function resolveOnGetEventHandler(prop: string) {
+            const key = `${$ON_GET}${capitalize(prop)}`;
+            let handler = (params[key] || def.events?.[key]) as () => any;
+            if (handler) {
+                handler = runSafe(() => handler());
+            }
+            return handler;
+        }
+
+        function resolveOnChangingEventHandler(prop: string) {
+            const key = `${$ON_CHANGING}${capitalize(prop)}`;
+            return ((oldValue: any, newValue: any) => {
+                let result = true;
+                let handler = params[key] as ValueChangingHandler<any>;
+                if (handler) {
+                    result = runSafe(() => handler(oldValue, newValue));
+                }
+                if (result) {
+                    handler = def.events?.[key] as ValueChangingHandler<any>;
+                    if (handler) {
+                        result = runSafe(() => handler(oldValue, newValue));
+                    }
+                }
+                return result;
+            }) as ValueChangingHandler;
+        }
+
+        function resolveOnChangeEventHandler(prop: string) {
+            const key = `${$ON_CHANGE}${capitalize(prop)}`;
+            return ((value: any) => {
+                runSafe(() => (params[key] as ValueChangeHandler<any>)?.(value));
+                runSafe(() => (def.events?.[key] as ValueChangeHandler<any>)?.(value));
+            }) as ValueChangeHandler;
+        }
+
+        const commonHandlers: Pick<ComponentModelEventHandlers, 'onPropChanging' | 'onPropChange'> =
+            {
+                onPropChanging:
+                    params.onPropChanging || def.events?.onPropChanging
+                        ? (prop, oldValue, newValue) => {
+                              let result = true;
+                              let handler = params.onPropChanging;
+                              if (handler) {
+                                  result = runSafe(() => handler(String(prop), oldValue, newValue));
+                              }
+                              if (result) {
+                                  handler = def.events?.onPropChanging;
+                                  if (handler) {
+                                      result = runSafe(() =>
+                                          handler(String(prop), oldValue, newValue),
+                                      );
+                                  }
+                              }
+                              return result;
+                          }
+                        : undefined,
+                onPropChange:
+                    params.onPropChange || def.events?.onPropChange
+                        ? (prop, value) => {
+                              runSafe(() => params.onPropChange?.(String(prop), value));
+                              runSafe(() => def.events?.onPropChange?.(String(prop), value));
+                          }
+                        : undefined,
+            };
+
+        const propHandlers: Record<PropertyKey, PropEventHandlers> = {};
+
+        if (def.props) {
+            for (const prop of Object.keys(def.props)) {
+                propHandlers[prop] = {
+                    onGet: resolveOnGetEventHandler(prop),
+                    onChanging: resolveOnChangingEventHandler(prop),
+                    onChange: resolveOnChangeEventHandler(prop),
+                };
+            }
+        }
+
+        return { ...commonHandlers, ...propHandlers } as ComponentModelEventHandlers;
+    }
+
+    const handlers = createEventHandlers();
+
+    model = new Proxy(model, {
         get(obj, prop, receiver) {
-            // 1. custom handlers
-            const onGet = handlers[prop]?.onGet;
+            const onGet = handlers?.[prop]?.onGet;
             if (onGet) return onGet();
 
-            // 2. bindings
-            const binding = bindings.get(prop);
+            const binding = component.bindings.get(prop);
 
             const value = Reflect.get(obj, prop, receiver);
             if (binding?.get) {
-                return binding.get();
-            }
-
-            if (typeof value === 'object' && value !== null && isObservable(value)) {
-                return createRecursiveProxy(value, bindings, handlers);
+                return runSafe(() => binding.get());
             }
 
             return value;
         },
 
         set(obj, prop, value, receiver) {
-            const oldValue = obj[prop];
+            const oldValue = Reflect.get(obj, prop);
 
             // before-change hooks
-            const onChanging = handlers[prop]?.onChanging;
+            const onChanging = handlers?.[prop]?.onChanging;
             if (onChanging && onChanging(oldValue, value) === false) {
                 return true;
             }
 
             if (
-                handlers.onPropChanging &&
+                handlers?.onPropChanging &&
                 handlers.onPropChanging(prop, oldValue, value) === false
             ) {
                 return true;
@@ -120,19 +240,20 @@ export function createRecursiveProxy(
             });
 
             // bindings
-            const binding = bindings.get(prop);
-            binding?.set?.(value);
+            const binding = component.bindings.get(prop);
+            if (binding?.set) {
+                runSafe(() => binding?.set?.(value));
+            }
 
             // after-change hooks
-            handlers[prop]?.onChange?.(value);
+            handlers?.[prop]?.onChange?.(value);
             handlers.onPropChange?.(prop, value);
 
             return result;
         },
     });
 
-    proxyCache.set(target, proxy);
-    return proxy;
+    return model;
 }
 
 export function toHtmlId(url: string): string {
@@ -357,7 +478,7 @@ export function createEffect<
             disposer = autorun(
                 () => {
                     if (!paused.get()) {
-                        fn(component);
+                        component.run(() => fn(component), false);
                     }
                 },
                 {

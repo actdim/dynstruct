@@ -7,7 +7,7 @@ import {
     type ComponentParams,
     type ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react/react';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap'; // appDomain
 import { TestChildStruct, useTestChild } from './TestChild';

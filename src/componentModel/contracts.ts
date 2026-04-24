@@ -1,8 +1,5 @@
-// import { FC, PropsWithChildren, ReactNode } from 'react';
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import {
-    $CG_IN,
-    $CG_OUT,
     Msg,
     MsgBus,
     MsgHeaders,
@@ -105,26 +102,26 @@ export type ComponentPropStruct = Record<string, any>;
 //     [prop: string]: any;
 // };
 
-export type ComponentMethodStruct = Record<string, Function>;
-// export type ComponentMethodStruct = {
+export type ComponentActionStruct = Record<string, Function>;
+// export type ComponentActionStruct = {
 //     [action: string]: Function;
 // };
 
 // export type ComponentRefStruct = Record<string, ComponentStruct<TMsgStruct, T>>;
 export type ComponentRefStruct = {
     [name: string]:
-        | ComponentStruct<any>
-        | ((params: unknown) => ComponentStruct<any>)
-        | ((params: unknown) => unknown);
+    | ComponentStruct<any>
+    | ((params: unknown) => ComponentStruct<any>)
+    | ((params: unknown) => unknown);
 };
 
 export type ComponentStructBase<
     TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct,
-    TPropStruct extends ComponentPropStruct = ComponentPropStruct,    
+    TPropStruct extends ComponentPropStruct = ComponentPropStruct,
     TMsgScope extends MsgBrokerScope<TMsgStruct> = MsgBrokerScope<TMsgStruct>,
 > = {
     props?: TPropStruct;
-    actions?: ComponentMethodStruct;
+    actions?: ComponentActionStruct;
     effects?: string[] | string | undefined;
     children?: ComponentRefStruct;
     // msgs?
@@ -269,21 +266,21 @@ export type ComponentEvents<
     // onError
     onCatch?: (component: Component<TStruct, TMsgHeaders>, error: unknown, info?: unknown) => void;
 } & {
-    [P in keyof TStruct['props'] as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
-} & {
-    [P in keyof TStruct['props'] as `${typeof $ON_CHANGING}${Capitalize<P & string>}`]?: ValueChangingHandler<
-        TStruct['props'][P]
-    >;
-} & {
-    [P in keyof TStruct['props'] as `${typeof $ON_CHANGE}${Capitalize<P & string>}`]?: ValueChangeHandler<
-        TStruct['props'][P]
-    >;
-};
+        [P in keyof TStruct['props']as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
+    } & {
+        [P in keyof TStruct['props']as `${typeof $ON_CHANGING}${Capitalize<P & string>}`]?: ValueChangingHandler<
+            TStruct['props'][P]
+        >;
+    } & {
+        [P in keyof TStruct['props']as `${typeof $ON_CHANGE}${Capitalize<P & string>}`]?: ValueChangeHandler<
+            TStruct['props'][P]
+        >;
+    };
 
 // AllHTMLAttributes<JSX.Element>
 
 export type ComponentViewProps = {
-    render?: boolean;
+    // render?: boolean;
     children?: unknown;
 };
 
@@ -317,11 +314,11 @@ export type ComponentDef<
     props?: Require<TStruct['props'], HasKeys<TStruct['props']>>;
     actions?: Require<TStruct['actions'], HasKeys<TStruct['actions']>>;
     effects?: keyof TStruct['effects'] extends never
-        ? never
-        : Record<
-              TStruct['effects'] extends string ? TStruct['effects'] : TStruct['effects'][number],
-              EffectFn<TStruct, TMsgHeaders>
-          >;
+    ? never
+    : Record<
+        TStruct['effects'] extends string ? TStruct['effects'] : TStruct['effects'][number],
+        EffectFn<TStruct, TMsgHeaders>
+    >;
     children?: ComponentDefChildren<TStruct['children']>;
     events?: ComponentEvents<TStruct, TMsgHeaders>;
     // msgs?
@@ -336,12 +333,12 @@ export type ComponentDef<
 export type ComponentDefChildren<TRefStruct extends ComponentRefStruct> = Require<
     {
         [P in keyof TRefStruct]: TRefStruct[P] extends (params: infer TParams) => infer T
-            ? T extends ComponentStruct<any>
-                ? (params: TParams) => Component<T>
-                : (params: TParams) => T // ReactNode for example
-            : TRefStruct[P] extends ComponentStruct<any>
-              ? Component<TRefStruct[P]>
-              : never;
+        ? T extends ComponentStruct<any>
+        ? (params: TParams) => Component<T>
+        : (params: TParams) => T // ReactNode for example
+        : TRefStruct[P] extends ComponentStruct<any>
+        ? Component<TRefStruct[P]>
+        : never;
     },
     HasKeys<TRefStruct>
 >;
@@ -353,14 +350,14 @@ export type RenderFn<P> = {
 
 export type ComponentChildren<TRefStruct extends ComponentRefStruct> = {
     readonly [P in keyof TRefStruct as TRefStruct[P] extends Function
-        ? `${Capitalize<P & string>}`
-        : P]: TRefStruct[P] extends (params: infer TParams) => infer T
-        ? T extends ComponentStruct<any>
-            ? RenderFn<ComponentParams<T> & TParams>
-            : (params: TParams) => T // ReactNode for example
-        : TRefStruct[P] extends ComponentStruct<any>
-          ? Component<TRefStruct[P]>
-          : never;
+    ? `${Capitalize<P & string>}`
+    : P]: TRefStruct[P] extends (params: infer TParams) => infer T
+    ? T extends ComponentStruct<any>
+    ? RenderFn<ComponentParams<T> & TParams>
+    : (params: TParams) => T // ReactNode for example
+    : TRefStruct[P] extends ComponentStruct<any>
+    ? Component<TRefStruct[P]>
+    : never;
 };
 
 export type ComponentMsgStruct<TStruct extends ComponentStruct<any> = ComponentStruct<any>> = Pick<
@@ -372,10 +369,10 @@ export type ComponentMsgStruct<TStruct extends ComponentStruct<any> = ComponentS
 
 export type ComponentParams<TStruct extends ComponentStruct<any> = ComponentStruct<any>> =
     ComponentPropParams<TStruct['props']> &
-        ComponentEvents<TStruct> & {
-            $id?: string;
-            $key?: string;
-        }; // & PropsWithChildren?
+    ComponentEvents<TStruct> & {
+        $id?: string;
+        $key?: string;
+    }; // & PropsWithChildren?
 
 // ComponentRenderFn
 export type ComponentViewFn = (props: ComponentViewProps) => any; // ReactNode
@@ -403,11 +400,11 @@ export type ComponentBase<
     readonly msgBus: MsgBus<ComponentMsgStruct<TStruct>, TMsgHeaders>;
     readonly msgBroker: ComponentMsgBroker<TStruct>;
     readonly effects: keyof TStruct['effects'] extends never
-        ? never
-        : Record<
-              TStruct['effects'] extends string ? TStruct['effects'] : TStruct['effects'][number],
-              EffectController
-          >;
+    ? never
+    : Record<
+        TStruct['effects'] extends string ? TStruct['effects'] : TStruct['effects'][number],
+        EffectController
+    >;
     readonly View: ComponentViewFn;
     readonly run: <TFunc extends () => MaybePromise<any>>(
         handler: TFunc,
@@ -421,8 +418,8 @@ export function isComponent(obj: any): obj is ComponentBase {
     return typeof obj == 'object' && obj && obj[$isComponent] === true;
 }
 
-export type ComponentModel<TStruct extends ComponentStruct<any> = ComponentStruct<any>> = TStruct['props'] &
-    Readonly<TStruct['actions']>;
+export type ComponentModel<TStruct extends ComponentStruct<any> = ComponentStruct<any>> =
+    TStruct['props'] & Readonly<TStruct['actions']>;
 
 export type Component<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,

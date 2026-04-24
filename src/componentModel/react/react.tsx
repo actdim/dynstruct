@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, ReactNode } from 'react';
 import React from 'react';
-import { MaybePromise, Mutable } from '@actdim/utico/typeCore';
+import { Func, MaybePromise, Mutable } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
 import { action, observable } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
@@ -17,7 +17,6 @@ import {
     ComponentChildren,
     ComponentDef,
     ComponentImpl,
-    ComponentModel,
     ComponentMsgHeaders,
     ComponentParams,
     ComponentRegistryContext,
@@ -25,32 +24,23 @@ import {
     ComponentViewImplFn,
     ComponentViewProps,
     EffectController,
-    EffectFn,
-    isBinding,
     isComponent,
-    ValueChangeHandler,
-    ValueChangingHandler,
-} from './contracts';
+} from '../contracts';
 
-import { $ON_CHANGE, $ON_CHANGING, $ON_GET } from './contracts';
 import { lazy } from '@actdim/utico/utils';
 import {
     createEffect,
-    createRecursiveProxy,
     getComponentSourceByCaller,
     getComponentMsgBus,
-    ProxyEventHandlers,
     registerMsgBroker,
     toHtmlId,
-} from './core';
-import { ErrorBoundary } from './react/errorBoundary';
+    createModel,
+} from '../core';
+import { ErrorBoundary } from './errorBoundary';
 import { ErrorPayload, MsgBus } from '@actdim/msgmesh/contracts';
 import { $ERROR } from '@/appDomain/commonContracts';
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
-
-function capitalize(name: string) {
-    return name.replace(/^./, name[0].toUpperCase());
-}
+import { capitalize } from '../util';
 
 function cleanSourceRef(sourceRef: string) {
     // remove origin
@@ -67,8 +57,6 @@ function createComponent<
 ): Component<TStruct, TMsgHeaders> {
     // result
     let component: Mutable<Component<TStruct, TMsgHeaders>>;
-
-    let model: Mutable<ComponentModel<TStruct>>;
 
     if (!def) {
         def = {};
@@ -92,31 +80,9 @@ function createComponent<
 
     const view = def.view;
 
-    let msgBus = def.msgBus;
-
-    const bindings = new Map<PropertyKey, Binding>();
+    let msgBus = def.msgBus || context.msgBus;
 
     const abortController = new AbortController();
-
-    let msgBroker = {
-        ...def.msgBroker,
-    };
-
-    const initEffects = () => {
-        if (def.effects) {
-            for (const [name, fn] of Object.entries(def.effects)) {
-                try {
-                    component.effects[name] = createEffect(
-                        component,
-                        name,
-                        fn as EffectFn<TStruct, ComponentMsgHeaders>,
-                    );
-                } catch (e) {
-                    console.log(e);
-                }
-            }
-        }
-    };
 
     const onError = (err: unknown) => {
         const src = import.meta.env.DEV
@@ -178,6 +144,18 @@ function createComponent<
     function runSafe<TFunc extends () => MaybePromise<any>>(handler: TFunc): ReturnType<TFunc> {
         return run(handler, true);
     }
+
+    const initEffects = () => {
+        if (def.effects) {
+            for (const [name, fn] of Object.entries(def.effects)) {
+                component.effects[name] = createEffect(
+                    component,
+                    name,
+                    () => runSafe(fn as Func), // as EffectFn<TStruct, ComponentMsgHeaders>
+                );
+            }
+        }
+    };
 
     const OrigView = observer((props: ComponentViewProps) => {
         const context = useComponentContext() as ComponentRegistryContext<
@@ -303,33 +281,23 @@ function createComponent<
 
     const children = {} as ComponentChildren<TStruct['children']>;
 
-    model = {} as Mutable<ComponentModel<TStruct>>;
-
-    if (def.props) {
-        Object.assign(model, def.props);
-    }
-
-    if (def.actions) {
-        Object.assign(model, def.actions);
-    }
-
     if (def.children) {
         for (const [key, value] of Object.entries(def.children)) {
             if (typeof value == 'function') {
                 const view = value as (params: any) => Component;
-                const ChildViewFC: ComponentViewImplFn<TStruct> = (props) => {
+                const ChildViewFC: ComponentViewImplFn<TStruct> = observer((props) => {
                     const c = view(props);
                     if (isComponent(c) && c.View) {
                         return <c.View />;
                     } else {
-                        return c;
+                        return c as any;
                     }
 
                     // if (typeof c.view === "function") {
                     //     return c.view(props);
                     // }
                     // return <>{props.children}</>;
-                };
+                });
                 Reflect.set(children, capitalize(key), ChildViewFC);
             } else {
                 Reflect.set(children, key, value);
@@ -337,106 +305,8 @@ function createComponent<
         }
     }
 
-    // Reflect.ownKeys/Object.keys
-    for (const [key, value] of Object.entries(params)) {
-        // model.hasOwnProperty(key)
-        if (key in model) {
-            if (isBinding(value)) {
-                bindings.set(key, value);
-            } else {
-                Reflect.set(model, key, value);
-            }
-        }
-    }
-
-    const proxyEventHandlers: Pick<ProxyEventHandlers, 'onPropChanging' | 'onPropChange'> = {
-        onPropChanging:
-            params.onPropChanging || def.events?.onPropChanging
-                ? (prop, oldValue, newValue) => {
-                      let result = true;
-                      let handler = params.onPropChanging;
-                      if (handler) {
-                          result = runSafe(() => handler(String(prop), oldValue, newValue));
-                      }
-                      if (result) {
-                          handler = def.events?.onPropChanging;
-                          if (handler) {
-                              result = runSafe(() => handler(String(prop), oldValue, newValue));
-                          }
-                      }
-                      return result;
-                  }
-                : undefined,
-        onPropChange:
-            params.onPropChange || def.events?.onPropChange
-                ? (prop, value) => {
-                      runSafe(() => params.onPropChange?.(String(prop), value));
-                      runSafe(() => def.events?.onPropChange?.(String(prop), value));
-                  }
-                : undefined,
-    };
-
-    function resolveOnGetEventHandler(prop: string) {
-        const key = `${$ON_GET}${capitalize(prop)}`;
-        return params[key] || def.events?.[key];
-    }
-
-    function resolveOnChangingEventHandler(prop: string) {
-        const key = `${$ON_CHANGING}${capitalize(prop)}`;
-        return ((oldValue: any, newValue: any) => {
-            let result = true;
-            let handler = params[key] as ValueChangingHandler<any>;
-            if (handler) {
-                result = runSafe(() => handler(oldValue, newValue));
-            }
-            if (result) {
-                handler = def.events?.[key] as ValueChangingHandler<any>;
-                if (handler) {
-                    result = runSafe(() => handler(oldValue, newValue));
-                }
-            }
-            return result;
-        }) as ValueChangingHandler;
-    }
-
-    function resolveOnChangeEventHandler(prop: string) {
-        const key = `${$ON_CHANGE}${capitalize(prop)}`;
-        return ((value: any) => {
-            runSafe(() => (params[key] as ValueChangeHandler<any>)?.(value));
-            runSafe(() => (def.events?.[key] as ValueChangeHandler<any>)?.(value));
-        }) as ValueChangeHandler;
-    }
-
-    let annotationMap: Record<string, any> = {};
-
-    if (def.props) {
-        for (const prop of Object.keys(def.props)) {
-            proxyEventHandlers[prop] = {
-                onGet: resolveOnGetEventHandler(prop),
-                onChanging: resolveOnChangingEventHandler(prop),
-                onChange: resolveOnChangeEventHandler(prop),
-            };
-        }
-
-        for (const key of Object.keys(def.props)) {
-            annotationMap[key] = observable.deep;
-        }
-    }
-
-    if (def.actions) {
-        const annotationMap: Record<string, any> = {};
-        for (const key of Object.keys(def.actions)) {
-            annotationMap[key] = action;
-        }
-    }
-
-    model = observable(model, annotationMap, {
-        deep: true,
-    });
-
-    model = createRecursiveProxy(model, bindings, proxyEventHandlers);
-
     const componentMsgBus = lazy(() => getComponentMsgBus(component, msgBus));
+    const model = lazy(() => createModel(component, def, params));
 
     component = {
         [$isComponent]: true,
@@ -450,11 +320,13 @@ function createComponent<
         getChildren: () => context.getChildren(component.id),
         getParent: () => context.getParent(component.id),
         getNodeMap: () => context.getNodeMap(),
-        bindings: bindings,
+        bindings: new Map<PropertyKey, Binding>(),
         get msgBus() {
             return componentMsgBus();
         },
-        msgBroker: msgBroker,
+        msgBroker: {
+            ...def.msgBroker,
+        },
         effects: {} as Component<TStruct, TMsgHeaders>['effects'],
         // view: componentDef.view,
         View: View,
@@ -466,7 +338,9 @@ function createComponent<
             }
         },
         children: children,
-        model: model,
+        get model() {
+            return model();
+        },
     };
 
     runSafe(() => def.events?.onInit?.(component));

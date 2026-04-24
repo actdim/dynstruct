@@ -4,20 +4,24 @@ import type {
     ComponentModel,
     ComponentParams,
     ComponentStruct,
+    ComponentViewProps,
 } from '@/componentModel/contracts';
 import type { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import React from 'react';
-import { useComponent } from './react';
+import { useComponent } from './react/react';
 
 export type DynamicContentStruct<
-    TData = never,
+    TData = any,
     TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct,
 > = ComponentStruct<
     TMsgStruct,
     {
         props: {
             data: TData;
-            render: () => React.ReactNode;
+            render: (
+                props: ComponentViewProps,
+                component: Component<DynamicContentStruct<TData>>,
+            ) => React.ReactNode;
         };
     }
 >;
@@ -32,8 +36,8 @@ export function useDynamicContent<TData = any>(
             render: undefined,
             data: undefined,
         },
-        view: () => {
-            return m.render();
+        view: (props, component?) => {
+            return m.render(props, component);
         },
     };
 

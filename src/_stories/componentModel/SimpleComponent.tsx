@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react/react';
 import React, { ReactNode } from 'react';
 import { AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';
@@ -25,7 +25,7 @@ type Struct = ComponentStruct<
             summary: React.FC;
             button: SimpleButtonStruct;
             edit: SimpleEditStruct;
-            content: DynamicContentStruct<string, AppMsgStruct>;
+            content: DynamicContentStruct<string>;
             dynEdit: (props: { value?: string }) => SimpleEditStruct;
         };
     }
@@ -60,16 +60,16 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
             }),
             content: useDynamicContent<string>({
                 data: bindProp(() => m, 'text'),
-                render: () => {
-                    // return <>{props.text}</>;
-                    return <>{c.children.content.model.data}</>;
+                render: (_, dc) => {
+                    // return <>{c.children.content.model.data}</>;
+                    return <>{dc.model.data}</>;
                 },
             }),
             dynEdit: (params) => {
                 let dynComponent = useSimpleEdit({
-                    value: bindProp(() => m, 'text'),
+                    // value: bindProp(() => m, 'text'),
                     // value: 'test',
-                    // value: params.value,
+                    value: params.value,
                 });
                 return dynComponent;
             },
@@ -78,7 +78,9 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
         view: () => {
             return (
                 <details open style={detailsStyle}>
-                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Simple Component</summary>
+                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
+                        Simple Component
+                    </summary>
                     <div style={row}>
                         <span style={labelStyle}>Counter</span>
                         <c.children.Summary />
@@ -98,7 +100,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
                     <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
                         {Array.from({ length: m.counter }).map((_, i) => (
                             <li key={i}>
-                                <c.children.DynEdit key={i}></c.children.DynEdit>
+                                <c.children.DynEdit key={i} value={m.text}></c.children.DynEdit>
                             </li>
                         ))}
                     </ul>

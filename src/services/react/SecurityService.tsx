@@ -67,7 +67,7 @@ import {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
-import { toReact, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react/react';
 import { AsyncMutex } from '@actdim/utico/asyncMutex';
 
 type Struct = ComponentStruct<

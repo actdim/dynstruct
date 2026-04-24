@@ -6,7 +6,7 @@ import {
     ComponentDef,
     ComponentImpl,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react';
+import { toReact, useComponent } from '@/componentModel/react/react';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { PropsWithChildren } from 'react';
@@ -84,7 +84,6 @@ export const useStorageService = (params: ComponentParams<Struct>): Component<St
             },
         },
         events: {
-            onInit: () => {},
             onReady: async () => {
                 await init();
             },

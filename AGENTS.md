@@ -64,10 +64,49 @@ Use hook-constructors as the primary component format:
   - `onChangeX` after set
   - `onPropChanging`/`onPropChange` for generic handlers
   - `onCatch` (not `onError`) for error handling — signature: `(component, error, info?) => void`
-  - Lifecycle handlers (`onInit`, `onReady`, `onDestroy`, etc.) may be `async`.
+  - Lifecycle handlers may be `async`:
+    - `onInit` — once on creation, before first render; sync setup only, no DOM
+    - `onLayoutReady` / `onLayoutDestroy` — maps to `useLayoutEffect` / its cleanup; sync, DOM is available
+    - `onReady` / `onDestroy` — maps to `useEffect` / its cleanup; async-safe, primary hook for data loading
+  - Effect bodies (`def.effects`) are also wrapped by the framework error router — errors propagate to `onCatch`.
 - Use `effects` for derived/auto-tracked behavior; pause/resume/stop through `c.effects.<name>`.
-- Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child.
-- Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches an error.
+- Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child — `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
+- Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
+
+### Error handling pattern
+
+`onCatch` is called automatically whenever an error crosses the **dynstruct API boundary**. This covers:
+- Lifecycle hooks: `onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy` — sync and async
+- Actions (`def.actions`) — wrapped in `runSafe` before MobX annotation; MobX handles batching, dynstruct handles errors
+- Property event handlers: `onGetX`, `onChangingX`, `onChangeX`, `onPropChanging`, `onPropChange`
+- Binding get/set functions (`bind`, `bindProp`)
+- Effect bodies (`def.effects`)
+- MsgBus subscriber and provider callbacks; `c.msgBus.request(...)` calls
+
+Manual `try/catch` is needed only for code that is **outside** this boundary — a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
+
+```ts
+function handleError(err: unknown) {
+    m.status = 'error';
+    m.errorMessage = err instanceof Error ? err.message : String(err);
+}
+
+const def: ComponentDef<Struct> = {
+    useErrorBoundary: false, // async errors; no render-time throwing expected
+    events: {
+        onReady: async () => { await load(); }, // framework routes rejection → onCatch
+        onCatch: (_, err) => { handleError(err); },
+    },
+    view: () => (
+        // load() calls a plain fetchData() — not a dynstruct call, so catch manually
+        <button onClick={async () => {
+            try { await load(); } catch (err) { handleError(err); }
+        }}>Retry</button>
+    ),
+};
+```
+
+When `view` itself may throw, keep `useErrorBoundary: true` (default) and optionally provide `fallbackView`.
 
 Avoid:
 - introducing local `useState`/`useReducer` for state that belongs to component model
