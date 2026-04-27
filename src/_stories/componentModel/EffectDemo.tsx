@@ -1,6 +1,8 @@
 import type {
     Component,
     ComponentDef,
+    ComponentImpl,
+    ComponentImplStruct,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
@@ -23,7 +25,6 @@ type Struct = ComponentStruct<
             email: string;
             userId: string;
             fullName: string;
-            trackingEnabled: boolean;
         };
         actions: {
             reset: () => void;
@@ -41,9 +42,11 @@ type Struct = ComponentStruct<
     }
 >;
 
-export const useEffectDemo = (params: ComponentParams<Struct>) => {
-    let c: Component<Struct>;
-    let m: ComponentModel<Struct>;
+export const useEffectDemo = (params: ComponentParams<Struct>): Component<Struct> => {
+    type ImplStruct = ComponentImplStruct<Struct, { trackingEnabled: boolean }>;
+
+    let c: ComponentImpl<ImplStruct>;
+    let m: ComponentModel<ImplStruct>;
 
     const reset = () => {
         m.firstName = '';
@@ -52,7 +55,7 @@ export const useEffectDemo = (params: ComponentParams<Struct>) => {
         m.userId = '';
     };
 
-    const def: ComponentDef<Struct> = {
+    const def: ComponentDef<ImplStruct> = {
         props: {
             firstName: 'John',
             lastName: 'Smith',
@@ -132,7 +135,7 @@ export const useEffectDemo = (params: ComponentParams<Struct>) => {
                 isReadOnly: true,
             }),
         },
-        view: () => (            
+        view: () => (
             <details open style={detailsStyle}>
                 <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Effects</summary>
                 <c.children.Buttons />
@@ -161,7 +164,9 @@ export const useEffectDemo = (params: ComponentParams<Struct>) => {
     };
 
     c = useComponent(def, params);
+
     m = c.model;
+
     return c;
 };
 

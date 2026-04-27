@@ -12,7 +12,6 @@ import {
 import {
     $isComponent,
     $SYSTEM_TOPIC,
-    Binding,
     Component,
     ComponentChildren,
     ComponentDef,
@@ -287,7 +286,7 @@ function createComponent<
                 const view = value as (params: any) => Component;
                 const ChildViewFC: ComponentViewImplFn<TStruct> = observer((props) => {
                     const c = view(props);
-                    if (isComponent(c) && c.View) {                        
+                    if (isComponent(c) && c.View) {
                         return <c.View />;
                     } else {
                         return c as any;
@@ -321,7 +320,6 @@ function createComponent<
         getChildren: () => context.getChildren(component.id),
         getParent: () => context.getParent(component.id),
         getNodeMap: () => context.getNodeMap(),
-        bindings: new Map<PropertyKey, Binding>(),
         get msgBus() {
             return componentMsgBus();
         },
@@ -341,6 +339,9 @@ function createComponent<
         children: children,
         get model() {
             return model();
+        },
+        validate: () => {
+            // TODO:
         },
     };
 
@@ -366,7 +367,7 @@ export function useComponent<
             context,
             params,
         ) as ComponentImpl<TStruct, TInternals, TMsgHeaders>;
-        component.internals = internals;
+        component._ = (internals || {}) as TInternals;
         return component;
     });
     useLayoutEffect(() => {

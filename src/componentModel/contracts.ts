@@ -136,6 +136,15 @@ export type ComponentStruct<
     msg: TMsgStruct;
 };
 
+export type ComponentImplStruct<TStruct extends ComponentStruct<any> = ComponentStruct<any>, TInternalProps extends ComponentPropStruct = ComponentPropStruct> = {
+    msg: TStruct["msg"];
+    props?: TStruct["props"] & TInternalProps;
+    actions?: TStruct["actions"];
+    effects?: TStruct["effects"];
+    children?: TStruct["children"];
+    msgScope?: TStruct["msgScope"];
+};
+
 export type MsgBroker<
     TStructToProvide extends MsgStruct = MsgStruct,
     TStructToSubscribe extends MsgStruct = MsgStruct,
@@ -265,10 +274,11 @@ export type ComponentEvents<
     onDestroy?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<void>; // onDispose/onCleanup
     // onError
     onCatch?: (component: Component<TStruct, TMsgHeaders>, error: unknown, info?: unknown) => void;
+    onValidate?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<Partial<Record<keyof TStruct["props"], ComponentPropState>>>;
     // TODO:
     // onFocus
     // onBlur
-    // onValidate
+    // 
 } & {
         [P in keyof TStruct['props']as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
     } & {
@@ -394,9 +404,11 @@ export type ComponentParams<TStruct extends ComponentStruct<any> = ComponentStru
 export type ComponentViewFn = (props: ComponentViewProps) => any; // ReactNode
 
 export const $isComponent = Symbol('isComponent'); // brand
+
 // style?: CSSProperties;
 // classNames?: string[];
-export type ComponentBase<
+
+export type Component<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = {
@@ -412,7 +424,6 @@ export type ComponentBase<
     readonly getChainUp: () => string[];
     readonly getChainDown: () => string[];
     readonly getNodeMap: () => Map<string, ComponentTreeNode>;
-    readonly bindings: Map<PropertyKey, Binding>;
     readonly msgBus: MsgBus<ComponentMsgStruct<TStruct>, TMsgHeaders>;
     readonly msgBroker: ComponentMsgBroker<TStruct>;
     readonly effects: keyof TStruct['effects'] extends never
@@ -427,39 +438,44 @@ export type ComponentBase<
         silent: boolean,
     ) => ReturnType<TFunc>;
     readonly abortSignal: AbortSignal;
+    readonly validate: () => MaybePromise<void>;
+    readonly model: ComponentModel<TStruct>;
+    readonly children: ComponentChildren<TStruct['children']>;
     readonly [Symbol.dispose]: () => void;
 };
 
-export function isComponent(obj: any): obj is ComponentBase {
+export function isComponent(obj: any): obj is Component {
     return typeof obj == 'object' && obj && obj[$isComponent] === true;
+}
+
+export type ComponentPropState = {
+    readonly isValid: boolean;
+    readonly validationMessage?: string;
+}
+
+// ComponentPublicState
+export type ComponentState<TStruct extends ComponentStruct<any> = ComponentStruct<any>> = {
+    readonly bindings: Map<PropertyKey, Binding>;
+    isBusy: boolean;
+    isDisabled: boolean;
+    isReadOnly: boolean;
+    isVisible: boolean;
+    isValid: boolean;
+    pendingRequestCount: number;
+    readonly propState: Record<keyof TStruct["props"], ComponentPropState>;
 }
 
 export type ComponentModel<TStruct extends ComponentStruct<any> = ComponentStruct<any>> =
     TStruct['props'] & Readonly<TStruct['actions']> & {
-        // TODO:
-        // "$": {
-        //     isBusy: boolean;
-        //     isDisabled: boolean;
-        //     isReadOnly: boolean;
-        //     isVisible: boolean;
-        //     isValid: boolean;
-        // }
+        "$": ComponentState<TStruct>;
     };
-
-export type Component<
-    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
-    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
-> = {
-    readonly model: ComponentModel<TStruct>;
-    readonly children: ComponentChildren<TStruct['children']>;
-} & ComponentBase<TStruct, TMsgHeaders>;
 
 export type ComponentImpl<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TInternals = unknown,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
 > = Component<TStruct, TMsgHeaders> & {
-    internals?: TInternals;
+    _: TInternals;
 };
 
 export type PropEventHandlers = {

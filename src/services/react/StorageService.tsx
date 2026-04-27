@@ -11,7 +11,7 @@ import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { PropsWithChildren } from 'react';
 import { $STORE_GET, $STORE_REMOVE, $STORE_SET } from '@/appDomain/commonContracts';
-import { AsyncMutex } from '@actdim/utico/asyncMutex';
+import { AsyncLock } from '@actdim/utico/asyncLock';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -27,7 +27,7 @@ type Struct = ComponentStruct<
     }
 >;
 
-const mutex = new AsyncMutex();
+const lock = new AsyncLock();
 
 export const useStorageService = (params: ComponentParams<Struct>): Component<Struct> => {
     type Internals = {
@@ -38,9 +38,9 @@ export const useStorageService = (params: ComponentParams<Struct>): Component<St
     let m: ComponentModel<Struct>;
 
     async function init(forceUpdate = false) {
-        await mutex.dispatch(async () => {
-            if (!c.internals.store || forceUpdate) {
-                c.internals.store = await PersistentStore.open(m.storeName);
+        await lock.dispatch(async () => {
+            if (!c._.store || forceUpdate) {
+                c._.store = await PersistentStore.open(m.storeName);
             }
         });
     }
@@ -55,7 +55,7 @@ export const useStorageService = (params: ComponentParams<Struct>): Component<St
                     in: {
                         callback: async (msg) => {
                             await init();
-                            const item = await c.internals.store.get(msg.payload.key);
+                            const item = await c._.store.get(msg.payload.key);
                             return item;
                         },
                     },
@@ -64,7 +64,7 @@ export const useStorageService = (params: ComponentParams<Struct>): Component<St
                     in: {
                         callback: async (msg) => {
                             await init();
-                            await c.internals.store.set(
+                            await c._.store.set(
                                 {
                                     key: msg.payload.key,
                                 },
@@ -77,7 +77,7 @@ export const useStorageService = (params: ComponentParams<Struct>): Component<St
                     in: {
                         callback: async (msg) => {
                             await init();
-                            await c.internals.store.delete(msg.payload.key);
+                            await c._.store.delete(msg.payload.key);
                         },
                     },
                 },

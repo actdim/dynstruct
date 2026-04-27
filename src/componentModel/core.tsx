@@ -7,6 +7,7 @@ import type {
     ComponentModel,
     ComponentMsgHeaders,
     ComponentParams,
+    ComponentState,
     ComponentStruct,
     EffectController,
     EffectFn,
@@ -81,22 +82,35 @@ export function createModel<
         return component.run(handler, true);
     }
 
-    let model = {} as Mutable<ComponentModel<TStruct>>;
+    const state = {
+        bindings: new Map<PropertyKey, Binding>(),
+        isBusy: false,
+        isDisabled: false,
+        isReadOnly: false,
+        isVisible: true,
+        isValid: true,
+        pendingRequestCount: 0,
+        propState: {},
+    } as ComponentState;
+
+    let model = {
+        $: state,
+    } as Mutable<ComponentModel<TStruct>>;
 
     if (def.props) {
         Object.assign(model, def.props);
     }
 
-    if (def.actions) {        
+    if (def.actions) {
         for (const [key, fn] of Object.entries(def.actions)) {
             Reflect.set(model, key, (...args: any[]) => component.run(() => fn(...args), false));
-        }        
+        }
     }
-    
+
     for (const [key, value] of Object.entries(params)) {
         if (key in model) {
             if (isBinding(value)) {
-                component.bindings.set(key, value);
+                state.bindings.set(key, value);
             } else {
                 Reflect.set(model, key, value);
             }
@@ -209,7 +223,7 @@ export function createModel<
             const onGet = handlers?.[prop]?.onGet;
             if (onGet) return onGet();
 
-            const binding = component.bindings.get(prop);
+            const binding = state.bindings.get(prop);
 
             const value = Reflect.get(obj, prop, receiver);
             if (binding?.get) {
@@ -240,7 +254,7 @@ export function createModel<
             });
 
             // bindings
-            const binding = component.bindings.get(prop);
+            const binding = state.bindings.get(prop);
             if (binding?.set) {
                 runSafe(() => binding?.set?.(value));
             }

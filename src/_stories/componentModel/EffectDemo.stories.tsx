@@ -28,8 +28,8 @@ export const EffectDemoStory: Story = {
             <p style={{ margin: 0, color: '#555', fontSize: 13 }}>
                 Demonstrates <b>reactive effects</b> — side-effects that automatically re-run when
                 observed model properties change. The <i>trackNameChanges</i> effect keeps{' '}
-                <code>fullName</code> in sync with <code>firstName</code> and{' '}
-                <code>lastName</code>. Use <b>Pause / Resume</b> to control the effect lifecycle.
+                <code>fullName</code> in sync with <code>firstName</code> and <code>lastName</code>.
+                Use <b>Pause / Resume</b> to control the effect lifecycle.
             </p>
             <EffectDemo {...args} />
         </div>

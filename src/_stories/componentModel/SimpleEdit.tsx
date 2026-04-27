@@ -32,7 +32,7 @@ export const useSimpleEdit = (params: ComponentParams<Struct>) => {
             isReadOnly: false,
             isValid: true,
         },
-        view: () => {
+        view: () => {            
             const style: React.CSSProperties = {
                 ...(m.isDisabled || m.isReadOnly
                     ? { background: '#f5f5f5', color: '#888', cursor: m.isDisabled ? 'not-allowed' : 'default' }

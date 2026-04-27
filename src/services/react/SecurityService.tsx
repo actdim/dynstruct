@@ -68,7 +68,7 @@ import {
 } from '@/componentModel/contracts';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { toReact, useComponent } from '@/componentModel/react/react';
-import { AsyncMutex } from '@actdim/utico/asyncMutex';
+import { AsyncLock } from '@actdim/utico/asyncLock';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -102,7 +102,7 @@ type Struct = ComponentStruct<
     }
 >;
 
-const mutex = new AsyncMutex();
+const lock = new AsyncLock();
 
 export const useSecurityService = (params: ComponentParams<Struct>): Component<Struct> => {
     type Internals = {
@@ -138,33 +138,33 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             });
             config = msg.payload;
         }
-        c.internals.domainConfig = config;
-        const prefixer = getValuePrefixer<typeof c.internals.storageKeys>(
-            `${c.internals.domainConfig?.id}/`,
+        c._.domainConfig = config;
+        const prefixer = getValuePrefixer<typeof c._.storageKeys>(
+            `${c._.domainConfig?.id}/`,
         );
-        c.internals.storageKeys = prefixer(c.internals.storageKeys);
+        c._.storageKeys = prefixer(c._.storageKeys);
         await restoreData();
     }
 
     function getSessionInternal(): AuthSession {
         return {
-            accessToken: c.internals.accessToken,
-            refreshToken: c.internals.refreshToken,
-            authInfo: c.internals.authInfo,
-            authProvider: c.internals.authProvider,
-            domain: c.internals.domain,
-            tokenExpiresAt: c.internals.tokenExpiresAt,
+            accessToken: c._.accessToken,
+            refreshToken: c._.refreshToken,
+            authInfo: c._.authInfo,
+            authProvider: c._.authProvider,
+            domain: c._.domain,
+            tokenExpiresAt: c._.tokenExpiresAt,
         };
     }
 
     async function init() {
-        await mutex.dispatch(async () => {
-            if (!c.internals.domainConfig) {
+        await lock.dispatch(async () => {
+            if (!c._.domainConfig) {
                 await updateConfig();
             }
         });
 
-        if (c.internals.accessToken) {
+        if (c._.accessToken) {
             const session = getSessionInternal();
             c.msgBus.send({
                 channel: $AUTH_SIGNIN,
@@ -183,26 +183,26 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         let msg = await c.msgBus.request({
             channel: $STORE_GET,
             payload: {
-                key: c.internals.storageKeys.accessToken,
+                key: c._.storageKeys.accessToken,
             },
         });
-        c.internals.accessToken = msg.payload?.data.value as string;
+        c._.accessToken = msg.payload?.data.value as string;
 
         msg = await c.msgBus.request({
             channel: $STORE_GET,
             payload: {
-                key: c.internals.storageKeys.refreshToken,
+                key: c._.storageKeys.refreshToken,
             },
         });
-        c.internals.refreshToken = msg.payload?.data.value as string;
+        c._.refreshToken = msg.payload?.data.value as string;
 
         msg = await c.msgBus.request({
             channel: $STORE_GET,
             payload: {
-                key: c.internals.storageKeys.userCredentials,
+                key: c._.storageKeys.userCredentials,
             },
         });
-        c.internals.userCredentials = (msg.payload?.data.value as UserCredentials) || {
+        c._.userCredentials = (msg.payload?.data.value as UserCredentials) || {
             userName: null,
             password: null,
         };
@@ -210,55 +210,55 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         msg = await c.msgBus.request({
             channel: $STORE_GET,
             payload: {
-                key: c.internals.storageKeys.authInfo,
+                key: c._.storageKeys.authInfo,
             },
         });
-        c.internals.authInfo = msg.payload?.data.value;
+        c._.authInfo = msg.payload?.data.value;
 
         msg = await c.msgBus.request({
             channel: $STORE_GET,
             payload: {
-                key: c.internals.storageKeys.acl,
+                key: c._.storageKeys.acl,
             },
         });
-        c.internals.acl = msg.payload?.data.value || null;
+        c._.acl = msg.payload?.data.value || null;
     }
 
     // removeSavedData
     async function clearSavedData() {
-        c.internals.accessToken = null;
+        c._.accessToken = null;
         await c.msgBus.request({
             channel: $STORE_REMOVE,
             payload: {
-                key: c.internals.storageKeys.accessToken,
+                key: c._.storageKeys.accessToken,
             },
         });
-        c.internals.refreshToken = null;
+        c._.refreshToken = null;
         await c.msgBus.request({
             channel: $STORE_REMOVE,
             payload: {
-                key: c.internals.storageKeys.refreshToken,
+                key: c._.storageKeys.refreshToken,
             },
         });
-        c.internals.userCredentials = null;
+        c._.userCredentials = null;
         await c.msgBus.request({
             channel: $STORE_REMOVE,
             payload: {
-                key: c.internals.storageKeys.userCredentials,
+                key: c._.storageKeys.userCredentials,
             },
         });
-        c.internals.authInfo = null;
+        c._.authInfo = null;
         await c.msgBus.request({
             channel: $STORE_REMOVE,
             payload: {
-                key: c.internals.storageKeys.authInfo,
+                key: c._.storageKeys.authInfo,
             },
         });
-        c.internals.acl = null;
+        c._.acl = null;
         await c.msgBus.request({
             channel: $STORE_REMOVE,
             payload: {
-                key: c.internals.storageKeys.acl,
+                key: c._.storageKeys.acl,
             },
         });
         // await saveData();
@@ -267,8 +267,8 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
     async function ensureAuth() {
         // await init();
 
-        c.internals.accessToken = null;
-        c.internals.acl = null;
+        c._.accessToken = null;
+        c._.acl = null;
 
         const signIn = c.msgBus.once({
             channel: $AUTH_SIGNIN,
@@ -286,7 +286,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         c.msgBus.send({
             channel: $NAV_GOTO,
             payload: {
-                path: c.internals.domainConfig.routes.authSignInPage,
+                path: c._.domainConfig.routes.authSignInPage,
                 params: {
                     callbackUrl:
                         window.location.pathname + window.location.search + window.location.hash,
@@ -301,42 +301,42 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         await c.msgBus.request({
             channel: $STORE_SET,
             payload: {
-                key: c.internals.storageKeys.accessToken,
-                value: c.internals.accessToken || null,
+                key: c._.storageKeys.accessToken,
+                value: c._.accessToken || null,
             },
         });
         await c.msgBus.request({
             channel: $STORE_SET,
             payload: {
-                key: c.internals.storageKeys.refreshToken,
-                value: c.internals.refreshToken || null,
+                key: c._.storageKeys.refreshToken,
+                value: c._.refreshToken || null,
             },
         });
         await c.msgBus.request({
             channel: $STORE_SET,
             payload: {
-                key: c.internals.storageKeys.userCredentials,
-                value: c.internals.userCredentials ? c.internals.userCredentials : null,
+                key: c._.storageKeys.userCredentials,
+                value: c._.userCredentials ? c._.userCredentials : null,
             },
         });
         await c.msgBus.request({
             channel: $STORE_SET,
             payload: {
-                key: c.internals.storageKeys.authInfo,
-                value: c.internals.authInfo ? c.internals.authInfo : null,
+                key: c._.storageKeys.authInfo,
+                value: c._.authInfo ? c._.authInfo : null,
             },
         });
         await c.msgBus.request({
             channel: $STORE_SET,
             payload: {
-                key: c.internals.storageKeys.acl,
-                value: c.internals.acl ? c.internals.acl : null,
+                key: c._.storageKeys.acl,
+                value: c._.acl ? c._.acl : null,
             },
         });
     }
 
     function loadAuthInfo(json: unknown) {
-        c.internals.authInfo = json;
+        c._.authInfo = json;
 
         const accessToken = json['access_token'] || json['accessToken'] || json['token'];
         const refreshToken = json['refresh_token'] || json['refreshToken'];
@@ -344,26 +344,26 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         // const tokenType = json['token_type'] || json['tokenType'];
         // const expiresAt = json['expires_at'] || json['expiresAt'];
 
-        c.internals.accessToken = accessToken;
-        c.internals.refreshToken = refreshToken;
+        c._.accessToken = accessToken;
+        c._.refreshToken = refreshToken;
         // c.internals.acl = ...;
     }
 
     // setSession
     function loadSession(session: AuthSession) {
-        c.internals.accessToken = session.accessToken;
-        c.internals.refreshToken = session.refreshToken;
-        c.internals.authInfo = session.authInfo;
-        c.internals.authProvider = session.authProvider;
-        c.internals.domain = session.domain;
-        c.internals.tokenExpiresAt = session.tokenExpiresAt;
+        c._.accessToken = session.accessToken;
+        c._.refreshToken = session.refreshToken;
+        c._.authInfo = session.authInfo;
+        c._.authProvider = session.authProvider;
+        c._.domain = session.domain;
+        c._.tokenExpiresAt = session.tokenExpiresAt;
     }
 
     async function signIn(credentials: UserCredentials) {
         await init();
 
         if (!m.useConventions) {
-            let url = c.internals.domainConfig.routes?.authSignIn;
+            let url = c._.domainConfig.routes?.authSignIn;
 
             url = url.replace(/[?&]$/, '');
 
@@ -397,7 +397,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             await getResponseResult(response, request);
             ApiError.assert(response, request);
 
-            c.internals.userCredentials = credentials;
+            c._.userCredentials = credentials;
 
             const json = response.resolved.json;
 
@@ -420,12 +420,12 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         await init();
 
         if (!m.useConventions) {
-            let url = c.internals.domainConfig.routes?.authSignOut;
+            let url = c._.domainConfig.routes?.authSignOut;
             if (url) {
                 url = url.replace(/[?&]$/, '');
             }
 
-            const content = JSON.stringify({ accessToken: c.internals.accessToken });
+            const content = JSON.stringify({ accessToken: c._.accessToken });
 
             const requestParams: IRequestParams = {
                 url: url,
@@ -449,7 +449,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             await c.msgBus.request({
                 channel: $AUTH_SIGNOUT_REQUEST,
                 payload: {
-                    accessToken: c.internals.accessToken,
+                    accessToken: c._.accessToken,
                 },
             });
         }
@@ -461,13 +461,13 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         await init();
 
         if (!m.useConventions) {
-            let url = c.internals.domainConfig.routes?.authRefresh;
+            let url = c._.domainConfig.routes?.authRefresh;
             if (url) {
                 url = url.replace(/[?&]$/, '');
             }
 
             const content = JSON.stringify({
-                refreshToken: c.internals.refreshToken,
+                refreshToken: c._.refreshToken,
                 // refresh_token: c.internals.refreshToken
             });
 
@@ -498,7 +498,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             const msg = await c.msgBus.request({
                 channel: $AUTH_REFRESH_REQUEST,
                 payload: {
-                    refreshToken: c.internals.refreshToken,
+                    refreshToken: c._.refreshToken,
                 },
             });
 
