@@ -430,6 +430,12 @@ export const $isComponent = Symbol('isComponent'); // brand
 // style?: CSSProperties;
 // classNames?: string[];
 
+export type HtmlInputProps = {
+    readonly value?: string | readonly string[] | number | undefined;
+    readonly onChange?: ChangeEventHandler,
+    readonly onBlur?: BlurEventHandler;
+}
+
 export type Component<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
@@ -463,11 +469,7 @@ export type Component<
     readonly model: ComponentModel<TStruct>;
     readonly children: ComponentChildren<TStruct['children']>;
     readonly validate: (path?: KeyPath<TStruct["props"]>) => MaybePromise<void>;
-    readonly mapToInput: (path?: KeyPath<TStruct["props"]>) => {
-        value: string | readonly string[] | number | undefined;
-        onChange: ChangeEventHandler,
-        onBlur: BlurEventHandler;
-    };
+    readonly mapToInput: (path?: KeyPath<TStruct["props"]>, exclude?: (keyof HtmlInputProps)[]) => Partial<HtmlInputProps>;
     readonly [Symbol.dispose]: () => void;
 };
 
@@ -496,10 +498,12 @@ export type ComponentState<TStruct extends ComponentStruct<any> = ComponentStruc
     readonly propState: Record<KeyPath<TStruct["props"]>, ComponentPropState>;
 }
 
+export type BaseComponentModel<TStruct extends ComponentStruct<any> = ComponentStruct<any>> = {
+    $: ComponentState<TStruct>;
+}
+
 export type ComponentModel<TStruct extends ComponentStruct<any> = ComponentStruct<any>> =
-    TStruct['props'] & Readonly<TStruct['actions']> & {
-        "$": ComponentState<TStruct>;
-    };
+    TStruct['props'] & Readonly<TStruct['actions']> & BaseComponentModel<TStruct>;
 
 export type ComponentImpl<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,

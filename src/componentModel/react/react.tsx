@@ -307,7 +307,7 @@ function createComponent<
     }
 
     const componentMsgBus = lazy(() => getComponentMsgBus(component, msgBus));
-    const model = lazy(() => createModel({ component, def, params }));
+    const model = lazy(() => createModel(component, def, params));
 
     component = {
         [$isComponent]: true,
@@ -337,10 +337,10 @@ function createComponent<
             return model();
         },
         validate: (path) => {
-            return validate({ component, def, params, path });
+            return validate(component, def, params, path);
         },
-        mapToInput: (path) => {
-            return mapToInput({ component, def, params, path });
+        mapToInput: (path, exclude) => {
+            return mapToInput(component, def, params, path, exclude);
         },
         [Symbol.dispose]: () => {
             for (const [name, fn] of Object.entries(component.effects)) {

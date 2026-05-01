@@ -1,6 +1,7 @@
 import { MsgBus, MsgSubOptions, PromiseOptions } from '@actdim/msgmesh/contracts';
 import { runInAction, toJS, autorun, IReactionDisposer, observable, action } from 'mobx';
 import type {
+    BaseComponentModel,
     Binding,
     BlurEventHandler,
     ChangeEventHandler,
@@ -15,12 +16,14 @@ import type {
     ComponentStruct,
     EffectController,
     EffectFn,
+    HtmlInputProps,
     MsgChannelGroupProviderParams,
     MsgChannelGroupSubscriberParams,
     PropEventHandlers,
     PropValueChangeHandler,
     PropValueChangingHandler,
     ValidationResult,
+    Validator,
     ValueChangeHandler,
     ValueChangingHandler,
     ValueConverter,
@@ -78,11 +81,17 @@ export function bindProp<T extends object, P extends keyof T>(target: () => T, p
     };
 }
 
-export function prop<T = any>(prop: Partial<ComponentProp<T>>): ComponentProp<T> {
-    return {
+export function prop<T = any>(prop: Partial<ComponentProp<T>>) {
+    prop = {
         ...prop,
         [$isComponentProp]: true,
     };
+    if (prop.validator) {
+        if (!prop.validator.hasOwnProperty('onChange' satisfies keyof Validator)) {
+            prop.validator.onChange = true;
+        }
+    }
+    return prop as ComponentProp<T>;
 }
 
 export type ComponentModelEventHandlers = {
@@ -93,27 +102,28 @@ export type ComponentModelEventHandlers = {
 export async function validate<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
-    TProp extends KeyPath<TStruct['props']> = KeyPath<TStruct['props']>,
->(context: {
-    component: Component<TStruct, TMsgHeaders>;
-    def: ComponentDef<TStruct, TMsgHeaders>;
-    params?: ComponentParams<TStruct>;
-    path?: TProp;
-}) {
-    const { component, def, params, path } = context;
-    const model = component.model;
-    let state = model.$;
+    // TPropKey
+    TPropPath extends KeyPath<TStruct['props']> = KeyPath<TStruct['props']>,
+>(
+    component: Component<TStruct, TMsgHeaders>,
+    def: ComponentDef<TStruct, TMsgHeaders>,
+    params?: ComponentParams<TStruct>,
+    path?: TPropPath,
+) {
+    const state = component.model.$;
+    const model = component.model as TStruct['props'];
 
-    type ValidationResults = Partial<Record<KeyPath<TStruct['props']>, ValidationResult>>;
+    type ValidationResults = Partial<Record<TPropPath, ValidationResult>>;
 
     function mergeResults(validationResults: ValidationResults) {
         if (validationResults) {
-            for (const kv of Object.entries(validationResults)) {
-                const prop = kv[0];
-                const entry: Mutable<ComponentPropState> = state.propState[prop] || {};
-                entry.validation = (kv[1] as ValidationResult) || { isValid: true };
+            for (const [key, val] of Object.entries(validationResults)) {
+                const path = key as TPropPath;
+                const result = val as ValidationResult;
+                const entry = (state.propState[path] || {}) as Mutable<ComponentPropState>;
+                entry.validation = result || { isValid: true };
                 runInAction(() => {
-                    Reflect.set(state.propState, prop, entry);
+                    Reflect.set(state.propState, path, entry);
                 });
             }
         }
@@ -124,8 +134,8 @@ export async function validate<
         if (isComponentProp(prop)) {
             const validator = prop.validator;
             if (validator?.validate) {
-                const value = getByKeyPath(model, path as KeyPath<ComponentModel<TStruct>>);
-                const result = await Promise.resolve(validator.validate(value));
+                const val = getByKeyPath(model, path);
+                const result = await Promise.resolve(validator.validate(val));
                 mergeResults({ [path]: result } as ValidationResults);
             }
         }
@@ -139,14 +149,13 @@ export async function validate<
         mergeResults(results);
 
         if (def.props) {
-            for (const kv of Object.entries(def.props)) {
-                const path = kv[0];
-                const prop = kv[1];
+            for (const [key, prop] of Object.entries(def.props)) {
+                const path = key as TPropPath;
                 if (isComponentProp(prop)) {
                     const validator = prop.validator;
                     if (validator?.validate) {
-                        const value = getByKeyPath(model, path as KeyPath<ComponentModel<TStruct>>);
-                        const result = await Promise.resolve(validator.validate(value));
+                        const val = getByKeyPath(model, path);
+                        const result = await Promise.resolve(validator.validate(val));
                         mergeResults({ [path]: result } as ValidationResults);
                     }
                 }
@@ -158,55 +167,58 @@ export async function validate<
 export function mapToInput<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
-    TProp extends KeyPath<TStruct['props']> = KeyPath<TStruct['props']>,
->(context: {
-    component: Component<TStruct, TMsgHeaders>;
-    def: ComponentDef<TStruct, TMsgHeaders>;
-    params?: ComponentParams<TStruct>;
-    path?: TProp;
-}) {
-    const { component, def, params, path } = context;
+    // TPropKey
+    TPropPath extends KeyPath<TStruct['props']> = KeyPath<TStruct['props']>,
+>(
+    component: Component<TStruct, TMsgHeaders>,
+    def: ComponentDef<TStruct, TMsgHeaders>,
+    params?: ComponentParams<TStruct>,
+    path?: TPropPath,
+    exclude?: (keyof HtmlInputProps)[],
+) {
+    const model = component.model as TStruct['props'];
+    if (!exclude) {
+        exclude = [];
+    }
 
-    let model = component.model;
-
-    const onBlurFactory = (path: KeyPath<TStruct['props']>): BlurEventHandler => {
-        return async (evt) => {
-            const prop = def.props?.[path];
-            if (isComponentProp(prop) && prop.validator?.onBlur) {
-                validate({ component, def, params, path });
-            }
+    const result: Mutable<Partial<HtmlInputProps>> = {};
+    if (exclude.indexOf('value') < 0) {
+        result.value = getByKeyPath(model, path) ?? '';
+    }
+    if (exclude.indexOf('onBlur') < 0) {
+        const onBlurFactory = (path: TPropPath): BlurEventHandler => {
+            return async (evt) => {
+                const prop = def.props?.[path];
+                if (isComponentProp(prop) && prop.validator?.onBlur) {
+                    validate(component, def, params, path);
+                }
+            };
         };
-    };
-
-    const onChangeFactory = (path: KeyPath<TStruct['props']>): ChangeEventHandler => {
-        return (evt) => {
-            const el = evt.target as HTMLInputElement;
-            setByKeyPath(model, path as KeyPath<ComponentModel<TStruct>>, el.value as any);
+        result.onBlur = onBlurFactory(path);
+    }
+    if (exclude.indexOf('onChange') < 0) {
+        const onChangeFactory = (path: TPropPath): ChangeEventHandler => {
+            return (evt) => {
+                const el = evt.target as HTMLInputElement;
+                setByKeyPath(model, path, el.value as any);
+            };
         };
-    };
-
-    return {
-        value: getByKeyPath(model, path as KeyPath<ComponentModel<TStruct>>) ?? '',
-        onBlur: onBlurFactory(path),
-        onChange: onChangeFactory(path),
-    };
+        result.onChange = onChangeFactory(path);
+    }
+    return result;
 }
 
 export function createModel<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
->(context: {
-    component: Component<TStruct, TMsgHeaders>;
-    def: ComponentDef<TStruct, TMsgHeaders>;
-    params?: ComponentParams<TStruct>;
-}) {
-    const { component, def, params } = context;
-
+>(
+    component: Component<TStruct, TMsgHeaders>,
+    def: ComponentDef<TStruct, TMsgHeaders>,
+    params?: ComponentParams<TStruct>,
+) {
     function runSafe<TFunc extends () => MaybePromise<any>>(handler: TFunc): ReturnType<TFunc> {
         return component.run(handler, true);
     }
-
-    let model: ComponentModel<TStruct>;
 
     const state = {
         bindings: new Map<PropertyKey, Binding>(),
@@ -218,17 +230,19 @@ export function createModel<
         pendingRequestCount: 0,
         propState: {},
         validate: (path: KeyPath<TStruct['props']>) => {
-            return validate({ component, def, params, path });
+            return validate(component, def, params, path);
         },
     } as ComponentState;
 
-    model = {
-        $: state,
-    } as Mutable<ComponentModel<TStruct>>;
+    let model = {
+        ['$' satisfies keyof BaseComponentModel]: state,
+    } as TStruct['props'];
+
+    type TPropPath = KeyPath<TStruct['props']>;
 
     if (def.props) {
         for (const kv of Object.entries(def.props)) {
-            const path = kv[0] as KeyPath<ComponentModel<TStruct>>;
+            const path = kv[0] as TPropPath;
             const prop = kv[1];
             let value: any;
             if (isComponentProp(prop)) {
@@ -251,12 +265,12 @@ export function createModel<
         }
     }
 
-    for (const [key, value] of Object.entries(params)) {
+    for (const [key, val] of Object.entries(params)) {
         if (key in model) {
-            if (isBinding(value)) {
-                state.bindings.set(key, value);
+            if (isBinding(val)) {
+                state.bindings.set(key, val);
             } else {
-                Reflect.set(model, key, value);
+                Reflect.set(model, key, val);
             }
         }
     }
@@ -275,7 +289,7 @@ export function createModel<
         }
     }
 
-    annotationMap['$'] = observable.deep;
+    annotationMap['$' satisfies keyof BaseComponentModel] = observable.deep;
 
     model = observable(model, annotationMap, {
         deep: true,
@@ -364,56 +378,95 @@ export function createModel<
 
     const handlers = createEventHandlers();
 
+    const deepProxyCache = new WeakMap<object, Map<string, object>>();
+
+    function isPlainObject(val: unknown): val is object {
+        if (!val || typeof val !== 'object') return false;
+        const proto = Object.getPrototypeOf(val);
+        return proto === Object.prototype || proto === null;
+    }
+
+    function createDeepProxy<T extends object>(obj: T, basePath = ''): T {
+        if (!isPlainObject(obj)) return obj;
+        let pathMap = deepProxyCache.get(obj);
+        if (!pathMap) {
+            pathMap = new Map();
+            deepProxyCache.set(obj, pathMap);
+        }
+        if (pathMap.has(basePath)) return pathMap.get(basePath) as T;
+        const proxy = new Proxy(obj, {
+            get(target, key, receiver) {
+                const val = Reflect.get(target, key, receiver);
+                const childPath = basePath ? `${basePath}.${String(key)}` : String(key);
+                if (isPlainObject(val)) return createDeepProxy(val, childPath);
+                return val;
+            },
+            set(target, key, val, receiver) {
+                const fullPath = basePath ? `${basePath}.${String(key)}` : String(key);
+                const result = runInAction(() => Reflect.set(target, key, val, receiver));
+                handlers.onPropChange?.(fullPath, val);
+                const prop = def.props[fullPath];
+                if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
+                    validate(component, def, params, fullPath as TPropPath);
+                }
+                return result;
+            },
+        });
+        pathMap.set(basePath, proxy);
+        return proxy;
+    }
+
     model = new Proxy(model, {
-        get(obj, prop, receiver) {
-            const onGet = handlers?.[prop]?.onGet;
+        get(obj, key, receiver) {
+            const onGet = handlers?.[key]?.onGet;
             if (onGet) return onGet();
 
-            const binding = state.bindings.get(prop);
+            const binding = state.bindings.get(key);
 
-            const value = Reflect.get(obj, prop, receiver);
+            const val = Reflect.get(obj, key, receiver);
             if (binding?.get) {
                 return runSafe(() => binding.get());
             }
 
-            return value;
+            if (val && typeof val === 'object') {
+                return createDeepProxy(val, String(key));
+            }
+
+            return val;
         },
 
-        set(obj, prop, value, receiver) {
-            const oldValue = Reflect.get(obj, prop);
+        set(obj, key, val, receiver) {
+            const oldVal = Reflect.get(obj, key);
 
             // before-change hooks
-            const onChanging = handlers?.[prop]?.onChanging;
-            if (onChanging && onChanging(oldValue, value) === false) {
+            const onChanging = handlers?.[key]?.onChanging;
+            if (onChanging && onChanging(oldVal, val) === false) {
                 return true;
             }
 
-            if (
-                handlers?.onPropChanging &&
-                handlers.onPropChanging(prop, oldValue, value) === false
-            ) {
+            if (handlers?.onPropChanging && handlers.onPropChanging(key, oldVal, val) === false) {
                 return true;
             }
 
             const result = runInAction(() => {
-                return Reflect.set(obj, prop, value, receiver);
+                return Reflect.set(obj, key, val, receiver);
             });
 
             // bindings
-            const binding = state.bindings.get(prop);
+            const binding = state.bindings.get(key);
             if (binding?.set) {
-                runSafe(() => binding?.set?.(value));
+                runSafe(() => binding?.set?.(val));
             }
 
             // after-change hooks
-            handlers?.[prop]?.onChange?.(value);
-            handlers.onPropChange?.(prop, value);
+            handlers?.[key]?.onChange?.(val);
+            handlers.onPropChange?.(key, val);
 
             return result;
         },
     });
 
-    return model;
+    return model as ComponentModel<TStruct>;
 }
 
 export function toHtmlId(url: string): string {
