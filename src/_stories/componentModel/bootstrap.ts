@@ -13,7 +13,7 @@ import type {
 import { $C_INHERIT, MsgBus, MsgStruct } from '@actdim/msgmesh/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { KeysOf } from '@actdim/utico/typeCore';
-import React, { PropsWithChildren } from 'react';
+import { PropsWithChildren } from 'react';
 
 export const appRoutes = {
     page: createNavigationRoute<{

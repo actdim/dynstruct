@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, ReactNode } from 'react';
 import React from 'react';
 import { Func, MaybePromise, Mutable } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
-import { action, observable } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
 import {
@@ -34,6 +33,8 @@ import {
     registerMsgBroker,
     toHtmlId,
     createModel,
+    validate,
+    mapToInput,
 } from '../core';
 import { ErrorBoundary } from './errorBoundary';
 import { ErrorPayload, MsgBus } from '@actdim/msgmesh/contracts';
@@ -306,7 +307,7 @@ function createComponent<
     }
 
     const componentMsgBus = lazy(() => getComponentMsgBus(component, msgBus));
-    const model = lazy(() => createModel(component, def, params));
+    const model = lazy(() => createModel({ component, def, params }));
 
     component = {
         [$isComponent]: true,
@@ -331,17 +332,20 @@ function createComponent<
         View: View,
         run: run,
         abortSignal: abortController.signal,
-        [Symbol.dispose]: () => {
-            for (const [name, fn] of Object.entries(component.effects)) {
-                (fn as EffectController).stop();
-            }
-        },
         children: children,
         get model() {
             return model();
         },
-        validate: () => {
-            // TODO:
+        validate: (path) => {
+            return validate({ component, def, params, path });
+        },
+        mapToInput: (path) => {
+            return mapToInput({ component, def, params, path });
+        },
+        [Symbol.dispose]: () => {
+            for (const [name, fn] of Object.entries(component.effects)) {
+                (fn as EffectController).stop();
+            }
         },
     };
 

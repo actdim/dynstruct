@@ -10,7 +10,7 @@ export class SecureApiClient extends ClientBase {
     }    
     
     getData(param: string, callbacks?: IRequestCallbacks<string>): Promise<unknown> {
-        let url = "https://httpbin.org/post";        
+        let url = "https://httpbin.org/post";
 
         const options_ = {                
             url: url,

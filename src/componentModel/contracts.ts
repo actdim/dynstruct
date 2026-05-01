@@ -1,5 +1,6 @@
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import {
+    $CG_OUT,
     Msg,
     MsgBus,
     MsgHeaders,
@@ -8,7 +9,7 @@ import {
     MsgSubParams,
     OutStruct,
 } from '@actdim/msgmesh/contracts';
-import { HasKeys, MaybeKeyOf, MaybePromise, Require, Skip } from '@actdim/utico/typeCore';
+import { HasKeys, KeyPath, KeyPathValue, MaybeKeyOf, MaybePromise, Require, Skip } from '@actdim/utico/typeCore';
 
 export type BaseContext<
     TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct,
@@ -136,14 +137,10 @@ export type ComponentStruct<
     msg: TMsgStruct;
 };
 
-export type ComponentImplStruct<TStruct extends ComponentStruct<any> = ComponentStruct<any>, TInternalProps extends ComponentPropStruct = ComponentPropStruct> = {
-    msg: TStruct["msg"];
-    props?: TStruct["props"] & TInternalProps;
-    actions?: TStruct["actions"];
-    effects?: TStruct["effects"];
-    children?: TStruct["children"];
-    msgScope?: TStruct["msgScope"];
-};
+export type ComponentImplStruct<TStruct extends ComponentStruct<any> = ComponentStruct<any>, TInternalProps extends ComponentPropStruct = ComponentPropStruct> =
+    Omit<TStruct, 'props'> & {
+        props?: TStruct["props"] & TInternalProps;
+    };
 
 export type MsgBroker<
     TStructToProvide extends MsgStruct = MsgStruct,
@@ -158,8 +155,8 @@ export type MsgBroker<
                 [TChannel in keyof TStructToProvide]: {
                     [TGroup in keyof Skip<
                         TStructToProvide[TChannel],
-                        // typeof $CG_OUT
-                        keyof TStructToProvide[TChannel]
+                        typeof $CG_OUT
+                    // keyof TStructToProvide[TChannel]
                     >]?: MsgChannelGroupProviderParams<
                         TStructToProvide,
                         TChannel,
@@ -198,14 +195,14 @@ export type ValueConverter<TTo, TFrom> = {
 };
 
 export type ValidationResult = {
-    valid: boolean;
-    message: string;
+    isValid: boolean;
+    message?: string;
 };
 
-export type Validator<T> = {
-    options: {
-        blur: boolean;
-    };
+export type Validator<T = any> = {
+    onBlur?: boolean;
+    onChange?: boolean;
+    onSubmit?: boolean;
     validate: (value: T) => MaybePromise<ValidationResult>;
 };
 
@@ -217,9 +214,8 @@ export type Binding<T = any, TFrom = any> = {
     // setter
     readonly set?: (value: T) => void;
     readonly converter?: ValueConverter<T, TFrom>;
-    readonly validator?: Validator<T>;
     readonly readOnly?: boolean;
-    [$isBinding]: true;
+    readonly [$isBinding]: true;
 };
 
 export function isBinding(obj: any): obj is Binding {
@@ -230,8 +226,38 @@ export type ComponentPropSource<T> = T | Binding<T>;
 
 export type ComponentPropParams<TPropStruct extends ComponentPropStruct> = {
     [P in keyof TPropStruct]?: ComponentPropSource<TPropStruct[P]>;
+    // [P in KeyPath<TPropStruct>]?: ComponentPropSource<KeyPathValue<TPropStruct, P>>; // TODO
 } & {
     key?: string | number | null | undefined;
+};
+
+export const $isComponentProp = Symbol('isComponentProperty'); // brand
+
+// ComponentPropDef
+export type ComponentProp<T = any> = {
+    readonly initialValue?: T;
+    readonly validator?: Validator<T>;
+    isDisabled?: boolean;
+    isReadOnly?: boolean;
+    // form support
+    // readonly label?: string;
+    // readonly inputType?: 'text' | 'number' | 'email' | 'date' | 'checkbox' | 'select';
+    // readonly options?: { value: string; label: string }[];
+    // readonly description?: string;
+    // readonly displayName?: string;
+    readonly [$isComponentProp]: true;
+};
+
+export function isComponentProp(obj: any): obj is ComponentProp {
+    return typeof obj == 'object' && obj && obj[$isComponentProp] === true;
+}
+
+// ComponentPropDefs
+export type ComponentProps<TPropStruct extends ComponentPropStruct> = {
+    [P in keyof TPropStruct]: TPropStruct[P] | ComponentProp<TPropStruct[P]>;
+} &
+{
+    [P in KeyPath<TPropStruct>]?: TPropStruct[P] | ComponentProp<TPropStruct[P]>;
 };
 
 // export const $ON_PROP_CHANGING = "onPropChanging" as const;
@@ -274,11 +300,7 @@ export type ComponentEvents<
     onDestroy?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<void>; // onDispose/onCleanup
     // onError
     onCatch?: (component: Component<TStruct, TMsgHeaders>, error: unknown, info?: unknown) => void;
-    onValidate?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<Partial<Record<keyof TStruct["props"], ComponentPropState>>>;
-    // TODO:
-    // onFocus
-    // onBlur
-    // 
+    onValidate?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<Partial<Record<KeyPath<TStruct["props"]>, ValidationResult>>>;
 } & {
         [P in keyof TStruct['props']as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
     } & {
@@ -325,7 +347,7 @@ export type ComponentDef<
 > = {
     // typeId
     regType?: string;
-    props?: Require<TStruct['props'], HasKeys<TStruct['props']>>;
+    props?: Require<ComponentProps<TStruct['props']>, HasKeys<TStruct['props']>>;
     actions?: Require<TStruct['actions'], HasKeys<TStruct['actions']>>;
     effects?: keyof TStruct['effects'] extends never
     ? never
@@ -358,7 +380,7 @@ export type ComponentDefChildren<TRefStruct extends ComponentRefStruct> = Requir
 >;
 
 export type RenderFn<P> = {
-    (props: P): any; // ReactNode | Promise<ReactNode>
+    (props: P): any; // ReactNode | Promise<ReactNode> for example
     displayName?: string | undefined;
 };
 
@@ -401,7 +423,7 @@ export type ComponentParams<TStruct extends ComponentStruct<any> = ComponentStru
     }; // & PropsWithChildren?
 
 // ComponentRenderFn
-export type ComponentViewFn = (props: ComponentViewProps) => any; // ReactNode
+export type ComponentViewFn = (props: ComponentViewProps) => any; // ReactNode for example
 
 export const $isComponent = Symbol('isComponent'); // brand
 
@@ -438,9 +460,14 @@ export type Component<
         silent: boolean,
     ) => ReturnType<TFunc>;
     readonly abortSignal: AbortSignal;
-    readonly validate: () => MaybePromise<void>;
     readonly model: ComponentModel<TStruct>;
     readonly children: ComponentChildren<TStruct['children']>;
+    readonly validate: (path?: KeyPath<TStruct["props"]>) => MaybePromise<void>;
+    readonly mapToInput: (path?: KeyPath<TStruct["props"]>) => {
+        value: string | readonly string[] | number | undefined;
+        onChange: ChangeEventHandler,
+        onBlur: BlurEventHandler;
+    };
     readonly [Symbol.dispose]: () => void;
 };
 
@@ -449,20 +476,24 @@ export function isComponent(obj: any): obj is Component {
 }
 
 export type ComponentPropState = {
-    readonly isValid: boolean;
-    readonly validationMessage?: string;
+    readonly validation?: ValidationResult;
 }
+
+export type ChangeEventHandler<T extends HTMLElement = HTMLInputElement> =
+    ((event: { currentTarget: T & EventTarget; target: T }) => void) | undefined;
+
+export type BlurEventHandler<T extends HTMLElement = HTMLInputElement> =
+    ((event: { currentTarget: T & EventTarget; target: T; relatedTarget: EventTarget | null }) => void) | undefined;
 
 // ComponentPublicState
 export type ComponentState<TStruct extends ComponentStruct<any> = ComponentStruct<any>> = {
     readonly bindings: Map<PropertyKey, Binding>;
-    isBusy: boolean;
     isDisabled: boolean;
     isReadOnly: boolean;
     isVisible: boolean;
     isValid: boolean;
-    pendingRequestCount: number;
-    readonly propState: Record<keyof TStruct["props"], ComponentPropState>;
+    pendingRequestCount: number; // for busy indicators etc
+    readonly propState: Record<KeyPath<TStruct["props"]>, ComponentPropState>;
 }
 
 export type ComponentModel<TStruct extends ComponentStruct<any> = ComponentStruct<any>> =

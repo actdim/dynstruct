@@ -11,6 +11,7 @@ import { LoginDialogStruct, useLoginDialog } from './LoginDialog';
 import { SecurityDemoMsgChannels, SecurityDemoMsgStruct } from './SecureApiServiceProvider';
 import { AuthSession } from '@/appDomain/securityContracts';
 import { detailsStyle, labelStyle, row } from '../styles';
+import { MaybePromise } from '@actdim/utico/typeCore';
 
 type Struct = ComponentStruct<
     SecurityDemoMsgStruct,
@@ -53,7 +54,7 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
         });
         m.activeUser = msg.payload?.authInfo?.user_name || msg.payload?.authInfo?.email;
     }
-
+    
     const def: ComponentDef<Struct> = {
         regType: 'SecurityServiceExample',
         props: {
