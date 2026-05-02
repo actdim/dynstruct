@@ -71,15 +71,33 @@ export function bind<T, TFrom = any>(
     };
 }
 
-export function bindProp<T extends object, P extends keyof T>(target: () => T, prop: P): Binding {
+export function bindProp<T extends object, P extends KeyPath<T>>(
+    target: () => T,
+    path: P,
+): Binding {
     return {
-        get: () => target()?.[prop],
-        set: (value: T[P]) => {
-            target()[prop] = value;
+        get: () => getByKeyPath(target(), path),
+        set: (value: KeyPathValue<T, P>) => {
+            setByKeyPath(target(), path, value);
         },
         [$isBinding]: true,
     };
 }
+
+// export function bindProp<
+//     T extends ComponentModel<any>,
+//     P extends Exclude<KeyPath<T>, '$' | `$.${string}`>,
+// >(target: () => T, path: P): Binding;
+// export function bindProp<T extends object, P extends KeyPath<T>>(target: () => T, path: P): Binding;
+// export function bindProp(target: () => any, path: any): Binding {
+//     return {
+//         get: () => getByKeyPath(target(), path),
+//         set: (value: any) => {
+//             setByKeyPath(target(), path, value);
+//         },
+//         [$isBinding]: true,
+//     };
+// }
 
 export function prop<T = any>(prop: Partial<ComponentProp<T>>) {
     prop = {

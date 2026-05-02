@@ -26,7 +26,7 @@ type Struct = ComponentStruct<
             button: SimpleButtonStruct;
             edit: SimpleEditStruct;
             content: DynamicContentStruct<string>;
-            dynEdit: (props: { value?: string }) => SimpleEditStruct;
+            dynEdit: (props: { index?: number }) => SimpleEditStruct;
         };
     }
 >;
@@ -68,8 +68,8 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
             dynEdit: (params) => {
                 let dynComponent = useSimpleEdit({
                     // value: bindProp(() => m, 'text'),
-                    // value: 'test',
-                    value: params.value,
+                    // value: params.value,
+                    value: bind(() => `${params.index}: ${m.text}`),
                 });
                 return dynComponent;
             },
@@ -100,7 +100,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
                     <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
                         {Array.from({ length: m.counter }).map((_, i) => (
                             <li key={i}>
-                                <c.children.DynEdit key={i} value={m.text}></c.children.DynEdit>
+                                <c.children.DynEdit key={i} index={i}></c.children.DynEdit>
                             </li>
                         ))}
                     </ul>
