@@ -110,7 +110,7 @@ export async function validate<
     params?: ComponentParams<TStruct>,
     path?: TPropPath,
 ) {
-    const state = component.model.$;
+    const propState = component.model.$.propState;
     const model = component.model as TStruct['props'];
 
     type ValidationResults = Partial<Record<TPropPath, ValidationResult>>;
@@ -119,12 +119,24 @@ export async function validate<
         if (validationResults) {
             for (const [key, val] of Object.entries(validationResults)) {
                 const path = key as TPropPath;
-                const result = val as ValidationResult;
-                const entry = (state.propState[path] || {}) as Mutable<ComponentPropState>;
-                entry.validation = result || { isValid: true };
-                runInAction(() => {
-                    Reflect.set(state.propState, path, entry);
-                });
+                const result = (val as ValidationResult) || { isValid: true };
+                let record = propState[path] as Mutable<ComponentPropState>;
+                if (record) {
+                    runInAction(() => {
+                        record.validation = result;
+                    });
+                } else {
+                    record = observable({
+                        validation: result,
+                        get error() {
+                            const v = (this as ComponentPropState).validation;
+                            return v && !v.isValid ? v.message : undefined;
+                        },
+                    } satisfies ComponentPropState);
+                    runInAction(() => {
+                        propState[path] = record;
+                    });
+                }
             }
         }
     }
@@ -181,9 +193,9 @@ export function mapToInput<
         exclude = [];
     }
 
-    const result: Mutable<Partial<HtmlInputProps>> = {};
+    const inputProps: Mutable<Partial<HtmlInputProps>> = {};
     if (exclude.indexOf('value') < 0) {
-        result.value = getByKeyPath(model, path) ?? '';
+        inputProps.value = getByKeyPath(model, path) ?? '';
     }
     if (exclude.indexOf('onBlur') < 0) {
         const onBlurFactory = (path: TPropPath): BlurEventHandler => {
@@ -194,7 +206,7 @@ export function mapToInput<
                 }
             };
         };
-        result.onBlur = onBlurFactory(path);
+        inputProps.onBlur = onBlurFactory(path);
     }
     if (exclude.indexOf('onChange') < 0) {
         const onChangeFactory = (path: TPropPath): ChangeEventHandler => {
@@ -203,9 +215,9 @@ export function mapToInput<
                 setByKeyPath(model, path, el.value as any);
             };
         };
-        result.onChange = onChangeFactory(path);
+        inputProps.onChange = onChangeFactory(path);
     }
-    return result;
+    return inputProps;
 }
 
 export function createModel<
@@ -222,21 +234,17 @@ export function createModel<
 
     const state = {
         bindings: new Map<PropertyKey, Binding>(),
-        isBusy: false,
         isDisabled: false,
         isReadOnly: false,
         isVisible: true,
         isValid: true,
         pendingRequestCount: 0,
         propState: {},
-        validate: (path: KeyPath<TStruct['props']>) => {
-            return validate(component, def, params, path);
-        },
-    } as ComponentState;
+    } satisfies ComponentState;
 
-    let model = {
+    let model: TStruct['props'] = {
         ['$' satisfies keyof BaseComponentModel]: state,
-    } as TStruct['props'];
+    };
 
     type TPropPath = KeyPath<TStruct['props']>;
 

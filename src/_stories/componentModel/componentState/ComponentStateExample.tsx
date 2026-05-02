@@ -75,8 +75,7 @@ export const useComponentStateExample = (params: ComponentParams<Struct>) => {
         },
         view: () => {
             const isBusy = m.$.pendingRequestCount > 0;
-            const emailValidation = m.$.propState['form.email']?.validation;
-            const emailInvalid = emailValidation != null && !emailValidation.isValid;
+            const emailState = m.$.propState['form.email'] || {};
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <details open style={detailsStyle}>
@@ -88,13 +87,13 @@ export const useComponentStateExample = (params: ComponentParams<Struct>) => {
                                     type="email"
                                     {...c.mapToInput('form.email')}
                                     style={{
-                                        borderColor: emailInvalid ? '#e53935' : undefined,
-                                        outline: emailInvalid ? '1px solid #e53935' : undefined,
+                                        borderColor: emailState.error ? '#e53935' : undefined,
+                                        outline: emailState.error ? '1px solid #e53935' : undefined,
                                     }}
                                 />
-                                {emailInvalid && (
+                                {emailState.error && (
                                     <span style={{ color: '#e53935', fontSize: 11 }}>
-                                        {emailValidation!.message}
+                                        {emailState.error}
                                     </span>
                                 )}
                             </div>

@@ -433,7 +433,7 @@ export const $isComponent = Symbol('isComponent'); // brand
 export type HtmlInputProps = {
     readonly value?: string | readonly string[] | number | undefined;
     readonly onChange?: ChangeEventHandler,
-    readonly onBlur?: BlurEventHandler;
+    readonly onBlur?: BlurEventHandler;    
 }
 
 export type Component<
@@ -479,6 +479,7 @@ export function isComponent(obj: any): obj is Component {
 
 export type ComponentPropState = {
     readonly validation?: ValidationResult;
+    readonly error?: string | undefined;
 }
 
 export type ChangeEventHandler<T extends HTMLElement = HTMLInputElement> =
