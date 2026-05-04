@@ -48,7 +48,7 @@ import {
     setByKeyPath,
 } from '@actdim/utico/typeCore';
 import { capitalize } from './util';
-import { keyOf } from '@actdim/utico/typeUtils';
+
 // import { isPlainObject } from 'mobx/dist/internal';
 
 // onReactionError((err, derivation) => {
@@ -71,7 +71,7 @@ export function bind<T, TFrom = any>(
     };
 }
 
-export function bindProp<T extends object, P extends KeyPath<T>>(
+export function bindProp<T extends object, P extends KeyPath<T, boolean>>(
     target: () => T,
     path: P,
 ): Binding {
@@ -86,9 +86,9 @@ export function bindProp<T extends object, P extends KeyPath<T>>(
 
 // export function bindProp<
 //     T extends ComponentModel<any>,
-//     P extends Exclude<KeyPath<T>, '$' | `$.${string}`>,
+//     P extends Exclude<KeyPath<T, boolean>, '$' | `$.${string}`>,
 // >(target: () => T, path: P): Binding;
-// export function bindProp<T extends object, P extends KeyPath<T>>(target: () => T, path: P): Binding;
+// export function bindProp<T extends object, P extends KeyPath<T, boolean>>(target: () => T, path: P): Binding;
 // export function bindProp(target: () => any, path: any): Binding {
 //     return {
 //         get: () => getByKeyPath(target(), path),
@@ -121,7 +121,7 @@ export async function validate<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
     // TPropKey
-    TPropPath extends KeyPath<TStruct['props']> = KeyPath<TStruct['props']>,
+    TPropPath extends KeyPath<TStruct['props'], boolean> = KeyPath<TStruct['props'], boolean>,
 >(
     component: Component<TStruct, TMsgHeaders>,
     def: ComponentDef<TStruct, TMsgHeaders>,
@@ -198,7 +198,7 @@ export function mapToInput<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
     // TPropKey
-    TPropPath extends KeyPath<TStruct['props']> = KeyPath<TStruct['props']>,
+    TPropPath extends KeyPath<TStruct['props'], boolean> = KeyPath<TStruct['props'], boolean>,
 >(
     component: Component<TStruct, TMsgHeaders>,
     def: ComponentDef<TStruct, TMsgHeaders>,
@@ -250,21 +250,21 @@ export function createModel<
         return component.run(handler, true);
     }
 
-    const state = {
-        bindings: new Map<PropertyKey, Binding>(),
+    const state: ComponentState = {
+        bindings: {},
         isDisabled: false,
         isReadOnly: false,
         isVisible: true,
         isValid: true,
         pendingRequestCount: 0,
         propState: {},
-    } satisfies ComponentState;
+    };
 
     let model: TStruct['props'] = {
         ['$' satisfies keyof BaseComponentModel]: state,
     };
 
-    type TPropPath = KeyPath<TStruct['props']>;
+    type TPropPath = KeyPath<TStruct['props'], boolean>;
 
     if (def.props) {
         for (const kv of Object.entries(def.props)) {
@@ -292,12 +292,10 @@ export function createModel<
     }
 
     for (const [key, val] of Object.entries(params)) {
-        if (key in model) {
-            if (isBinding(val)) {
-                state.bindings.set(key, val);
-            } else {
-                Reflect.set(model, key, val);
-            }
+        if (isBinding(val)) {
+            setByKeyPath(state.bindings, key, val);
+        } else {
+            setByKeyPath(model, key as TPropPath, val as KeyPathValue<TStruct['props'], TPropPath>);
         }
     }
 
@@ -433,7 +431,7 @@ export function createModel<
                 handlers.onPropChange?.(fullPath, val);
                 const prop = def.props[fullPath];
                 if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
-                    validate(component, def, params, fullPath as TPropPath);
+                    validate(component, def, params, fullPath as KeyPath<TStruct['props'], boolean>);
                 }
                 return result;
             },
@@ -447,7 +445,7 @@ export function createModel<
             const onGet = handlers?.[key]?.onGet;
             if (onGet) return onGet();
 
-            const binding = state.bindings.get(key);
+            const binding = getByKeyPath(state.bindings, key as KeyPath<TStruct['props'], boolean>);
 
             const val = Reflect.get(obj, key, receiver);
             if (binding?.get) {
@@ -479,7 +477,7 @@ export function createModel<
             });
 
             // bindings
-            const binding = state.bindings.get(key);
+            const binding = getByKeyPath(state.bindings, key as KeyPath<TStruct['props'], boolean>);
             if (binding?.set) {
                 runSafe(() => binding?.set?.(val));
             }

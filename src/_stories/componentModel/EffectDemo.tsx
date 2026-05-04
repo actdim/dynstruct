@@ -153,7 +153,7 @@ export const useEffectDemo = (params: ComponentParams<Struct>): Component<Struct
                     <c.children.UserProfileLink />
                 </div>
                 <div style={row}>
-                    <span style={labelStyle}>Full name</span>
+                    <span style={labelStyle}>Full name (Effect)</span>
                     <c.children.FullName />
                 </div>
                 <div>

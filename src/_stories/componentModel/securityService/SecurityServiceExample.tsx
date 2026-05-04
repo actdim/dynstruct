@@ -129,7 +129,7 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
             },
         },
         children: {
-            loginDialog: useLoginDialog({
+            loginDialog: useLoginDialog({                
                 onSubmit: async ({ email, password }) => {
                     try {
                         m.showLoginDialog = false;

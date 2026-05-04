@@ -225,8 +225,8 @@ export function isBinding(obj: any): obj is Binding {
 export type ComponentPropSource<T> = T | Binding<T>;
 
 export type ComponentPropParams<TPropStruct extends ComponentPropStruct> = {
-    [P in keyof TPropStruct]?: ComponentPropSource<TPropStruct[P]>;
-    // [P in KeyPath<TPropStruct>]?: ComponentPropSource<KeyPathValue<TPropStruct, P>>; // TODO
+    // [P in keyof TPropStruct]?: ComponentPropSource<TPropStruct[P]>;
+    [P in KeyPath<TPropStruct, boolean>]?: ComponentPropSource<KeyPathValue<TPropStruct, P>>; // TODO
 } & {
     key?: string | number | null | undefined;
 };
@@ -257,7 +257,7 @@ export type ComponentProps<TPropStruct extends ComponentPropStruct> = {
     [P in keyof TPropStruct]: TPropStruct[P] | ComponentProp<TPropStruct[P]>;
 } &
 {
-    [P in KeyPath<TPropStruct>]?: TPropStruct[P] | ComponentProp<TPropStruct[P]>;
+    [P in KeyPath<TPropStruct, boolean>]?: TPropStruct[P] | ComponentProp<TPropStruct[P]>;
 };
 
 // export const $ON_PROP_CHANGING = "onPropChanging" as const;
@@ -300,7 +300,7 @@ export type ComponentEvents<
     onDestroy?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<void>; // onDispose/onCleanup
     // onError
     onCatch?: (component: Component<TStruct, TMsgHeaders>, error: unknown, info?: unknown) => void;
-    onValidate?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<Partial<Record<KeyPath<TStruct["props"]>, ValidationResult>>>;
+    onValidate?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<Partial<Record<KeyPath<TStruct["props"], boolean>, ValidationResult>>>;
 } & {
         [P in keyof TStruct['props']as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
     } & {
@@ -433,7 +433,7 @@ export const $isComponent = Symbol('isComponent'); // brand
 export type HtmlInputProps = {
     readonly value?: string | readonly string[] | number | undefined;
     readonly onChange?: ChangeEventHandler,
-    readonly onBlur?: BlurEventHandler;    
+    readonly onBlur?: BlurEventHandler;
 }
 
 export type Component<
@@ -468,8 +468,8 @@ export type Component<
     readonly abortSignal: AbortSignal;
     readonly model: ComponentModel<TStruct>;
     readonly children: ComponentChildren<TStruct['children']>;
-    readonly validate: (path?: KeyPath<TStruct["props"]>) => MaybePromise<void>;
-    readonly mapToInput: (path?: KeyPath<TStruct["props"]>, exclude?: (keyof HtmlInputProps)[]) => Partial<HtmlInputProps>;
+    readonly validate: (path?: KeyPath<TStruct["props"], boolean>) => MaybePromise<void>;
+    readonly mapToInput: (path?: KeyPath<TStruct["props"], boolean>, exclude?: (keyof HtmlInputProps)[]) => Partial<HtmlInputProps>;
     readonly [Symbol.dispose]: () => void;
 };
 
@@ -490,13 +490,13 @@ export type BlurEventHandler<T extends HTMLElement = HTMLInputElement> =
 
 // ComponentPublicState
 export type ComponentState<TStruct extends ComponentStruct<any> = ComponentStruct<any>> = {
-    readonly bindings: Map<PropertyKey, Binding>;
+    readonly bindings: Record<KeyPath<ComponentStruct["props"], boolean>, Binding>;
     isDisabled: boolean;
     isReadOnly: boolean;
     isVisible: boolean;
     isValid: boolean;
     pendingRequestCount: number; // for busy indicators etc
-    readonly propState: Record<KeyPath<TStruct["props"]>, ComponentPropState>;
+    readonly propState: Record<KeyPath<TStruct["props"], boolean>, ComponentPropState>;
 }
 
 export type BaseComponentModel<TStruct extends ComponentStruct<any> = ComponentStruct<any>> = {
