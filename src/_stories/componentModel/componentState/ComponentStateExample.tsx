@@ -1,7 +1,7 @@
 import type {
     Component,
     ComponentDef,
-    ComponentImplStruct,
+    ComponentStructExt,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
@@ -11,7 +11,10 @@ import React from 'react';
 import { TestMsgChannels, TestMsgStruct } from './msgStruct';
 import { detailsStyle, labelStyle, row } from '../styles';
 import { requestFakeData } from './TestApiClient';
-import { prop } from '@/componentModel/core';
+import { bind, prop } from '@/componentModel/core';
+import { AvatarViewStruct, useAvatarView } from './AvatarView';
+import avatar1 from './avatar1.jpg';
+import avatar2 from './avatar2.jpg';
 
 type Struct = ComponentStruct<
     TestMsgStruct,
@@ -24,13 +27,21 @@ type Struct = ComponentStruct<
     }
 >;
 
-export const useComponentStateExample = (params: ComponentParams<Struct>) => {
-    type ImplStruct = ComponentImplStruct<
+export const useComponentStateExample = (params: ComponentParams<Struct>): Component<Struct> => {
+    type ImplStruct = ComponentStructExt<
         Struct,
         {
-            data: string[];
-            form: {
-                email: string;
+            props: {
+                data: string[];
+                userInfo: {
+                    email: string;
+                    avatarUrl: string;
+                };
+            };
+            children: {
+                avatarView: AvatarViewStruct;
+                section1: React.FC;
+                section2: React.FC;
             };
         }
     >;
@@ -46,18 +57,20 @@ export const useComponentStateExample = (params: ComponentParams<Struct>) => {
     const def: ComponentDef<ImplStruct> = {
         props: {
             data: [],
-            // form: {
+            // userInfo: {
             //     email: '',
             // },
-            form: prop({
+            userInfo: prop({
                 initialValue: {
-                    email: 'a@b.mail.com',
+                    email: 'john.smith@mail.com',
+                    avatarUrl: avatar1,
                 },
             }),
-            'form.email': prop<string>({
+            'userInfo.email': prop({
+                initialValue: 'john.smith@mail.com',
                 validator: {
                     onBlur: true,
-                    validate: (v) => {
+                    validate: (v: string) => {
                         const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v ?? '');
                         return valid ? undefined : { isValid: false, message: 'Invalid email' };
                     },
@@ -73,11 +86,13 @@ export const useComponentStateExample = (params: ComponentParams<Struct>) => {
                 },
             },
         },
-        view: () => {
-            const isBusy = m.$.pendingRequestCount > 0;
-            const emailState = m.$.propState['form.email'] || {};
-            return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        children: {
+            avatarView: useAvatarView({
+                'avatar.imageUrl': bind(() => m.userInfo.avatarUrl),
+            }),
+            section1: () => {
+                const emailState = m.$.propState['userInfo.email'] || {};
+                return (
                     <details open style={detailsStyle}>
                         <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Form</summary>
                         <div style={row}>
@@ -85,7 +100,7 @@ export const useComponentStateExample = (params: ComponentParams<Struct>) => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <input
                                     type="email"
-                                    {...c.mapToInput('form.email')}
+                                    {...c.mapToEdit('userInfo.email')}
                                     style={{
                                         borderColor: emailState.error ? '#e53935' : undefined,
                                         outline: emailState.error ? '1px solid #e53935' : undefined,
@@ -98,11 +113,24 @@ export const useComponentStateExample = (params: ComponentParams<Struct>) => {
                                 )}
                             </div>
                         </div>
+                        <div style={row}>
+                            <span style={labelStyle}>Avatar</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <select {...c.mapToEdit<HTMLSelectElement>('userInfo.avatarUrl')}>
+                                    <option value={avatar1}>Example 1</option>
+                                    <option value={avatar2}>Example 2</option>
+                                </select>
+                                <c.children.AvatarView></c.children.AvatarView>
+                            </div>
+                        </div>
                     </details>
+                );
+            },
+            section2: () => {
+                const isBusy = m.$.pendingRequestCount > 0;
+                return (
                     <details open style={detailsStyle}>
-                        <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
-                            Component State
-                        </summary>
+                        <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Busy State</summary>
                         <div style={{ ...row, marginTop: 4 }}>
                             <button onClick={requestMoreData} disabled={isBusy}>
                                 Request More
@@ -121,6 +149,14 @@ export const useComponentStateExample = (params: ComponentParams<Struct>) => {
                             ))}
                         </ul>
                     </details>
+                );
+            },
+        },
+        view: () => {
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <c.children.Section1 />
+                    <c.children.Section2 />
                 </div>
             );
         },

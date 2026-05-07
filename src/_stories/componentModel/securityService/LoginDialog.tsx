@@ -10,8 +10,6 @@ import type {
 import { toReact, useComponent } from '@/componentModel/react/react';
 import { AppMsgStruct } from '../bootstrap';
 
-// import './simpleButton.css';
-
 type Struct = ComponentStruct<
     AppMsgStruct,
     {

@@ -139,9 +139,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             config = msg.payload;
         }
         c._.domainConfig = config;
-        const prefixer = getValuePrefixer<typeof c._.storageKeys>(
-            `${c._.domainConfig?.id}/`,
-        );
+        const prefixer = getValuePrefixer<typeof c._.storageKeys>(`${c._.domainConfig?.id}/`);
         c._.storageKeys = prefixer(c._.storageKeys);
         await restoreData();
     }

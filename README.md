@@ -1135,7 +1135,7 @@ children: {
 }
 ```
 
-**Why bindings must use lazy getters — never pass `m` directly:**
+**Why bindings must use lazy getters — never pass model directly:**
 
 `def.children` is evaluated **before** `c = useComponent(...)` and `m = c.model` are assigned. Passing `m` directly copies `undefined`:
 

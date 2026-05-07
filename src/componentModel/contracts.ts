@@ -125,7 +125,6 @@ export type ComponentStructBase<
     actions?: ComponentActionStruct;
     effects?: string[] | string | undefined;
     children?: ComponentRefStruct;
-    // msgs?
     msgScope?: TMsgScope;
 };
 
@@ -137,10 +136,17 @@ export type ComponentStruct<
     msg: TMsgStruct;
 };
 
-export type ComponentImplStruct<TStruct extends ComponentStruct<any> = ComponentStruct<any>, TInternalProps extends ComponentPropStruct = ComponentPropStruct> =
-    Omit<TStruct, 'props'> & {
-        props?: TStruct["props"] & TInternalProps;
-    };
+// Returns NonNullable<T[K]> if K is in T, else Fallback (use {} for &-merges, never for |-merges)
+type Field<T, K extends PropertyKey, Fallback = {}> = K extends keyof T ? NonNullable<T[K]> : Fallback;
+
+export type ComponentStructExt<TStruct extends ComponentStruct<any> = ComponentStruct<any>, TInternalStruct extends Skip<ComponentStructBase<TStruct["msg"]>, "msgScope"> = Skip<ComponentStructBase<TStruct["msg"]>, "msgScope">> = {
+    props?: Field<TStruct, 'props'> & Field<TInternalStruct, 'props'>;
+    actions?: Field<TStruct, 'actions'> & Field<TInternalStruct, 'actions'>;
+    effects?: Field<TStruct, 'effects', never> | Field<TInternalStruct, 'effects', never>;
+    children?: Field<TStruct, 'children'> & Field<TInternalStruct, 'children'>;
+    msgScope: TStruct["msgScope"];
+    msg: TStruct["msg"];
+};
 
 export type MsgBroker<
     TStructToProvide extends MsgStruct = MsgStruct,
@@ -430,10 +436,10 @@ export const $isComponent = Symbol('isComponent'); // brand
 // style?: CSSProperties;
 // classNames?: string[];
 
-export type HtmlInputProps = {
+export type HtmlInputProps<T extends HTMLElement = HTMLInputElement> = {
     readonly value?: string | readonly string[] | number | undefined;
-    readonly onChange?: ChangeEventHandler,
-    readonly onBlur?: BlurEventHandler;
+    readonly onChange?: ChangeEventHandler<T>;
+    readonly onBlur?: BlurEventHandler<T>;
 }
 
 export type Component<
@@ -454,7 +460,7 @@ export type Component<
     readonly getNodeMap: () => Map<string, ComponentTreeNode>;
     readonly msgBus: MsgBus<ComponentMsgStruct<TStruct>, TMsgHeaders>;
     readonly msgBroker: ComponentMsgBroker<TStruct>;
-    readonly effects: keyof TStruct['effects'] extends never
+    readonly effects: TStruct['effects'] extends never
     ? never
     : Record<
         TStruct['effects'] extends string ? TStruct['effects'] : TStruct['effects'][number],
@@ -469,7 +475,7 @@ export type Component<
     readonly model: ComponentModel<TStruct>;
     readonly children: ComponentChildren<TStruct['children']>;
     readonly validate: (path?: KeyPath<TStruct["props"], boolean>) => MaybePromise<void>;
-    readonly mapToInput: (path?: KeyPath<TStruct["props"], boolean>, exclude?: (keyof HtmlInputProps)[]) => Partial<HtmlInputProps>;
+    readonly mapToEdit: <T extends HTMLElement = HTMLInputElement>(path?: KeyPath<TStruct["props"], boolean>, exclude?: (keyof HtmlInputProps)[]) => Partial<HtmlInputProps<T>>;
     readonly [Symbol.dispose]: () => void;
 };
 

@@ -61,7 +61,7 @@ export const useNavService = (params: ComponentParams<Struct>) => {
             provide: {
                 'APP.NAV.GOTO': {
                     in: {
-                        callback: async (msg) => {
+                        callback: async (msg) => {                            
                             navigate(msg.payload as To);
                         },
                     },

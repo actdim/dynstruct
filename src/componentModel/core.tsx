@@ -120,7 +120,6 @@ export type ComponentModelEventHandlers = {
 export async function validate<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
-    // TPropKey
     TPropPath extends KeyPath<TStruct['props'], boolean> = KeyPath<TStruct['props'], boolean>,
 >(
     component: Component<TStruct, TMsgHeaders>,
@@ -194,10 +193,10 @@ export async function validate<
     }
 }
 
-export function mapToInput<
+export function mapToEdit<
+    TElement extends HTMLElement = HTMLInputElement,
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
-    // TPropKey
     TPropPath extends KeyPath<TStruct['props'], boolean> = KeyPath<TStruct['props'], boolean>,
 >(
     component: Component<TStruct, TMsgHeaders>,
@@ -211,12 +210,12 @@ export function mapToInput<
         exclude = [];
     }
 
-    const inputProps: Mutable<Partial<HtmlInputProps>> = {};
+    const inputProps: Mutable<Partial<HtmlInputProps<TElement>>> = {};
     if (exclude.indexOf('value') < 0) {
         inputProps.value = getByKeyPath(model, path) ?? '';
     }
     if (exclude.indexOf('onBlur') < 0) {
-        const onBlurFactory = (path: TPropPath): BlurEventHandler => {
+        const onBlurFactory = (path: TPropPath): BlurEventHandler<TElement> => {
             return async (evt) => {
                 const prop = def.props?.[path];
                 if (isComponentProp(prop) && prop.validator?.onBlur) {
@@ -227,10 +226,14 @@ export function mapToInput<
         inputProps.onBlur = onBlurFactory(path);
     }
     if (exclude.indexOf('onChange') < 0) {
-        const onChangeFactory = (path: TPropPath): ChangeEventHandler => {
+        const onChangeFactory = (path: TPropPath): ChangeEventHandler<TElement> => {
             return (evt) => {
-                const el = evt.target as HTMLInputElement;
-                setByKeyPath(model, path, el.value as any);
+                // HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement etc
+                setByKeyPath(
+                    model,
+                    path,
+                    (evt.target as unknown as { value: string }).value as any,
+                );
             };
         };
         inputProps.onChange = onChangeFactory(path);
@@ -293,7 +296,7 @@ export function createModel<
 
     for (const [key, val] of Object.entries(params)) {
         if (isBinding(val)) {
-            setByKeyPath(state.bindings, key, val);
+            state.bindings[key] = val;
         } else {
             setByKeyPath(model, key as TPropPath, val as KeyPathValue<TStruct['props'], TPropPath>);
         }
@@ -420,18 +423,35 @@ export function createModel<
         if (pathMap.has(basePath)) return pathMap.get(basePath) as T;
         const proxy = new Proxy(obj, {
             get(target, key, receiver) {
-                const val = Reflect.get(target, key, receiver);
                 const childPath = basePath ? `${basePath}.${String(key)}` : String(key);
+                const binding = state.bindings[childPath] as Binding | undefined;
+                if (binding?.get) {
+                    const raw = runSafe(() => binding.get());
+                    return binding.converter ? runSafe(() => binding.converter!.convert(raw)) : raw;
+                }
+                const val = Reflect.get(target, key, receiver);
                 if (isPlainObject(val)) return createDeepProxy(val, childPath);
                 return val;
             },
             set(target, key, val, receiver) {
                 const fullPath = basePath ? `${basePath}.${String(key)}` : String(key);
                 const result = runInAction(() => Reflect.set(target, key, val, receiver));
+                const binding = state.bindings[fullPath] as Binding | undefined;
+                if (binding?.set) {
+                    const outVal = binding.converter
+                        ? runSafe(() => binding.converter!.convertBack(val))
+                        : val;
+                    runSafe(() => binding.set!(outVal));
+                }
                 handlers.onPropChange?.(fullPath, val);
                 const prop = def.props[fullPath];
                 if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
-                    validate(component, def, params, fullPath as KeyPath<TStruct['props'], boolean>);
+                    validate(
+                        component,
+                        def,
+                        params,
+                        fullPath as KeyPath<TStruct['props'], boolean>,
+                    );
                 }
                 return result;
             },
@@ -445,11 +465,12 @@ export function createModel<
             const onGet = handlers?.[key]?.onGet;
             if (onGet) return onGet();
 
-            const binding = getByKeyPath(state.bindings, key as KeyPath<TStruct['props'], boolean>);
+            const binding = state.bindings[key as TPropPath];
 
             const val = Reflect.get(obj, key, receiver);
             if (binding?.get) {
-                return runSafe(() => binding.get());
+                const raw = runSafe(() => binding.get());
+                return binding.converter ? runSafe(() => binding.converter!.convert(raw)) : raw;
             }
 
             if (val && typeof val === 'object') {
@@ -477,9 +498,12 @@ export function createModel<
             });
 
             // bindings
-            const binding = getByKeyPath(state.bindings, key as KeyPath<TStruct['props'], boolean>);
+            const binding = state.bindings[key as TPropPath];
             if (binding?.set) {
-                runSafe(() => binding?.set?.(val));
+                const outVal = binding.converter
+                    ? runSafe(() => binding.converter!.convertBack(val))
+                    : val;
+                runSafe(() => binding.set!(outVal));
             }
 
             // after-change hooks

@@ -2,7 +2,7 @@ import type {
     Component,
     ComponentDef,
     ComponentImpl,
-    ComponentImplStruct,
+    ComponentStructExt,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
@@ -43,9 +43,16 @@ type Struct = ComponentStruct<
 >;
 
 export const useEffectDemo = (params: ComponentParams<Struct>): Component<Struct> => {
-    type ImplStruct = ComponentImplStruct<Struct, { trackingEnabled: boolean }>;
+    type ImplStruct = ComponentStructExt<
+        Struct,
+        {
+            props: {
+                trackingEnabled: boolean;
+            };
+        }
+    >;
 
-    let c: ComponentImpl<ImplStruct>;
+    let c: Component<ImplStruct>;
     let m: ComponentModel<ImplStruct>;
 
     const reset = () => {
@@ -109,7 +116,7 @@ export const useEffectDemo = (params: ComponentParams<Struct>): Component<Struct
             emailEdit: (params) => {
                 let dynComponent = useSimpleEdit({
                     value: bindProp(() => m, 'email'),
-                    isValid: bind(() => !!m.email),
+                    isValid: bind(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email ?? '')),
                 });
                 return dynComponent;
             },

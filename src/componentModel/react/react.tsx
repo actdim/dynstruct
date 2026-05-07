@@ -19,6 +19,7 @@ import {
     ComponentParams,
     ComponentRegistryContext,
     ComponentStruct,
+    ComponentStructExt,
     ComponentViewImplFn,
     ComponentViewProps,
     EffectController,
@@ -34,7 +35,7 @@ import {
     toHtmlId,
     createModel,
     validate,
-    mapToInput,
+    mapToEdit,
 } from '../core';
 import { ErrorBoundary } from './errorBoundary';
 import { ErrorPayload, MsgBus } from '@actdim/msgmesh/contracts';
@@ -339,8 +340,8 @@ function createComponent<
         validate: (path) => {
             return validate(component, def, params, path);
         },
-        mapToInput: (path, exclude) => {
-            return mapToInput(component, def, params, path, exclude);
+        mapToEdit: (path, exclude) => {
+            return mapToEdit(component, def, params, path, exclude);
         },
         [Symbol.dispose]: () => {
             for (const [name, fn] of Object.entries(component.effects)) {
@@ -359,9 +360,10 @@ export function useComponent<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TInternals = unknown,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+    TExtStruct extends ComponentStruct<any> = TStruct,
 >(
     def: ComponentDef<TStruct, TMsgHeaders>,
-    params: ComponentParams<TStruct>,
+    params: ComponentParams<TExtStruct>,
     internals?: TInternals,
 ) {
     const context = useComponentContext() as ComponentRegistryContext<TStruct['msg'], TMsgHeaders>;
@@ -369,7 +371,7 @@ export function useComponent<
         const component = createComponent<TStruct, TMsgHeaders>(
             def,
             context,
-            params,
+            params as ComponentParams<TStruct>,
         ) as ComponentImpl<TStruct, TInternals, TMsgHeaders>;
         component._ = (internals || {}) as TInternals;
         return component;
