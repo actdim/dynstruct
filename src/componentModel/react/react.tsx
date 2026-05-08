@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, ReactNode } from 'react';
 import React from 'react';
 import { Func, MaybePromise, Mutable } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
+import { runInAction } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
 import {
@@ -19,10 +20,10 @@ import {
     ComponentParams,
     ComponentRegistryContext,
     ComponentStruct,
-    ComponentStructExt,
     ComponentViewImplFn,
     ComponentViewProps,
     EffectController,
+    isBinding,
     isComponent,
 } from '../contracts';
 
@@ -376,12 +377,30 @@ export function useComponent<
         component._ = (internals || {}) as TInternals;
         return component;
     });
+
+    // Sync incoming params to the model on every render.
+    // Needed for toReact usage: React re-renders the wrapper with new prop values
+    // but the component instance (and its model) is created only once via useLazyRef.
+    const c = ref.current;
+    if (c && def.props) {
+        runInAction(() => {
+            for (const [key, val] of Object.entries(params)) {
+                if (key in def.props && !isBinding(val)) {
+                    const current = c.model[key];
+                    if (current !== val) {
+                        Reflect.set(c.model, key, val);
+                    }
+                }
+            }
+        });
+    }
+
     useLayoutEffect(() => {
         return () => {
             ref.current = null;
         };
     }, []); // [params]?
-    return ref.current;
+    return c;
 }
 
 export function toReact<
