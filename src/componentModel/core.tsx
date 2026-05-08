@@ -784,10 +784,9 @@ export function createEffect<
 //     };
 // }
 
+// TODO: support granular access control
 // TODO: support async resources via msgbus (TanStack Query/SWR + Suspense)
 // TODO: support control persistence (with providers)
-// TODO: control requestCount via msgbus (for busy state indicator)
-// TODO: support asyn validation
 // TODO: component type (resource-boundary/layout/UI) support
 // TODO: add skeleton/not-ready state support
 // TODO: visibility (visible/none/hidden) & interaction (disabled/readOnly) support (security etc) with fallback view
