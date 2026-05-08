@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
 
 import { AppContextProvider, appMsgBus } from '../bootstrap';
-import { ComponentStateExample } from './ComponentStateExample';
+import { ComponentStateExample } from './StateExample';
 
 const meta: Meta<typeof ComponentStateExample> = {
     title: 'dynstruct/Basics',

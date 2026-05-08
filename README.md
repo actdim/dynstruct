@@ -16,7 +16,12 @@ Build scalable applications with dynamic structured components, explicit wiring,
 - [Core Concepts](#core-concepts)
   - [Component Structure](#component-structure)
   - [Component Definition](#component-definition)
+  - [Implementation Extension (ComponentStructExt)](#implementation-extension-componentstructext)
+  - [Instance Internals (ComponentImpl)](#instance-internals-componentimpl)
   - [Reactive Properties](#reactive-properties)
+    - [Nested Props and Validators](#nested-props-and-validators)
+    - [Component State ($)](#component-state-)
+    - [Form Helpers: validate() and mapToEdit()](#form-helpers-validate-and-maptoedit)
   - [Component Events](#component-events)
     - [Lifecycle Events](#lifecycle-events)
     - [Error Handling](#error-handling)
@@ -530,6 +535,120 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
 | `view` | Render function `() => JSX`. Uses the closed-over `c` and `m` variables declared at the top of the hook-constructor. Children rendered as `<c.children.Name />` (Capitalized). Intended to be compact — logic lives in other definition areas. |
 | `fallbackView` | Optional error fallback `(props, component) => JSX`. Rendered instead of `view` when `useErrorBoundary: true` is set and the component catches an error. |
 
+### Implementation Extension (`ComponentStructExt`)
+
+When a component's implementation grows complex, you can extend the component struct **inside the hook-constructor** using `ComponentStructExt`. The extended type is only visible within that function; callers receive `Component<Struct>` and see only the original public API.
+
+This cleanly separates the **external contract** (what callers pass and observe) from the **internal implementation** (what the hook needs to do its work). It replaces the React pattern of splitting concerns between `props` (external) and `useState`/`useReducer` (internal) — but through a single consistent mechanism, just with different scopes.
+
+**What it enables:**
+
+- **Private reactive props** — internal state that only the implementation reads or writes.
+- **Internal children** — lightweight `React.FC` fragments used to decompose a large `view` into named, readable sections. The parent `view` becomes a clean slot list.
+- **Internal effects** — effects that drive internal state and are never exposed.
+
+```typescript
+export const useComponentStateExample = (params: ComponentParams<Struct>): Component<Struct> => {
+    // Invisible to callers — only valid inside this function
+    type ImplStruct = ComponentStructExt<
+        Struct,
+        {
+            props: {
+                data: string[];
+                userInfo: {
+                    email: string;
+                    avatarUrl: string;
+                };
+            };
+            children: {
+                avatarView: AvatarViewStruct;
+                section1: React.FC; // named fragment for the form section
+                section2: React.FC; // named fragment for the busy-state section
+            };
+        }
+    >;
+
+    let c: Component<ImplStruct>;
+    let m: ComponentModel<ImplStruct>;
+
+    const def: ComponentDef<ImplStruct> = {
+        props: {
+            data: [],
+            userInfo: prop({ initialValue: { email: '', avatarUrl: '' } }),
+        },
+        children: {
+            avatarView: useAvatarView({ 'avatar.imageUrl': bind(() => m.userInfo.avatarUrl) }),
+            section1: () => <details>...form JSX...</details>,
+            section2: () => <details>...busy-state JSX...</details>,
+        },
+        // Main view stays minimal — just slots for the two sections
+        view: () => (
+            <div>
+                <c.children.Section1 />
+                <c.children.Section2 />
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c; // returned as Component<Struct> — ImplStruct stays private
+};
+```
+
+> **Full working example:** [`src/_stories/componentModel/componentState/StateExample.tsx`](src/_stories/componentModel/componentState/StateExample.tsx)
+
+### Instance Internals (`ComponentImpl`)
+
+Sometimes a component needs non-reactive, per-instance data — a cache, a lock, a lazily-initialized resource — that must survive re-renders but must **not** trigger UI updates when it changes. This is the role of the internals slot (`c._`), analogous to `useRef` in React but typed and initialized once per instance.
+
+Declare a `type Internals` alias inside the hook-constructor, then pass the initial value as the third argument to `useComponent`. The component instance type becomes `ComponentImpl<Struct, Internals>` and the data is accessible via `c._`.
+
+```typescript
+export const useStorageService = (params: ComponentParams<Struct>): Component<Struct> => {
+    type Internals = {
+        store?: PersistentStore;
+    };
+
+    let c: ComponentImpl<Struct, Internals>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
+        events: {
+            onReady: async () => {
+                c._.store = await PersistentStore.open(m.storeName);
+            },
+            onChangeStoreName: async () => {
+                c._.store = await PersistentStore.open(m.storeName); // reinitialize
+            },
+        },
+        msgBroker: {
+            provide: {
+                [$STORE_GET]: {
+                    in: {
+                        callback: async (msg) => {
+                            return await c._.store.get(msg.payload.key);
+                        },
+                    },
+                },
+            },
+        },
+    };
+
+    c = useComponent(def, params, {} as Internals); // 3rd arg initializes c._
+    m = c.model;
+    return c; // returned as Component<Struct> — Internals stays private
+};
+```
+
+**Key properties:**
+- Changes to `c._` fields do **not** trigger re-renders.
+- Each component instance has its own isolated `c._` object.
+- Initialized once with the value passed as the third argument to `useComponent`.
+- Return `Component<Struct>` (not `ComponentImpl`) from the hook-constructor to keep internals private.
+
+> **Full working example:** [`src/services/react/StorageService.tsx`](src/services/react/StorageService.tsx)
+
 ### Reactive Properties
 
 Component properties are **automatically reactive** after component creation with `useComponent`. Any changes to properties will trigger UI updates:
@@ -549,6 +668,86 @@ const def: ComponentDef<Struct> = {
 
 const c = useComponent(def, params);
 const m = c.model; // m.counter and m.message are reactive
+```
+
+#### Nested Props and Validators
+
+Properties are not limited to top-level names. You can declare **nested paths** (e.g. `'userInfo.email'`) as keys in `def.props` to attach validators and descriptors to nested values. A nested path entry requires a `prop(...)` descriptor instead of a plain value.
+
+```typescript
+const def: ComponentDef<ImplStruct> = {
+    props: {
+        userInfo: prop({
+            initialValue: {
+                email: 'john.smith@mail.com',
+                avatarUrl: '',
+            },
+        }),
+        // Attach a validator to the nested path userInfo.email
+        'userInfo.email': prop({
+            initialValue: 'john.smith@mail.com',
+            validator: {
+                onBlur: true,   // run when the bound input loses focus
+                validate: (v: string) => {
+                    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v ?? '');
+                    return valid ? undefined : { isValid: false, message: 'Invalid email' };
+                },
+            },
+        }),
+    },
+};
+```
+
+Validator triggers:
+
+| Option | Description |
+|---|---|
+| `onBlur: true` | Validates when the bound input element loses focus (via `mapToEdit`). |
+| `onChange: true` | Validates on every value change. |
+
+Bindings (`bind` / `bindProp`) also support nested paths. A binding to `'userInfo.email'` behaves identically to a binding to a top-level prop — it is reactive, propagates changes through the property system, and fires validation and change events.
+
+#### Component State (`m.$`)
+
+Every component model exposes a `$` field of type `ComponentState<TStruct>` with reactive metadata about the component:
+
+| Field | Type | Description |
+|---|---|---|
+| `pendingRequestCount` | `number` | Reactive count of unresolved `c.msgBus.request(...)` calls. Use in JSX to drive loading indicators. |
+| `propState` | `Record<path, descriptor>` | Reactive map of per-property state descriptors, keyed by property path (including nested paths). Each entry exposes `error`, `isValid`, and related validation results. Supports IntelliSense and compile-time path checking. |
+
+```typescript
+// Show a loading indicator while any request is in flight
+const isBusy = m.$.pendingRequestCount > 0;
+
+// Read validation state for a nested property
+const emailState = m.$.propState['userInfo.email'] ?? {};
+
+// Use in JSX
+<input
+    {...c.mapToEdit('userInfo.email')}
+    style={{ borderColor: emailState.error ? '#e53935' : undefined }}
+/>
+{emailState.error && <span style={{ color: '#e53935' }}>{emailState.error}</span>}
+```
+
+> **Full working example:** [`src/_stories/componentModel/componentState/StateExample.tsx`](src/_stories/componentModel/componentState/StateExample.tsx)
+
+#### Form Helpers: `validate()` and `mapToEdit()`
+
+**`c.validate(propPath?)`** — triggers validation for one property (by path) or for all declared validators. Use before submit to block sending invalid data.
+
+**`c.mapToEdit<TEl>(propPath)`** — returns a props object that binds a reactive property to an HTML input or select element. Wires `value`, `onChange`, and (when `onBlur: true` is declared for the validator) `onBlur`. Writes flow back through the property system so validators and `onChangingX` / `onChangeX` handlers fire as expected.
+
+```typescript
+// Bind m.userInfo.email to an <input type="email">
+<input type="email" {...c.mapToEdit('userInfo.email')} />
+
+// Bind m.userInfo.avatarUrl to a <select>
+<select {...c.mapToEdit<HTMLSelectElement>('userInfo.avatarUrl')}>
+    <option value={avatar1}>Example 1</option>
+    <option value={avatar2}>Example 2</option>
+</select>
 ```
 
 ### Component Events
@@ -677,7 +876,7 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
 };
 ```
 
-> **When `onCatch` is called automatically:** The framework routes errors to `onCatch` for every call that crosses the dynstruct API boundary — lifecycle hooks (`onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`), actions (`def.actions` — wrapped in `runSafe` before MobX annotation so MobX handles batching and dynstruct handles errors), property event handlers (`onGetX`, `onChangingX`, `onChangeX`, `onPropChanging`, `onPropChange`), binding get/set functions, effect bodies, and msgBus subscriber/provider callbacks and `request(...)` calls.
+> **When `onCatch` is called automatically:** The framework routes errors to `onCatch` for every call that crosses the dynstruct API boundary — lifecycle hooks (`onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`), actions (`def.actions` — wrapped by the framework so action calls are batched automatically and errors propagate to `onCatch`), property event handlers (`onGetX`, `onChangingX`, `onChangeX`, `onPropChanging`, `onPropChange`), binding get/set functions, effect bodies, and msgBus subscriber/provider callbacks and `request(...)` calls.
 >
 > **When manual `try/catch` is needed:** A raw function called in an `onClick` that does not use any dynstruct API. In the pattern above, `load()` calls a plain `fetchData()` helper — so errors from the button click are caught manually with the same shared `handleError` function.
 
@@ -1092,7 +1291,7 @@ const def: ComponentDef<Struct> = {
 | DynamicContent | `DynamicContentStruct<TData>` | `<c.children.Name />` | Typed reactive data with typed render callback |
 | Component structure | `SomeChildStruct` | `<c.children.Name />` | Full dynstruct component with its own model and effects |
 
-> **Naming convention:** All children are rendered in JSX using a **Capitalized** name: `<c.children.Name />`. For component structure children the camelCase name additionally gives access to the full component instance (`c.children.name.model`, `c.children.name.effects`, …). For `React.FC` and factory children only the Capitalized form exists.
+> **Naming convention:** All children are rendered in JSX using a **Capitalized** name: `<c.children.Name />`. This is a JSX shortcut — instead of writing `<c.children.avatarView.View />` you write the shorter `<c.children.AvatarView />`. For full dynstruct component children (`ComponentStruct` types), the camelCase name additionally gives access to the complete component instance — model, effects, and nested children: `c.children.avatarView.model`, `c.children.avatarView.effects`. For `React.FC` and factory function children only the Capitalized JSX shortcut exists, since these are lightweight fragments without their own component instance.
 
 ### Component Wiring
 
@@ -1190,7 +1389,7 @@ children: {
 }
 ```
 
-This is **convenient for editor components** that take a data object and display/edit all its fields without needing a separate binding for each field. Reads are tracked by MobX; writes trigger the parent's `onChange` handlers.
+This is **convenient for editor components** that take a data object and display/edit all its fields without needing a separate binding for each field. Reads are tracked reactively; writes trigger the parent's `onChange` handlers.
 
 > ⚠️ **Coupling trade-off:** binding a child to the parent's full model tightens the coupling significantly — the child implicitly depends on the parent's model shape. This can make the child difficult to reuse and the data flow harder to trace. Use it when both components are designed together and the relationship is intentional. In general, prefer binding individual props and keep `children` structure declarations honest about what is actually used.
 
@@ -1506,6 +1705,16 @@ const validationResult = await c.msgBus.request(
 ```
 
 > **Unmount safety:** `c.msgBus` is bound to component lifecycle. When the component is unmounted, active subscriptions are automatically unsubscribed and pending `request(...)` calls are aborted. This prevents updating state of an already destroyed component from late async responses.
+
+#### Payload Isolation
+
+The component's message broker automatically applies `structuredClone` to message payloads before delivery:
+
+- Reactive objects from the sender's model are **not** transmitted as-is — a plain clone is sent. This prevents a subscriber from accidentally holding a live reference into another component's reactive state and affecting its lifecycle.
+- Payloads must be **serializable** — objects with circular references or non-cloneable types (functions, class instances) will throw at send time.
+- Each subscriber receives its own independent copy; mutations in one handler do not affect others.
+
+This is a deliberate safety layer for the component model layer. It enforces clean component boundaries: no component can accidentally mutate another component's state through a shared payload reference.
 
 #### Message Filtering
 
@@ -2545,6 +2754,7 @@ Available stories:
 - **Simple Component** — Reactive props, child components, dynamic content, factory children
 - **Effects** — Auto-tracking reactive effects with pause/resume lifecycle control
 - **Custom Msg Struct** — Custom message structures with typed headers
+- **Component State** — Private props and children via `ComponentStructExt`, form validation with nested paths and validators, `mapToEdit`, pending request tracking via `m.$`
 
 **Communication:**
 - **Basic Communication** — Message bus producer/consumer pattern

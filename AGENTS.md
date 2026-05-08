@@ -1,6 +1,6 @@
-# Codex Guide for `@actdim/dynstruct`
+# Agent Development Guide for `@actdim/dynstruct`
 
-This file defines how Codex should implement and modify code in this repository.
+This file defines how agents should implement and modify code in this repository.
 
 ## Goal
 
@@ -72,12 +72,14 @@ Use hook-constructors as the primary component format:
 - Use `effects` for derived/auto-tracked behavior; pause/resume/stop through `c.effects.<name>`.
 - Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child — `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
 - Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
+- Use `ComponentStructExt<Struct, {...}>` **inside** a hook-constructor to declare private reactive props, internal children (often `React.FC` sections), and effects. The extended type is invisible to callers; return `Component<Struct>` from the hook to preserve the public API. See `componentState/StateExample.tsx`.
+- Use `ComponentImpl<Struct, Internals>` when you need non-reactive, per-instance data (e.g., a cache or lock). Pass initial internals as the third argument to `useComponent`; access via `c._`. Return `Component<Struct>` to hide internals from callers. See `services/react/StorageService.tsx`.
 
 ### Error handling pattern
 
 `onCatch` is called automatically whenever an error crosses the **dynstruct API boundary**. This covers:
 - Lifecycle hooks: `onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy` — sync and async
-- Actions (`def.actions`) — wrapped in `runSafe` before MobX annotation; MobX handles batching, dynstruct handles errors
+- Actions (`def.actions`) — wrapped by the framework; action calls are batched automatically and errors propagate to `onCatch`
 - Property event handlers: `onGetX`, `onChangingX`, `onChangeX`, `onPropChanging`, `onPropChange`
 - Binding get/set functions (`bind`, `bindProp`)
 - Effect bodies (`def.effects`)
@@ -136,7 +138,7 @@ For service APIs:
 - Prefer parent-child composition via `children` over passing unstable inline objects/functions deep into tree.
 - Keep JSX mostly structural; put behavior in `actions/events/effects`.
 - Reuse existing component structures rather than creating parallel incompatible patterns.
-- In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This works for every child type — `ComponentStruct`, `React.FC`, and factory functions. For `ComponentStruct` children the camelCase name still exists for model/effects access (`c.children.name.model`), but JSX always uses the Capitalized form.
+- In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This is a JSX shortcut — instead of `<c.children.avatarView.View />` you write `<c.children.AvatarView />`. For full dynstruct component children (`ComponentStruct` types) the camelCase name additionally exposes the full component instance (`c.children.avatarView.model`, `c.children.avatarView.effects`). For `React.FC` and factory function children only the Capitalized JSX shortcut exists — these are lightweight fragments without their own model.
 
 ## File and Story Conventions
 
@@ -149,6 +151,7 @@ For service APIs:
   - `serviceCall/` — API adapter integration
   - `securityService/` — auth flow
   - `storageService/` — storage service
+  - `componentState/` — `ComponentStructExt`, form validation with validators, `m.$` and `mapToEdit`
 - Shared story styles: `src/_stories/componentModel/styles.ts` (`row`, `labelStyle`, `detailsStyle`)
 
 When adding a feature:
@@ -199,7 +202,7 @@ const useMy = (params: ComponentParams<MyStruct>) => {
         // reactive logic
       },
     },
-    view: (_, c) => <div>{m.value}</div>,
+    view: () => <div>{m.value}</div>,
   };
 
   c = useComponent(def, params);
