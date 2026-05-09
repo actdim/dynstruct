@@ -48,6 +48,7 @@ export const useEffectDemo = (params: ComponentParams<Struct>): Component<Struct
         {
             props: {
                 trackingEnabled: boolean;
+                readonly fullNameComputed: string;
             };
         }
     >;
@@ -70,7 +71,11 @@ export const useEffectDemo = (params: ComponentParams<Struct>): Component<Struct
             userId: '',
             fullName: '',
             trackingEnabled: true,
-        },
+            get fullNameComputed() {
+                // return `${this.firstName || ''} ${this.lastName || ''}`;
+                return `${m.firstName || ''} ${m?.lastName || ''}`;
+            },
+        } as ImplStruct['props'],
         actions: {
             reset,
         },
@@ -162,6 +167,10 @@ export const useEffectDemo = (params: ComponentParams<Struct>): Component<Struct
                 <div style={row}>
                     <span style={labelStyle}>Full name (Effect)</span>
                     <c.children.FullName />
+                </div>
+                <div style={row}>
+                    <span style={labelStyle}>Full name (Computed)</span>
+                    {m.fullNameComputed}
                 </div>
                 <div>
                     <c.children.ContactEdit />

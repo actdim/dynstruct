@@ -1,5 +1,5 @@
 import { MsgBus, MsgSubOptions, PromiseOptions } from '@actdim/msgmesh/contracts';
-import { runInAction, toJS, autorun, IReactionDisposer, observable, action } from 'mobx';
+import { runInAction, toJS, autorun, IReactionDisposer, observable, action, computed } from 'mobx';
 import type {
     BaseComponentModel,
     Binding,
@@ -241,6 +241,47 @@ export function mapToEdit<
     return inputProps;
 }
 
+export function defineByKeyPath<
+    T,
+    P extends KeyPath<T, boolean, MaxDepth>,
+    MaxDepth extends number = 5,
+>(obj: T, path: P, descriptor: PropertyDescriptor & ThisType<KeyPathValue<T, P>>): void {
+    const keys = path.split('.');
+    const last = keys.pop()!;
+    const target = keys.reduce((acc: any, key) => acc?.[key], obj);
+    if (target != null) Object.defineProperty(target, last, descriptor);
+}
+
+export function observableWithPaths<T extends object>(
+    value: T,
+    annotationMap: Record<string, any>,
+    options?: Parameters<typeof observable.object>[2],
+): T {
+    const topLevel: Record<string, any> = {};
+    const nested: Record<string, Record<string, any>> = {};
+
+    for (const [keyPath, annotation] of Object.entries(annotationMap)) {
+        const dotIdx = keyPath.indexOf('.');
+        if (dotIdx < 0) {
+            topLevel[keyPath] = annotation;
+        } else {
+            const first = keyPath.slice(0, dotIdx);
+            const rest = keyPath.slice(dotIdx + 1);
+            (nested[first] ??= {})[rest] = annotation;
+        }
+    }
+
+    for (const [key, nestedAnnotations] of Object.entries(nested)) {
+        const nestedObj = value[key];
+        if (nestedObj != null && typeof nestedObj === 'object' && !Array.isArray(nestedObj)) {
+            value[key] = observableWithPaths(nestedObj, nestedAnnotations, options);            
+            topLevel[key] ??= observable.deep;
+        }
+    }
+
+    return observable(value, topLevel, options);
+}
+
 export function createModel<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
@@ -269,11 +310,16 @@ export function createModel<
 
     type TPropPath = KeyPath<TStruct['props'], boolean>;
 
+    const annotationMap: Record<string, any> = {};
     if (def.props) {
-        for (const kv of Object.entries(def.props)) {
-            const path = kv[0] as TPropPath;
-            const prop = kv[1];
+        for (const key of Object.getOwnPropertyNames(def.props)) {
+            const descriptor = Object.getOwnPropertyDescriptor(def.props, key)!;
+            const path = key as TPropPath;
+            let prop: any;
             let value: any;
+            try {
+                prop = def.props[key];
+            } catch {}
             if (isComponentProp(prop)) {
                 // keyOf<ComponentProp>('initialValue')
                 if (prop.hasOwnProperty('initialValue' satisfies keyof ComponentProp)) {
@@ -282,9 +328,18 @@ export function createModel<
                     continue;
                 }
             } else {
-                value = prop;
+                const hasGetterOnly =
+                    typeof descriptor.get === 'function' && descriptor.set === undefined;
+                if (hasGetterOnly) {
+                    defineByKeyPath(model, path, descriptor);
+                    annotationMap[key] = computed;
+                    continue;
+                } else {
+                    value = prop;
+                }
             }
             setByKeyPath(model, path, value);
+            annotationMap[key] = observable.deep;
         }
     }
 
@@ -302,14 +357,6 @@ export function createModel<
         }
     }
 
-    const annotationMap: Record<string, any> = {};
-
-    if (def.props) {
-        for (const key of Object.keys(def.props)) {
-            annotationMap[key] = observable.deep;
-        }
-    }
-
     if (def.actions) {
         for (const prop of Object.keys(def.actions)) {
             annotationMap[prop] = action;
@@ -318,7 +365,7 @@ export function createModel<
 
     annotationMap['$' satisfies keyof BaseComponentModel] = observable.deep;
 
-    model = observable(model, annotationMap, {
+    model = observableWithPaths(model, annotationMap, {
         deep: true,
     });
 
