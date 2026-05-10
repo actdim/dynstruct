@@ -707,6 +707,30 @@ Validator triggers:
 
 Bindings (`bind` / `bindProp`) also support nested paths. A binding to `'userInfo.email'` behaves identically to a binding to a top-level prop — it is reactive, propagates changes through the property system, and fires validation and change events.
 
+#### Controlling Reactivity
+
+By default every prop is fully reactive — the framework tracks property access and mutations at any depth. Use `prop({ reactive: ... })` to opt out or limit reactivity:
+
+| `reactive` | Behaviour |
+|---|---|
+| `true` (default) | Fully reactive. Access and mutations at any depth are tracked. |
+| `false` | Not reactive at all. Reads and writes are invisible to the reactivity system — no re-renders. |
+| `'shallow'` | Array mutations (`push`, `pop`, `splice`) are tracked, but item properties are not. Useful for large lists whose items don't need individual observation. |
+
+```typescript
+const def: ComponentDef<Struct> = {
+    props: {
+        // top-level prop — completely non-reactive
+        config: prop({ initialValue: { debug: false }, reactive: false }),
+
+        // nested path — array mutations reactive, items not tracked
+        'user.tags': prop({ reactive: 'shallow' }),
+    },
+};
+```
+
+`reactive: false` and `'shallow'` also work on pure metadata entries (without `initialValue`) to annotate a property that was already declared elsewhere in `def.props`.
+
 #### Computed (Trackable) Properties
 
 A **getter** in `def.props` declares a computed property that is automatically tracked by MobX. The framework detects getter-only descriptors and registers them as `computed` values — re-evaluating only when their reactive dependencies change.

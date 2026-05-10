@@ -245,6 +245,12 @@ export type ComponentProp<T = any> = {
     readonly validator?: Validator<T>;
     isDisabled?: boolean;
     isReadOnly?: boolean;
+    /** Controls reactivity of this prop.
+     *  - `true` (default) — fully reactive, proxy tracks all depths
+     *  - `false` — not reactive at all
+     *  - `'shallow'` — container is reactive (array mutations tracked), items are not proxied
+     */
+    readonly reactive?: true | false | 'shallow';
     // form support
     // readonly label?: string;
     // readonly inputType?: 'text' | 'number' | 'email' | 'date' | 'checkbox' | 'select';

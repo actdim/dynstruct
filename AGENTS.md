@@ -96,6 +96,19 @@ Use hook-constructors as the primary component format:
   ```
 
   This also works for **nested object properties**: define the getter on the nested object literal inside `def.props`. The framework propagates computed annotations through any depth of nesting.
+- Use `prop({ reactive: ... })` to control how a prop is tracked. Default is fully reactive. Options:
+  - `reactive: false` — completely non-reactive; reads and writes are invisible to the reactivity system
+  - `reactive: 'shallow'` — array container is reactive (push/pop tracked), but item properties are not
+
+  Works for top-level and nested paths alike. Can be used without `initialValue` as a pure annotation:
+
+  ```ts
+  props: {
+    config: prop({ initialValue: { debug: false }, reactive: false }),
+    'user.tags': prop({ reactive: 'shallow' }),  // tags is declared elsewhere
+  }
+  ```
+
 - Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child — `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
 - Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
 - Use `ComponentStructExt<Struct, {...}>` **inside** a hook-constructor to declare private reactive props, internal children (often `React.FC` sections), and effects. The extended type is invisible to callers; return `Component<Struct>` from the hook to preserve the public API. See `componentState/StateExample.tsx`.

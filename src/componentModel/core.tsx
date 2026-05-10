@@ -320,7 +320,7 @@ export function createModel<
 
     type TPropPath = KeyPath<TStruct['props'], boolean>;
 
-    const annotationMap: Record<string, any> = {};
+    const annotationMap: Record<PropertyKey, any> = {};
     if (def.props) {
         for (const key of Object.getOwnPropertyNames(def.props)) {
             const descriptor = Object.getOwnPropertyDescriptor(def.props, key)!;
@@ -334,6 +334,9 @@ export function createModel<
             } catch {}
             // workaround to support ComponentProp from getter
             if (isComponentProp(prop)) {
+                // record reactive annotation before potential continue
+                if (prop.reactive === false) annotationMap[key] = false;
+                else if (prop.reactive === 'shallow') annotationMap[key] = observable.shallow;
                 // keyOf<ComponentProp>('initialValue')
                 if (prop.hasOwnProperty('initialValue' satisfies keyof ComponentProp)) {
                     value = prop.initialValue;
@@ -347,10 +350,10 @@ export function createModel<
                     continue;
                 } else {
                     value = prop;
+                    annotationMap[key] = observable.deep;
                 }
             }
             setByKeyPath(model, path, value);
-            annotationMap[key] = observable.deep;
         }
     }
 
@@ -514,7 +517,11 @@ export function createModel<
                 set(target, key, val, receiver) {
                     if (isNumericKey(key)) {
                         const fullPath = basePath ? `${basePath}.${key}` : key;
-                        if (isPlainObject(val) && !isObservable(val) && isObservable(Reflect.get(target, key, receiver))) {
+                        if (
+                            isPlainObject(val) &&
+                            !isObservable(val) &&
+                            isObservable(Reflect.get(target, key, receiver))
+                        ) {
                             const nestedAnnotations = getNestedAnnotations(fullPath);
                             val = nestedAnnotations
                                 ? observableWithPaths(val, nestedAnnotations, { deep: false })
@@ -526,50 +533,57 @@ export function createModel<
             }) as T;
         } else {
             proxy = new Proxy(obj, {
-            get(target, key, receiver) {
-                const childPath = basePath ? `${basePath}.${String(key)}` : String(key);
-                const binding = state.bindings[childPath] as Binding | undefined;
-                if (binding?.get) {
-                    const raw = runSafe(() => binding.get());
-                    return binding.converter ? runSafe(() => binding.converter!.convert(raw)) : raw;
-                }
-                const val = Reflect.get(target, key, receiver);
-                if (isPlainObject(val) || Array.isArray(val)) return createDeepProxy(val as object, childPath);
-                return val;
-            },
-            set(target, key, val, receiver) {
-                const fullPath = basePath ? `${basePath}.${String(key)}` : String(key);
-                if (
-                    isPlainObject(val) &&
-                    !isObservable(val) &&
-                    isObservable(Reflect.get(target, key, receiver))
-                ) {
-                    const nestedAnnotations = getNestedAnnotations(fullPath);
-                    val = nestedAnnotations
-                        ? observableWithPaths(val, nestedAnnotations, { deep: false })
-                        : observable(val);
-                }
-                const result = runInAction(() => Reflect.set(target, key, val, receiver));
-                const binding = state.bindings[fullPath] as Binding | undefined;
-                if (binding?.set) {
-                    const outVal = binding.converter
-                        ? runSafe(() => binding.converter!.convertBack(val))
-                        : val;
-                    runSafe(() => binding.set!(outVal));
-                }
-                handlers.onPropChange?.(fullPath, val);
-                const prop = def.props[fullPath];
-                if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
-                    validate(
-                        component,
-                        def,
-                        params,
-                        fullPath as KeyPath<TStruct['props'], boolean>,
-                    );
-                }
-                return result;
-            },
-        });
+                get(target, key, receiver) {
+                    const childPath = basePath ? `${basePath}.${String(key)}` : String(key);
+                    const binding = state.bindings[childPath] as Binding | undefined;
+                    if (binding?.get) {
+                        const raw = runSafe(() => binding.get());
+                        return binding.converter
+                            ? runSafe(() => binding.converter!.convert(raw))
+                            : raw;
+                    }
+                    const val = Reflect.get(target, key, receiver);
+                    if (isPlainObject(val) || Array.isArray(val)) {
+                        const annotation = annotationMap[childPath];
+                        if (annotation === false) return val;
+                        if (annotation === observable.shallow) return val;
+                        return createDeepProxy(val as object, childPath);
+                    }
+                    return val;
+                },
+                set(target, key, val, receiver) {
+                    const fullPath = basePath ? `${basePath}.${String(key)}` : String(key);
+                    if (
+                        isPlainObject(val) &&
+                        !isObservable(val) &&
+                        isObservable(Reflect.get(target, key, receiver))
+                    ) {
+                        const nestedAnnotations = getNestedAnnotations(fullPath);
+                        val = nestedAnnotations
+                            ? observableWithPaths(val, nestedAnnotations, { deep: false })
+                            : observable(val);
+                    }
+                    const result = runInAction(() => Reflect.set(target, key, val, receiver));
+                    const binding = state.bindings[fullPath] as Binding | undefined;
+                    if (binding?.set) {
+                        const outVal = binding.converter
+                            ? runSafe(() => binding.converter!.convertBack(val))
+                            : val;
+                        runSafe(() => binding.set!(outVal));
+                    }
+                    handlers.onPropChange?.(fullPath, val);
+                    const prop = def.props[fullPath];
+                    if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
+                        validate(
+                            component,
+                            def,
+                            params,
+                            fullPath as KeyPath<TStruct['props'], boolean>,
+                        );
+                    }
+                    return result;
+                },
+            });
         }
         pathMap.set(basePath, proxy);
         return proxy;
@@ -589,6 +603,9 @@ export function createModel<
             }
 
             if (val && typeof val === 'object') {
+                const annotation = annotationMap[key];
+                if (annotation === false) return val;
+                if (annotation === observable.shallow) return val;
                 return createDeepProxy(val, String(key));
             }
 
