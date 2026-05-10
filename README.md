@@ -707,6 +707,41 @@ Validator triggers:
 
 Bindings (`bind` / `bindProp`) also support nested paths. A binding to `'userInfo.email'` behaves identically to a binding to a top-level prop — it is reactive, propagates changes through the property system, and fires validation and change events.
 
+#### Computed (Trackable) Properties
+
+A **getter** in `def.props` declares a computed property that is automatically tracked by MobX. The framework detects getter-only descriptors and registers them as `computed` values — re-evaluating only when their reactive dependencies change.
+
+Declare the prop as `readonly` in the struct type to match the getter-only semantics:
+
+```typescript
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+        firstName: string;
+        lastName: string;
+        readonly fullName: string;  // computed — mark readonly
+    };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: {
+        firstName: 'John',
+        lastName: 'Smith',
+        get fullName() {
+            // TypeScript does not type `this` in PropertyDescriptor getters —
+            // reference `m` (the reactive model) instead
+            return `${m.firstName} ${m.lastName}`.trim();
+        },
+    },
+    view: () => <div>{m.fullName}</div>,
+};
+```
+
+`fullName` re-renders only when `firstName` or `lastName` actually changes.
+
+This works for **nested object properties** too — define the getter on the nested object literal inside `def.props` and the framework propagates the `computed` annotation through any depth of nesting.
+
+> **Example:** [`src/_stories/componentModel/EffectDemo.tsx`](src/_stories/componentModel/EffectDemo.tsx)
+
 #### Component State (`m.$`)
 
 Every component model exposes a `$` field of type `ComponentState<TStruct>` with reactive metadata about the component:

@@ -1,5 +1,14 @@
 import { MsgBus, MsgSubOptions, PromiseOptions } from '@actdim/msgmesh/contracts';
-import { runInAction, toJS, autorun, IReactionDisposer, observable, action, computed } from 'mobx';
+import {
+    runInAction,
+    toJS,
+    autorun,
+    IReactionDisposer,
+    observable,
+    action,
+    computed,
+    isObservable,
+} from 'mobx';
 import type {
     BaseComponentModel,
     Binding,
@@ -48,8 +57,6 @@ import {
     setByKeyPath,
 } from '@actdim/utico/typeCore';
 import { capitalize } from './util';
-
-// import { isPlainObject } from 'mobx/dist/internal';
 
 // onReactionError((err, derivation) => {
 //     console.error(`Reaction "${derivation.name_}" error:`, err);
@@ -274,8 +281,11 @@ export function observableWithPaths<T extends object>(
     for (const [key, nestedAnnotations] of Object.entries(nested)) {
         const nestedObj = value[key];
         if (nestedObj != null && typeof nestedObj === 'object' && !Array.isArray(nestedObj)) {
-            value[key] = observableWithPaths(nestedObj, nestedAnnotations, options);            
-            topLevel[key] ??= observable.deep;
+            value[key] = observableWithPaths(nestedObj, nestedAnnotations, {
+                ...options,
+                deep: false,
+            });
+            topLevel[key] ??= observable.ref;
         }
     }
 
@@ -317,9 +327,12 @@ export function createModel<
             const path = key as TPropPath;
             let prop: any;
             let value: any;
+            const hasGetterOnly =
+                typeof descriptor.get === 'function' && descriptor.set === undefined;
             try {
                 prop = def.props[key];
             } catch {}
+            // workaround to support ComponentProp from getter
             if (isComponentProp(prop)) {
                 // keyOf<ComponentProp>('initialValue')
                 if (prop.hasOwnProperty('initialValue' satisfies keyof ComponentProp)) {
@@ -328,8 +341,6 @@ export function createModel<
                     continue;
                 }
             } else {
-                const hasGetterOnly =
-                    typeof descriptor.get === 'function' && descriptor.set === undefined;
                 if (hasGetterOnly) {
                     defineByKeyPath(model, path, descriptor);
                     annotationMap[key] = computed;
@@ -364,6 +375,19 @@ export function createModel<
     }
 
     annotationMap['$' satisfies keyof BaseComponentModel] = observable.deep;
+
+    function getNestedAnnotations(basePath: string): Record<string, any> | undefined {
+        const prefix = basePath + '.';
+        const result: Record<string, any> = {};
+        let found = false;
+        for (const [keyPath, annotation] of Object.entries(annotationMap)) {
+            if (keyPath.startsWith(prefix)) {
+                result[keyPath.slice(prefix.length)] = annotation;
+                found = true;
+            }
+        }
+        return found ? result : undefined;
+    }
 
     model = observableWithPaths(model, annotationMap, {
         deep: true,
@@ -454,21 +478,54 @@ export function createModel<
 
     const deepProxyCache = new WeakMap<object, Map<string, object>>();
 
-    function isPlainObject(val: unknown): val is object {
-        if (!val || typeof val !== 'object') return false;
+    function isPlainObject(val: unknown): val is Record<string, unknown> {
+        if (val === null || typeof val !== 'object') return false;
         const proto = Object.getPrototypeOf(val);
         return proto === Object.prototype || proto === null;
     }
 
+    function isNumericKey(key: string | symbol): key is string {
+        return typeof key === 'string' && key !== '' && !isNaN(Number(key));
+    }
+
     function createDeepProxy<T extends object>(obj: T, basePath = ''): T {
-        if (!isPlainObject(obj)) return obj;
+        if (!isPlainObject(obj) && !Array.isArray(obj)) return obj;
         let pathMap = deepProxyCache.get(obj);
         if (!pathMap) {
             pathMap = new Map();
             deepProxyCache.set(obj, pathMap);
         }
         if (pathMap.has(basePath)) return pathMap.get(basePath) as T;
-        const proxy = new Proxy(obj, {
+
+        let proxy: T;
+
+        if (Array.isArray(obj)) {
+            proxy = new Proxy(obj, {
+                get(target, key, receiver) {
+                    const val = Reflect.get(target, key, receiver);
+                    if (isNumericKey(key) && (isPlainObject(val) || Array.isArray(val))) {
+                        const childPath = basePath ? `${basePath}.${key}` : key;
+                        return createDeepProxy(val as object, childPath);
+                    }
+                    // bind methods to target so MobX's internal this-binding is preserved
+                    if (typeof val === 'function') return val.bind(target);
+                    return val;
+                },
+                set(target, key, val, receiver) {
+                    if (isNumericKey(key)) {
+                        const fullPath = basePath ? `${basePath}.${key}` : key;
+                        if (isPlainObject(val) && !isObservable(val) && isObservable(Reflect.get(target, key, receiver))) {
+                            const nestedAnnotations = getNestedAnnotations(fullPath);
+                            val = nestedAnnotations
+                                ? observableWithPaths(val, nestedAnnotations, { deep: false })
+                                : observable(val);
+                        }
+                    }
+                    return runInAction(() => Reflect.set(target, key, val, receiver));
+                },
+            }) as T;
+        } else {
+            proxy = new Proxy(obj, {
             get(target, key, receiver) {
                 const childPath = basePath ? `${basePath}.${String(key)}` : String(key);
                 const binding = state.bindings[childPath] as Binding | undefined;
@@ -477,11 +534,21 @@ export function createModel<
                     return binding.converter ? runSafe(() => binding.converter!.convert(raw)) : raw;
                 }
                 const val = Reflect.get(target, key, receiver);
-                if (isPlainObject(val)) return createDeepProxy(val, childPath);
+                if (isPlainObject(val) || Array.isArray(val)) return createDeepProxy(val as object, childPath);
                 return val;
             },
             set(target, key, val, receiver) {
                 const fullPath = basePath ? `${basePath}.${String(key)}` : String(key);
+                if (
+                    isPlainObject(val) &&
+                    !isObservable(val) &&
+                    isObservable(Reflect.get(target, key, receiver))
+                ) {
+                    const nestedAnnotations = getNestedAnnotations(fullPath);
+                    val = nestedAnnotations
+                        ? observableWithPaths(val, nestedAnnotations, { deep: false })
+                        : observable(val);
+                }
                 const result = runInAction(() => Reflect.set(target, key, val, receiver));
                 const binding = state.bindings[fullPath] as Binding | undefined;
                 if (binding?.set) {
@@ -503,6 +570,7 @@ export function createModel<
                 return result;
             },
         });
+        }
         pathMap.set(basePath, proxy);
         return proxy;
     }
@@ -538,6 +606,13 @@ export function createModel<
 
             if (handlers?.onPropChanging && handlers.onPropChanging(key, oldVal, val) === false) {
                 return true;
+            }
+
+            if (isPlainObject(val) && !isObservable(val) && isObservable(oldVal)) {
+                const nestedAnnotations = getNestedAnnotations(String(key));
+                val = nestedAnnotations
+                    ? observableWithPaths(val, nestedAnnotations, { deep: false })
+                    : observable(val);
             }
 
             const result = runInAction(() => {

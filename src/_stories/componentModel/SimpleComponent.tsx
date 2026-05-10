@@ -67,8 +67,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
             }),
             dynEdit: (params) => {
                 let dynComponent = useSimpleEdit({
-                    // value: bindProp(() => m, 'text'),
-                    // value: params.value,
+                    // value: bindProp(() => m, 'text'), // two-way binding
                     value: bind(() => `${params.index}: ${m.text}`),
                 });
                 return dynComponent;

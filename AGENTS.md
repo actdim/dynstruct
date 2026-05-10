@@ -70,6 +70,32 @@ Use hook-constructors as the primary component format:
     - `onReady` / `onDestroy` — maps to `useEffect` / its cleanup; async-safe, primary hook for data loading
   - Effect bodies (`def.effects`) are also wrapped by the framework error router — errors propagate to `onCatch`.
 - Use `effects` for derived/auto-tracked behavior; pause/resume/stop through `c.effects.<name>`.
+- Use a **getter in `def.props`** to declare a computed (auto-tracked) property. The framework detects getter-only descriptors and registers them as MobX `computed` values — no manual annotation needed. Declare the prop as `readonly` in the struct type. Reference `m` (not `this`) inside the getter body because TypeScript does not type `this` in `PropertyDescriptor` getters:
+
+  ```ts
+  // struct type
+  type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+      firstName: string;
+      lastName: string;
+      readonly fullName: string;  // computed — mark readonly
+    };
+  }>;
+
+  // def
+  const def: ComponentDef<Struct> = {
+    props: {
+      firstName: '',
+      lastName: '',
+      get fullName() {
+        // `this` is untyped in TS getter descriptors — use `m` instead
+        return `${m.firstName} ${m.lastName}`.trim();
+      },
+    },
+  };
+  ```
+
+  This also works for **nested object properties**: define the getter on the nested object literal inside `def.props`. The framework propagates computed annotations through any depth of nesting.
 - Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child — `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
 - Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
 - Use `ComponentStructExt<Struct, {...}>` **inside** a hook-constructor to declare private reactive props, internal children (often `React.FC` sections), and effects. The extended type is invisible to callers; return `Component<Struct>` from the hook to preserve the public API. See `componentState/StateExample.tsx`.
