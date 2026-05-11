@@ -70,7 +70,7 @@ Use hook-constructors as the primary component format:
     - `onReady` / `onDestroy` — maps to `useEffect` / its cleanup; async-safe, primary hook for data loading
   - Effect bodies (`def.effects`) are also wrapped by the framework error router — errors propagate to `onCatch`.
 - Use `effects` for derived/auto-tracked behavior; pause/resume/stop through `c.effects.<name>`.
-- Use a **getter in `def.props`** to declare a computed (auto-tracked) property. The framework detects getter-only descriptors and registers them as MobX `computed` values — no manual annotation needed. Declare the prop as `readonly` in the struct type. Reference `m` (not `this`) inside the getter body because TypeScript does not type `this` in `PropertyDescriptor` getters:
+- Use a **getter in `def.props`** to declare a computed (auto-tracked) property. The framework detects getter-only descriptors and registers them as computed values automatically — no manual annotation needed. Declare the prop as `readonly` in the struct type. Reference `m` (not `this`) inside the getter body because TypeScript does not type `this` in `PropertyDescriptor` getters:
 
   ```ts
   // struct type
@@ -153,6 +153,8 @@ Avoid:
 - introducing local `useState`/`useReducer` for state that belongs to component model
 - ad-hoc cross-component mutation without message bus or bindings
 - hidden dependencies not declared in `children` or `msgScope`
+- **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) — the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
+- passing reactive model values to external APIs without stripping proxies — use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
 
 ## Messaging Rules
 

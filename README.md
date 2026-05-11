@@ -58,7 +58,7 @@ Build scalable applications with dynamic structured components, explicit wiring,
 ### Framework Support
 
 **Currently Supported:**
-- ✅ **React** (with MobX for reactivity)
+- ✅ **React**
 
 **Planned Support:**
 - 🚧 **SolidJS** - In development
@@ -651,7 +651,39 @@ export const useStorageService = (params: ComponentParams<Struct>): Component<St
 
 ### Reactive Properties
 
-Component properties are **automatically reactive** after component creation with `useComponent`. Any changes to properties will trigger UI updates:
+Component properties are **automatically reactive** after component creation with `useComponent`. Any changes to properties will trigger UI updates.
+
+#### How reactivity works
+
+The framework makes the component model fully reactive by default — at **all levels of nesting**. This includes objects assigned to props after initialization: when a new plain object is placed into a reactive prop, the framework converts it into a reactive value automatically.
+
+This follows the same mental model as React's props and state: a change to any piece of state that was read during rendering will schedule a re-render of the component that read it. The key guarantee is that **re-renders only happen when there is an actual connection between the changed value and the rendered output** — values that were tracked during the last render. If a prop was never read in `view`, changing it will not cause a re-render.
+
+However, on large or deeply nested object graphs this fine-grained tracking still has a cost. Every property access is instrumented, and every object placed into the model is wrapped — even if the component only uses a small fraction of the graph. This is the default trade-off: maximum safety, predictable behavior, some overhead.
+
+#### When to limit reactivity
+
+If part of the model does not need to drive the UI directly — for example, an array of raw data items that are forwarded to child components or external APIs without being iterated in `view` — you can opt out using `prop({ reactive: ... })`. See [Controlling Reactivity](#controlling-reactivity) for the available options.
+
+If a piece of data does not need reactivity at all (a cache, a lock, a mutable counter for internal bookkeeping), do not put it in `def.props`. Use `ComponentImpl` / `c._` instead — it is per-instance mutable state that is invisible to the reactivity system entirely. See [Private Instance Data (`ComponentImpl`)](#private-instance-data-componentimpl).
+
+> **Do not use the underlying reactivity library (MobX) directly.** The dynstruct component model is self-contained — `def.props`, `def.effects`, `def.actions`, and the event system manage all reactivity for you. Importing `observable`, `computed`, `action`, or `autorun` from MobX in component code bypasses framework guarantees and leads to unpredictable behavior. MobX is an implementation detail, not part of the public API.
+
+#### Converting Model Values to Plain Objects
+
+Model properties carry internal proxy wrappers for reactivity tracking. When passing model data to **external systems** (REST APIs, third-party libraries, `postMessage`, etc.) that expect plain objects, use `toPlain`:
+
+```typescript
+import { toPlain } from '@actdim/dynstruct/componentModel/core';
+
+// convert a specific prop before sending externally
+externalApi.send(toPlain(m.user));
+
+// or the entire model
+const snapshot = toPlain(m);
+```
+
+`toPlain` performs a deep conversion and returns a plain JavaScript object with no reactive wrappers. It is not needed for values passed to child components or through the message bus — those are handled automatically by the framework.
 
 ```typescript
 const def: ComponentDef<Struct> = {
@@ -733,7 +765,7 @@ const def: ComponentDef<Struct> = {
 
 #### Computed (Trackable) Properties
 
-A **getter** in `def.props` declares a computed property that is automatically tracked by MobX. The framework detects getter-only descriptors and registers them as `computed` values — re-evaluating only when their reactive dependencies change.
+A **getter** in `def.props` declares a computed property that is automatically tracked by the framework. It re-evaluates only when its reactive dependencies change — no manual annotation needed.
 
 Declare the prop as `readonly` in the struct type to match the getter-only semantics:
 
@@ -1119,7 +1151,7 @@ const useForm = (params: ComponentParams<FormStruct>) => {
 
 ### Effects
 
-> **Coming from React?** Effects here are **not** the equivalent of `useEffect`. For side effects that run after mount (data fetching, subscriptions, timers), use the `onReady` lifecycle event — it maps to `useEffect` and is async-safe. See [Lifecycle Events](#lifecycle-events). Effects in dynstruct are closer to MobX `autorun`: they track reactive property reads and re-execute automatically when those values change.
+> **Coming from React?** Effects here are **not** the equivalent of `useEffect`. For side effects that run after mount (data fetching, subscriptions, timers), use the `onReady` lifecycle event — it maps to `useEffect` and is async-safe. See [Lifecycle Events](#lifecycle-events). Effects in dynstruct auto-track reactive property reads and re-execute automatically when those values change.
 
 Effects are **auto-tracking reactive functions**. An effect runs immediately when the component is created, and then **re-runs automatically** whenever any reactive property accessed inside it changes. Effect names must first be declared in the component structure, then implemented in `ComponentDef`.
 

@@ -64,6 +64,10 @@ import { capitalize } from './util';
 
 const blankView = () => null;
 
+export function toPlain<T>(value: T): T {
+    return toJS(value) as T;
+}
+
 export function bind<T, TFrom = any>(
     get: () => T,
     set?: (value: T) => void,
