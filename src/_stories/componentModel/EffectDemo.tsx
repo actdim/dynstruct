@@ -75,7 +75,7 @@ export const useEffectDemo = (params: ComponentParams<Struct>): Component<Struct
                 // return `${this.firstName || ''} ${this.lastName || ''}`;
                 return `${m.firstName || ''} ${m?.lastName || ''}`;
             },
-        } as ImplStruct['props'],
+        },
         actions: {
             reset,
         },

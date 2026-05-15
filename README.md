@@ -1546,7 +1546,7 @@ msgBroker: {
 }
 ```
 
-Available filters: `FromDescendants`, `FromAncestors`, `FromSelf`, `FromBus` (no filter). See Storybook examples **Basic Communication** and **Parent/Child** for working demos.
+Available filters: `FromDescendants`, `FromAncestors` (combinable with `|`). Omitting `componentFilter` (or using `None`) means messages from anywhere. See Storybook examples **Basic Communication** and **Parent/Child** for working demos.
 
 #### Choosing the Right Mechanism
 
@@ -1831,7 +1831,7 @@ msgBroker: {
         'GLOBAL-EVENT': {
             in: {
                 callback: (msg) => { /* ... */ },
-                componentFilter: ComponentMsgFilter.FromBus          // From anywhere
+                // no componentFilter — receives from anywhere
             }
         }
     }
@@ -1841,8 +1841,7 @@ msgBroker: {
 **Available Filters:**
 - `FromDescendants` - Only messages from child components
 - `FromAncestors` - Only messages from parent/ancestor components
-- `FromSelf` - Only messages from this component
-- `FromBus` - Messages from anywhere in the application
+- `None` (default) - Messages from anywhere in the application
 
 #### Real-World Example
 
@@ -2770,8 +2769,7 @@ Messages can be filtered by source using `ComponentMsgFilter`:
 
 - `FromAncestors` - Only receive messages from parent components
 - `FromDescendants` - Only receive messages from child components
-- `FromSelf` - Only messages from this component
-- `FromBus` - Messages from the global bus
+- `None` (default) - Messages from anywhere
 
 ```typescript
 msgBroker: {
