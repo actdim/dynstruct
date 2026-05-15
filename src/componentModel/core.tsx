@@ -255,7 +255,7 @@ export function mapToEdit<
 export function defineByKeyPath<
     T,
     P extends KeyPath<T, boolean, MaxDepth>,
-    MaxDepth extends number = 5,
+    MaxDepth extends number = 3,
 >(obj: T, path: P, descriptor: PropertyDescriptor & ThisType<KeyPathValue<T, P>>): void {
     const keys = path.split('.');
     const last = keys.pop()!;
