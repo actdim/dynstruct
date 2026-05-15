@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@actdim/msgmesh':
-        specifier: '>=1.4.6'
-        version: 1.4.6(@actdim/utico@1.2.3(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
+        specifier: '>=1.4.8'
+        version: 1.4.8(@actdim/utico@1.2.4(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)
       '@actdim/utico':
-        specifier: '>=1.2.3'
-        version: 1.2.3(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0)
+        specifier: '>=1.2.4'
+        version: 1.2.4(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0)
       http-status:
         specifier: '>=2.1.0'
         version: 2.1.0
@@ -159,15 +159,15 @@ importers:
 
 packages:
 
-  '@actdim/msgmesh@1.4.6':
-    resolution: {integrity: sha512-2+GmWgR5oRYqQPEzyzwRXrvfI2/O6Pv6a6nxkI6ks7h6YHfoSsaTlc1NIAX9wfYurqpO+uxy49Yxj5U+tUPziA==}
+  '@actdim/msgmesh@1.4.8':
+    resolution: {integrity: sha512-A3CkW8G9P3DT2FpaHctwADSucXvqIgmkmejbwPtqH6iYlq5bp5jBZrbvPn2vDmLjB07hQXjlNwdXejeIKITknw==}
     peerDependencies:
-      '@actdim/utico': '>=1.2.2'
+      '@actdim/utico': '>=1.2.4'
       rxjs: '>=7.8.0'
       uuid: '>=13.0.0'
 
-  '@actdim/utico@1.2.3':
-    resolution: {integrity: sha512-s9C3bgzV7gSXgQC/Kvf9TxrxI19PyXLWD2LBoERqZGiyYlK7IOwSdlG0u1lkC2dJY/wx0pRJEGJVSqm0Me9KFg==}
+  '@actdim/utico@1.2.4':
+    resolution: {integrity: sha512-vVl4fFhf8+EYEEHg+qeal777NoaTJGruZul+ebzaInQkPvCB2adlKNu+0JJgB83XWAbVy1aTVVFkzbxs9qtVYA==}
     peerDependencies:
       dexie: '>=4.2.0'
       luxon: '>=3.7.2'
@@ -2877,13 +2877,13 @@ packages:
 
 snapshots:
 
-  '@actdim/msgmesh@1.4.6(@actdim/utico@1.2.3(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
+  '@actdim/msgmesh@1.4.8(@actdim/utico@1.2.4(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0))(rxjs@7.8.2)(uuid@13.0.0)':
     dependencies:
-      '@actdim/utico': 1.2.3(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0)
+      '@actdim/utico': 1.2.4(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0)
       rxjs: 7.8.2
       uuid: 13.0.0
 
-  '@actdim/utico@1.2.3(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0)':
+  '@actdim/utico@1.2.4(dexie@4.2.1)(luxon@3.7.2)(uuid@13.0.0)':
     dependencies:
       dexie: 4.2.1
       luxon: 3.7.2
