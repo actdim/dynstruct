@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { ComponentMsgHeaders } from '@/componentModel/contracts';
@@ -23,7 +23,7 @@ type Struct = ComponentStruct<
     }
 >;
 
-export const useTestChild = (params: ComponentParams<Struct>) => {
+export const useTestChild = (params?: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 

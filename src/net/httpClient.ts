@@ -4,7 +4,7 @@ import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IReques
 import { ApiError } from "./apiError";
 import { BaseAppMsgStruct, BaseApiConfig } from "@/appDomain/appContracts";
 import { MsgBus, MsgSubOptions } from "@actdim/msgmesh/contracts";
-import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_SESSION_GET, $AUTH_SIGNOUT } from "@/appDomain/securityContracts";
+import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_INFO_GET, $AUTH_SIGNOUT, AuthInfo } from "@/appDomain/securityContracts";
 import { $CONFIG_CHANGED, $CONFIG_GET, BaseAppDomainConfig } from "@/appDomain/commonContracts";
 import { BaseAppContext } from "@/componentModel/contracts";
 
@@ -24,12 +24,11 @@ export function extractApiName(name: string, suffixes: string[]): string | null 
 }
 
 const API_SUFFIXES = ["api", "controller", "client", "fetcher"];
-// App(Api)ClientBase
-export class ClientBase {
+export class HttpClient {
 
     public baseUrl: string;
 
-    public accessToken: string;
+    public authInfo: AuthInfo;
 
     public name: string;
 
@@ -67,7 +66,7 @@ export class ClientBase {
         this.msgBus.on({
             channel: $CONFIG_CHANGED,
             callback: async (msg) => {
-                await this.updateApiConfig(msg.payload);
+                await this.update(msg.payload);
             }, options
         });
 
@@ -75,7 +74,7 @@ export class ClientBase {
             channel: $AUTH_SIGNIN,
             group: "out",
             callback: (msg) => {
-                this.accessToken = msg.payload.accessToken;
+                this.authInfo = msg.payload;
                 // this.updateSecurity();
             },
             options
@@ -85,7 +84,7 @@ export class ClientBase {
             channel: $AUTH_SIGNOUT,
             group: "out",
             callback: (msg) => {
-                this.accessToken = null;
+                this.authInfo = null;
                 // this.updateSecurity();
             },
             options
@@ -99,20 +98,28 @@ export class ClientBase {
 
     protected async init() {
         if (!this.baseUrl) {
-            await this.updateApiConfig();
+            await this.update();
         }
-        if (!this.accessToken) {
+        if (!this.authInfo) {
             await this.updateSecurity();
         }
     }
 
-    protected async updateApiConfig(config?: BaseAppDomainConfig) {
+    protected async updateConfig(config?: BaseApiConfig) {
+        this.apiConfig = config;
+        if (config?.url) {
+            this.baseUrl = config.url;
+        }
+    }
+
+    protected async update(config?: BaseAppDomainConfig) {
         if (!config) {
             const msg = await this.msgBus.request({
                 channel: $CONFIG_GET
             });
             config = msg.payload;
         }
+        this.baseUrl = config?.baseUrl;
         let apiId = this.apiId;
         if (!apiId) {
             this.apiId = apiId = extractApiName(this.name, this.apiSuffixes);
@@ -121,31 +128,30 @@ export class ClientBase {
         if (!apiEntry) {
             console.warn(`API "${apiId}" is not defined in the current configuration. Using default configuration.`);
         }
-        this.apiConfig = apiEntry?.[1];
-        this.baseUrl = this.apiConfig?.url || config?.baseUrl;
+        this.updateConfig(apiEntry?.[1]);
     }
 
     private async updateSecurity() {
         const msg = await this.msgBus.request({
-            channel: $AUTH_SESSION_GET
+            channel: $AUTH_INFO_GET
         });
-        this.accessToken = msg.payload.accessToken;
-        return this.accessToken;
+        this.authInfo = msg.payload;
+        return this.authInfo;
     }
 
-    private async addAuthorizationAsync(request: IRequestParams) {
-        if (!this.accessToken) {
+    protected async addAuthorization(request: IRequestParams) {
+        if (!this.authInfo) {
             await this.updateSecurity();
         }
-        const accessToken = this.accessToken;
-        if (!accessToken) {
+        const authInfo = this.authInfo;
+        if (!authInfo || !authInfo.accessToken) {
             throw ApiError.create({
                 status: httpStatus.UNAUTHORIZED
             });
         }
         const authorizationHeader = "Authorization";
         const headers = request.headers;
-        const headerValue = `Bearer ${accessToken}`;
+        const headerValue = `Bearer ${authInfo.accessToken}`;
         if (headers instanceof Headers) {
             // if (headers.has(authorizationHeader)) {
             //     headers.delete(authorizationHeader)
@@ -157,7 +163,7 @@ export class ClientBase {
         }
     }
 
-    private async executeRequestInternalAsync(request: IRequestState) {
+    private async executeRequestInternal(request: IRequestState) {
         try {
             let proceed = true;
             const onBeforeSendRequest = request.callbacks && request.callbacks.onBeforeSendRequest;
@@ -207,15 +213,15 @@ export class ClientBase {
         return request;
     }
 
-    private async executeRequestAsync(request: IRequestState): Promise<IRequestState> {
+    private async executeRequest(request: IRequestState): Promise<IRequestState> {
         // retryCount
         let attempt = 0;
         do {
             try {
                 if (request.useAuth) {
-                    await this.addAuthorizationAsync(request);
+                    await this.addAuthorization(request);
                 }
-                return await this.executeRequestInternalAsync(request);
+                return await this.executeRequestInternal(request);
             } catch (err) {
                 if (err instanceof ApiError) {
                     if (attempt > 0) {
@@ -256,7 +262,7 @@ export class ClientBase {
     }
 
     // T extends IApiResponse
-    protected async fetchAsync<T>(requestParams: IRequestParams): Promise<T> {
+    async fetch<T>(requestParams: IRequestParams): Promise<T> {
         await this.init;
 
         const defaultParams: Partial<IRequestParams> = {
@@ -296,7 +302,7 @@ export class ClientBase {
 
         this.requestStateMap.set(requestParams.id, request);
 
-        await this.executeRequestAsync(request);
+        await this.executeRequest(request);
         return request.result;
     }
 }

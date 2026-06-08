@@ -10,7 +10,7 @@ import type {
     ComponentMsgHeaders,
     ComponentRegistryContext,
 } from '@/componentModel/contracts';
-import { $C_INHERIT, MsgBus, MsgStruct } from '@actdim/msgmesh/contracts';
+import { MsgBus, MsgStruct } from '@actdim/msgmesh/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { KeysOf } from '@actdim/utico/typeCore';
 import { PropsWithChildren } from 'react';
@@ -49,7 +49,7 @@ export type AppMsgBus = MsgBus<AppMsgStruct, AppMsgHeaders>;
 
 export function createAppMsgBus() {
     const msgBus = createMsgBus<AppMsgStruct, AppMsgHeaders>({
-        [$C_INHERIT]: {
+        ["*"]: {
             mandatoryProvider: true,
         },
     });

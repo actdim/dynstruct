@@ -25,7 +25,7 @@ Build scalable applications with dynamic structured components, explicit wiring,
   - [Component Events](#component-events)
     - [Lifecycle Events](#lifecycle-events)
     - [Error Handling](#error-handling)
-    - [Property Change Events](#global-property-change-events)
+    - [Global Property Change Events](#global-property-change-events)
   - [Effects](#effects)
   - [Dynamic Content](#dynamic-content)
   - [Component Wiring](#component-wiring)
@@ -891,7 +891,7 @@ const def: ComponentDef<Struct> = {
 
         // Catches errors from lifecycle hooks, effects, property handlers,
         // bindings, and msgBus callbacks
-        onCatch: (component, error) => {
+        onCatch: (error, component) => {
             console.error('component error:', error);
         },
     }
@@ -935,7 +935,7 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
                 await load();
                 // if load() throws, the framework calls onCatch automatically
             },
-            onCatch: (_, err) => {
+            onCatch: (err) => {
                 handleError(err);
             },
         },
@@ -983,7 +983,7 @@ const def: ComponentDef<Struct> = {
     ),
     // Also receives render-time errors
     events: {
-        onCatch: (_, err) => {
+        onCatch: (err) => {
             console.error('Render error caught:', err);
         },
     },
@@ -2150,6 +2150,25 @@ export const Page = toReact(usePage);
 
 ### Authentication & Security
 
+#### SecurityService
+
+`SecurityService` is a built-in service component that manages authentication state and auth flows via the message bus. Mount it near the app root — it provides auth channels to all descendant components automatically.
+
+**Key channels** (constants from `@actdim/dynstruct/appDomain/securityContracts`):
+
+| Channel | Direction | Description |
+|---|---|---|
+| `APP.SECURITY.AUTH.SIGNIN` | request/response | Sign in. Payload: credentials. Response: `AuthInfo`. |
+| `APP.SECURITY.AUTH.SIGNOUT` | request/response | Sign out and clear auth state. |
+| `APP.SECURITY.AUTH.REFRESH` | request/response | Refresh access token (Bearer). |
+| `APP.SECURITY.AUTH.ENSURE` | request | Ensure user is authenticated; redirects to login page if not. |
+| `APP.SECURITY.AUTH.INFO.GET` | request/response | Get current `AuthInfo` (access token, scheme, properties). |
+| `APP.SECURITY.AUTH.INFO.CHANGED` | event | Published when auth state changes. |
+
+**Modes:**
+- `useConventions: true` (default) — SecurityService handles the full Bearer flow (HTTP sign-in, token storage, refresh). Configure via `domainConfig.endpoints.*`.
+- `useConventions: false` — delegate to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use this for mock providers in demos or custom backends.
+
 ```typescript
 // React implementation
 import { ComponentStruct, ComponentDef, ComponentParams, Component, ComponentModel } from '@actdim/dynstruct/componentModel/contracts';
@@ -2215,6 +2234,73 @@ const useSecurePage = (params: ComponentParams<SecurePageStruct>) => {
 
 export const SecurePage = toReact(useSecurePage);
 ```
+
+### HttpClient
+
+`HttpClient` is a base class for typed API clients that integrate with the dynstruct service adapter system and `SecurityService`. Extend it to create a service class — each public method becomes a typed message bus channel via the adapter pattern.
+
+**What it does automatically:**
+- Injects `Authorization` header when `useAuth: true` is set on a request (pulls `AuthInfo` from SecurityService via the bus)
+- Tracks in-flight requests and aborts them on `[Symbol.dispose]()` / component unmount
+- Applies base URL and API config from `domainConfig`
+
+```typescript
+import { HttpClient } from '@actdim/dynstruct/net/httpClient';
+import { BaseAppContext } from '@actdim/dynstruct/componentModel/contracts';
+
+export class MyApiClient extends HttpClient {
+    static readonly name = 'MyApiClient' as const;
+    readonly name = 'MyApiClient' as const;
+
+    constructor(context: BaseAppContext) {
+        super(context);
+    }
+
+    getUser(id: string): Promise<User> {
+        return this.fetch({
+            url: `/api/users/${id}`,
+            method: 'GET',
+            useAuth: true,   // injects Authorization header automatically
+        });
+    }
+
+    createPost(data: Post): Promise<Post> {
+        return this.fetch({
+            url: `/api/posts`,
+            method: 'POST',
+            body: JSON.stringify(data),
+            contentType: 'application/json',
+            useAuth: true,
+        });
+    }
+}
+```
+
+Wire it up via the service adapter (same pattern as any service class):
+
+```typescript
+import { ServiceProvider } from '@actdim/dynstruct/services/react/ServiceProvider';
+import { getMsgChannelSelector, MsgProviderAdapter, ToMsgChannelPrefix, ToMsgStruct } from '@actdim/msgmesh/adapters';
+
+type ApiPrefix = 'API';
+type MyApiChannelPrefix = ToMsgChannelPrefix<typeof MyApiClient.name, ApiPrefix>;
+type MyApiMsgStruct = ToMsgStruct<MyApiClient, MyApiChannelPrefix>;
+
+const services = { 'API.MYAPI.': new MyApiClient(context) };
+const adapters: MsgProviderAdapter[] = Object.entries(services).map(([_, service]) => ({
+    service,
+    channelSelector: getMsgChannelSelector(services),
+}));
+
+// Mount alongside SecurityService so auth is available:
+<SecurityService>
+    <ServiceProvider adapters={adapters}>
+        <App />
+    </ServiceProvider>
+</SecurityService>
+```
+
+> **Full working example:** [`src/_stories/componentModel/securityService/SecureApiClient.ts`](src/_stories/componentModel/securityService/SecureApiClient.ts)
 
 ## Key Advantages (React Examples)
 
@@ -2751,7 +2837,7 @@ The framework provides standard message channels for common operations. Constant
 - `APP.SECURITY.AUTH.SIGNOUT.REQUEST` — Request sign-out
 - `APP.SECURITY.AUTH.REFRESH` — Refresh authentication token
 - `APP.SECURITY.AUTH.ENSURE` — Ensure user is authenticated (triggers login flow if not)
-- `APP.SECURITY.AUTH.SESSION.GET` — Get current auth session
+- `APP.SECURITY.AUTH.INFO.GET` — Get current auth info
 
 ### Component Lifecycle
 

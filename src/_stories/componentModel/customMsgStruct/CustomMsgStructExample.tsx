@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { TodoEditStruct, useTodoEdit } from './TodoEdit';
 import { TodoListStruct, useTodoList } from './TodoList';
@@ -73,8 +73,8 @@ export const useCustomMsgStructExample = (params: ComponentParams<Struct>) => {
         },
 
         children: {
-            todoEdit: useTodoEdit({}),
-            todoList: useTodoList({}),
+            todoEdit: useTodoEdit(),
+            todoList: useTodoList(),
         },
 
         view: () => {

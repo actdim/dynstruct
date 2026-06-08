@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React, { ReactNode } from 'react';
 import { AppMsgStruct } from './bootstrap';
 import { SimpleButtonStruct, useSimpleButton } from './SimpleButton';

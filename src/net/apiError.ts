@@ -60,7 +60,9 @@ export class ApiError<TDetails = any> extends Error {
         // const statusClassMsg = HttpStatus.classes[`${statusClass}_MESSAGE`];
         const msg = HttpStatus[`${status}_MESSAGE`] as string; // || "An unexpected server error occurred."
         const name = `HTTP_STATUS_${status}`;
-        // response.resolved
+        // response.resolved.json:        
+        // 400/404: { message?: string, error?: string; }
+        // 422: { errors: ValidationError[] }
         const error = new ApiError(msg, {
             status,
             request,

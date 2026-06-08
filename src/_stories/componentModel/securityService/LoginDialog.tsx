@@ -7,7 +7,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import { AppMsgStruct } from '../bootstrap';
 
 type Struct = ComponentStruct<

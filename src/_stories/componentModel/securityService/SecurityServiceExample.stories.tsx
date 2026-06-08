@@ -12,9 +12,11 @@ const appConfig: BaseAppDomainConfig = {
     security: {
         id: 'test',
         // authType: "bearer",
-        routes: {
+        endpoints: {
             authSignIn: null,
             authSignOut: null,
+        },
+        routes: {
             authSignInPage: '/login',
             authSignOutPage: '/logout',
         },
@@ -42,7 +44,7 @@ const meta: Meta<typeof SecurityServiceExample> = {
         (Story) => (
             <AppContextProvider value={{ msgBus: appMsgBus }}>
                 <StorageService storeName={'test'}></StorageService>
-                <SecurityService></SecurityService>
+                <SecurityService useConventions={false}></SecurityService>
                 <SecurityDemoServiceProvider></SecurityDemoServiceProvider>
                 <Story></Story>
             </AppContextProvider>
@@ -66,9 +68,9 @@ export const SecurityServiceExampleStory: Story = {
     render: (args, context) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <p style={{ margin: 0, color: '#555', fontSize: 13 }}>
-                Demonstrates <b>security service integration</b> — sign-in/sign-out flow and
-                secure API access. Use email <code>admin@mail.com</code> / password{' '}
-                <code>admin</code> to authenticate.
+                Demonstrates <b>security service integration</b> — sign-in/sign-out flow and secure
+                API access. Use email <code>admin@mail.com</code> / password <code>admin</code> to
+                authenticate.
             </p>
             <SecurityServiceExample />
         </div>

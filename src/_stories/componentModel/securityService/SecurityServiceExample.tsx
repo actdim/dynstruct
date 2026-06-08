@@ -5,13 +5,13 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { LoginDialogStruct, useLoginDialog } from './LoginDialog';
 import { SecurityDemoMsgChannels, SecurityDemoMsgStruct } from './SecureApiServiceProvider';
-import { AuthSession } from '@/appDomain/securityContracts';
+import { AuthInfo } from '@/appDomain/securityContracts';
 import { detailsStyle, labelStyle, row } from '../styles';
-import { MaybePromise } from '@actdim/utico/typeCore';
+import { toJS } from 'mobx';
 
 type Struct = ComponentStruct<
     SecurityDemoMsgStruct,
@@ -35,7 +35,7 @@ type Struct = ComponentStruct<
             >;
             publish: SecurityDemoMsgChannels<
                 | 'API.SECURE.GETDATA'
-                | 'APP.SECURITY.AUTH.SESSION.GET'
+                | 'APP.SECURITY.AUTH.INFO.GET'
                 | 'APP.SECURITY.AUTH.SIGNIN'
                 | 'APP.SECURITY.AUTH.SIGNOUT'
                 | 'APP.SECURITY.AUTH.ENSURE'
@@ -44,17 +44,27 @@ type Struct = ComponentStruct<
     }
 >;
 
+type UserInfo = {
+    user_name: string;
+    email?: string;
+};
+
+type AuthInfoExtras = {
+    user: UserInfo;
+};
+
 export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
     async function updateActiveUser() {
         const msg = await c.msgBus.request({
-            channel: 'APP.SECURITY.AUTH.SESSION.GET',
+            channel: 'APP.SECURITY.AUTH.INFO.GET',
         });
-        m.activeUser = msg.payload?.authInfo?.user_name || msg.payload?.authInfo?.email;
+        const userInfo = (msg.payload?.properties as AuthInfoExtras)?.user;
+        m.activeUser = userInfo ? userInfo.user_name || userInfo.email : null;
     }
-    
+
     const def: ComponentDef<Struct> = {
         regType: 'SecurityServiceExample',
         props: {
@@ -93,19 +103,26 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                 'APP.SECURITY.AUTH.SIGNIN.REQUEST': {
                     in: {
                         callback: (msg) => {
-                            if (
-                                (msg.payload.userName === 'admin' ||
-                                    msg.payload.email === 'admin@mail.com') &&
-                                msg.payload.password === 'admin'
-                            ) {
-                                return {
-                                    accessToken: 'token',
-                                    authInfo: {
-                                        user_name: msg.payload.userName || msg.payload.email,
-                                        email: msg.payload.email,
-                                    },
-                                } as AuthSession;
+                            const creds = msg.payload.credentials;
+                            if (creds.scheme === 'Basic' || creds.scheme === 'Bearer') {
+                                if (
+                                    (creds.userName.toLowerCase() === 'admin' ||
+                                        creds.userName.toLowerCase() === 'admin@mail.com') &&
+                                    creds.password.toLowerCase() === 'admin'
+                                ) {
+                                    return {
+                                        accessToken: 'token',
+                                        scheme: creds.scheme,
+                                        properties: {
+                                            user: {
+                                                user_name: 'admin',
+                                                email: 'admin@mail.com',
+                                            },
+                                        } as AuthInfoExtras,
+                                    } as AuthInfo;
+                                }
                             }
+
                             throw new Error('Invalid credentials');
                         },
                     },
@@ -122,25 +139,27 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                 await c.msgBus.request({
                     channel: 'APP.SECURITY.AUTH.SIGNOUT',
                 });
-                await updateActiveUser();
             },
-            onCatch: (_, err) => {
+            onCatch: (err) => {
                 // console.error(err); // for debug
             },
         },
         children: {
-            loginDialog: useLoginDialog({                
+            loginDialog: useLoginDialog({
                 onSubmit: async ({ email, password }) => {
                     try {
                         m.showLoginDialog = false;
                         const msg = await c.msgBus.request({
                             channel: 'APP.SECURITY.AUTH.SIGNIN',
                             payload: {
-                                email,
-                                password,
+                                credentials: {
+                                    scheme: 'Basic',
+                                    userName: email,
+                                    password: password,
+                                },
                             },
                         });
-                        alert(`Login success. Token: {${msg.payload.accessToken}}`);
+                        alert(`Login success. Token: ${msg.payload.accessToken}`);
                         await updateActiveUser();
                     } catch (err) {
                         alert(`Login failed: ${err.message}`);
@@ -150,65 +169,94 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
         },
         view: () => {
             return (
-                <details open style={detailsStyle}>
-                    <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
-                        Security Service
-                    </summary>
-                    <div style={{ ...row, fontSize: 12, color: '#888', fontStyle: 'italic' }}>
-                        Credentials: email "admin@mail.com", password "admin"
-                    </div>
-                    <div style={row}>
-                        <span style={labelStyle}>User</span>
-                        <span>
-                            {m.activeUser || <i style={{ color: '#aaa' }}>Not authenticated</i>}
-                        </span>
-                    </div>
-                    <div style={{ ...row, marginTop: 8 }}>
-                        {!m.activeUser && (
-                            <button
-                                onClick={async () => {
-                                    await c.msgBus.request({ channel: 'APP.SECURITY.AUTH.ENSURE' });
-                                }}
-                            >
-                                Login
-                            </button>
-                        )}
-                        {m.activeUser && (
-                            <button
-                                onClick={async () => {
-                                    await c.msgBus.request({
-                                        channel: 'APP.SECURITY.AUTH.SIGNOUT',
-                                    });
-                                }}
-                            >
-                                Logout
-                            </button>
-                        )}
-                        <button
-                            onClick={async () => {
-                                const msg = await c.msgBus.request({
-                                    channel: 'API.SECURE.GETDATA',
-                                    payloadFn: (r) => r('foo'),
-                                });
-                                m.responseData = JSON.stringify(msg.payload);
-                            }}
-                        >
-                            Get secure data
-                        </button>
-                    </div>
-                    {m.responseData && (
-                        <div style={row}>
-                            <span style={labelStyle}>Data</span>
-                            <textarea
-                                name="data"
-                                value={m.responseData}
-                                readOnly
-                                style={{ flex: 1 }}
-                            />
+                <>
+                    <details open style={detailsStyle}>
+                        <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
+                            Security Service
+                        </summary>
+                        <div style={{ ...row, fontSize: 12, color: '#888', fontStyle: 'italic' }}>
+                            Credentials: email "admin@mail.com", password "admin"
                         </div>
+                        <div style={row}>
+                            <span style={labelStyle}>User</span>
+                            <span>
+                                {m.activeUser || <i style={{ color: '#aaa' }}>Not authenticated</i>}
+                            </span>
+                        </div>
+                        <div style={{ ...row, marginTop: 8 }}>
+                            {!m.activeUser && (
+                                <button
+                                    onClick={async () => {
+                                        await c.msgBus.request({
+                                            channel: 'APP.SECURITY.AUTH.ENSURE',
+                                        });
+                                    }}
+                                >
+                                    Login
+                                </button>
+                            )}
+                            {m.activeUser && (
+                                <button
+                                    onClick={async () => {
+                                        await c.msgBus.request({
+                                            channel: 'APP.SECURITY.AUTH.SIGNOUT',
+                                        });
+                                        updateActiveUser();
+                                    }}
+                                >
+                                    Logout
+                                </button>
+                            )}
+                            <button
+                                onClick={async () => {
+                                    const msg = await c.msgBus.request({
+                                        channel: 'API.SECURE.GETDATA',
+                                        payloadFn: (r) => r('foo'),
+                                        options: {
+                                            timeout: 60000,
+                                        },
+                                    });
+                                    m.responseData = JSON.stringify(msg.payload);
+                                }}
+                            >
+                                Get secure data
+                            </button>
+                        </div>
+                        {m.responseData && (
+                            <div style={row}>
+                                <span style={labelStyle}>Data</span>
+                                <textarea
+                                    name="data"
+                                    value={m.responseData}
+                                    readOnly
+                                    style={{ flex: 1 }}
+                                />
+                            </div>
+                        )}
+                        {m.showLoginDialog && <c.children.LoginDialog />}
+                    </details>
+                    {!!m.$.errors.length && (
+                        <details style={detailsStyle} open>
+                            <summary style={{ color: '#c00', cursor: 'pointer' }}>
+                                {m.$.errors.length} error{m.$.errors.length > 1 ? 's' : ''}
+                            </summary>
+                            {m.$.errors.map((err, i) => (
+                                <pre
+                                    key={i}
+                                    style={{
+                                        margin: '6px 0',
+                                        fontSize: 12,
+                                        whiteSpace: 'pre-wrap',
+                                    }}
+                                >
+                                    {err instanceof Error
+                                        ? err.message
+                                        : JSON.stringify(err, null, 2)}
+                                </pre>
+                            ))}
+                        </details>
                     )}
-                    {m.showLoginDialog && <c.children.LoginDialog />}
-                </details>
+                </>
             );
         },
     };

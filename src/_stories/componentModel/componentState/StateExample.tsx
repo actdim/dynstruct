@@ -6,7 +6,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { TestMsgChannels, TestMsgStruct } from './msgStruct';
 import { detailsStyle, labelStyle, row } from '../styles';
@@ -169,3 +169,5 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
 
 export type ComponentStateExampleStruct = Struct;
 export const ComponentStateExample = toReact(useComponentStateExample);
+
+// TODO: automatic children validation

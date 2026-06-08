@@ -1,6 +1,5 @@
 import {
-    UserCredentials,
-    AuthSession,
+    AuthInfo,
     $AUTH_SIGNIN,
     $AUTH_SIGNOUT_REQUEST,
     $AUTH_SIGNOUT,
@@ -8,10 +7,13 @@ import {
     $AUTH_REFRESH,
     $AUTH_REFRESH_REQUEST,
     $AUTH_ENSURE,
-    $AUTH_SESSION_GET,
-    $AUTH_SESSION_CHANGED,
+    $AUTH_INFO_GET,
+    $AUTH_INFO_CHANGED,
     $CONFIG_GET as $SECURITY_CONFIG_GET,
     $CONFIG_CHANGED as $SECURITY_CONFIG_CHANGED,
+    BearerSignInCredentials,
+    SignInCredentials,
+    BearerAuthInfo,
 } from '@/appDomain/securityContracts';
 import { getValuePrefixer } from '@actdim/utico/typeCore';
 import { jwtDecode } from 'jwt-decode';
@@ -37,11 +39,6 @@ type TokenPayload = {
 // const defaultAccessDeniedReason = 'Insufficient privileges. Contact your system Administrator.';
 
 const baseStorageKeys = {
-    accessToken: 'ACCESS_TOKEN',
-    refreshToken: 'REFRESH_TOKEN',
-    acl: 'ACL',
-    userCredentials: 'USER_CREDENTIALS',
-    // signInInfo
     authInfo: 'AUTH_INFO',
 };
 
@@ -67,7 +64,7 @@ import {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import { AsyncLock } from '@actdim/utico/asyncLock';
 
 type Struct = ComponentStruct<
@@ -76,6 +73,8 @@ type Struct = ComponentStruct<
         props: PropsWithChildren & {
             // useStandardConventions
             useConventions: boolean;
+            domainConfig?: BaseSecurityDomainConfig;
+            authInfo?: AuthInfo;
         };
         msgScope: {
             subscribe: BaseAppMsgChannels<typeof $SECURITY_CONFIG_CHANGED>;
@@ -83,7 +82,7 @@ type Struct = ComponentStruct<
                 | typeof $AUTH_SIGNIN
                 | typeof $AUTH_SIGNOUT
                 | typeof $AUTH_REFRESH
-                | typeof $AUTH_SESSION_GET
+                | typeof $AUTH_INFO_GET
                 | typeof $AUTH_ENSURE
             >;
             publish: BaseAppMsgChannels<
@@ -93,7 +92,7 @@ type Struct = ComponentStruct<
                 | typeof $STORE_SET
                 | typeof $STORE_GET
                 | typeof $STORE_REMOVE
-                | typeof $AUTH_SESSION_CHANGED
+                | typeof $AUTH_INFO_CHANGED
                 | typeof $AUTH_SIGNIN_REQUEST
                 | typeof $AUTH_SIGNOUT_REQUEST
                 | typeof $AUTH_REFRESH_REQUEST
@@ -106,20 +105,7 @@ const lock = new AsyncLock();
 
 export const useSecurityService = (params: ComponentParams<Struct>): Component<Struct> => {
     type Internals = {
-        // isAuthenticated?: boolean;
-        // isExpired?: boolean;
-        domain?: string;
-        domainConfig?: BaseSecurityDomainConfig;
         storageKeys?: typeof baseStorageKeys;
-        accessToken?: string;
-        refreshToken?: string;
-        userCredentials?: UserCredentials;
-        authInfo?: any;
-        // authority?: string;
-        authProvider?: string;
-        tokenExpiresAt?: string;
-        // RBAC vs ABAC vs PBAC: https://habr.com/ru/companies/otus/articles/698080/
-        acl?: any;
     };
 
     let c: ComponentImpl<Struct, Internals>;
@@ -138,125 +124,53 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             });
             config = msg.payload;
         }
-        c._.domainConfig = config;
-        const prefixer = getValuePrefixer<typeof c._.storageKeys>(`${c._.domainConfig?.id}/`);
+        m.domainConfig = config;
+        const prefixer = getValuePrefixer<typeof c._.storageKeys>(`${m.domainConfig?.id}/`);
         c._.storageKeys = prefixer(c._.storageKeys);
         await restoreData();
     }
 
-    function getSessionInternal(): AuthSession {
-        return {
-            accessToken: c._.accessToken,
-            refreshToken: c._.refreshToken,
-            authInfo: c._.authInfo,
-            authProvider: c._.authProvider,
-            domain: c._.domain,
-            tokenExpiresAt: c._.tokenExpiresAt,
-        };
-    }
-
     async function init() {
         await lock.dispatch(async () => {
-            if (!c._.domainConfig) {
+            if (!m.domainConfig) {
                 await updateConfig();
             }
         });
 
-        if (c._.accessToken) {
-            const session = getSessionInternal();
+        if (m.authInfo?.isAuthenticated) {
             c.msgBus.send({
                 channel: $AUTH_SIGNIN,
                 group: 'out',
-                payload: session,
+                payload: m.authInfo,
             });
         }
     }
 
-    async function getSession(): Promise<AuthSession> {
+    async function getAuthInfo(): Promise<AuthInfo> {
         await init();
-        return getSessionInternal();
+        return m.authInfo;
     }
 
     async function restoreData() {
         let msg = await c.msgBus.request({
             channel: $STORE_GET,
             payload: {
-                key: c._.storageKeys.accessToken,
-            },
-        });
-        c._.accessToken = msg.payload?.data.value as string;
-
-        msg = await c.msgBus.request({
-            channel: $STORE_GET,
-            payload: {
-                key: c._.storageKeys.refreshToken,
-            },
-        });
-        c._.refreshToken = msg.payload?.data.value as string;
-
-        msg = await c.msgBus.request({
-            channel: $STORE_GET,
-            payload: {
-                key: c._.storageKeys.userCredentials,
-            },
-        });
-        c._.userCredentials = (msg.payload?.data.value as UserCredentials) || {
-            userName: null,
-            password: null,
-        };
-
-        msg = await c.msgBus.request({
-            channel: $STORE_GET,
-            payload: {
                 key: c._.storageKeys.authInfo,
             },
         });
-        c._.authInfo = msg.payload?.data.value;
-
-        msg = await c.msgBus.request({
-            channel: $STORE_GET,
-            payload: {
-                key: c._.storageKeys.acl,
-            },
-        });
-        c._.acl = msg.payload?.data.value || null;
+        const authInfo = msg.payload?.data.value as AuthInfo;
+        if (authInfo) {
+            // m.authInfo = authInfo;
+            Object.assign(m.authInfo, authInfo);
+        }
     }
 
     // removeSavedData
     async function clearSavedData() {
-        c._.accessToken = null;
-        await c.msgBus.request({
-            channel: $STORE_REMOVE,
-            payload: {
-                key: c._.storageKeys.accessToken,
-            },
-        });
-        c._.refreshToken = null;
-        await c.msgBus.request({
-            channel: $STORE_REMOVE,
-            payload: {
-                key: c._.storageKeys.refreshToken,
-            },
-        });
-        c._.userCredentials = null;
-        await c.msgBus.request({
-            channel: $STORE_REMOVE,
-            payload: {
-                key: c._.storageKeys.userCredentials,
-            },
-        });
-        c._.authInfo = null;
         await c.msgBus.request({
             channel: $STORE_REMOVE,
             payload: {
                 key: c._.storageKeys.authInfo,
-            },
-        });
-        c._.acl = null;
-        await c.msgBus.request({
-            channel: $STORE_REMOVE,
-            payload: {
-                key: c._.storageKeys.acl,
             },
         });
         // await saveData();
@@ -264,9 +178,6 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
 
     async function ensureAuth() {
         // await init();
-
-        c._.accessToken = null;
-        c._.acl = null;
 
         const signIn = c.msgBus.once({
             channel: $AUTH_SIGNIN,
@@ -284,7 +195,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         c.msgBus.send({
             channel: $NAV_GOTO,
             payload: {
-                path: c._.domainConfig.routes.authSignInPage,
+                path: m.domainConfig.routes.authSignInPage,
                 params: {
                     callbackUrl:
                         window.location.pathname + window.location.search + window.location.hash,
@@ -299,213 +210,229 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         await c.msgBus.request({
             channel: $STORE_SET,
             payload: {
-                key: c._.storageKeys.accessToken,
-                value: c._.accessToken || null,
-            },
-        });
-        await c.msgBus.request({
-            channel: $STORE_SET,
-            payload: {
-                key: c._.storageKeys.refreshToken,
-                value: c._.refreshToken || null,
-            },
-        });
-        await c.msgBus.request({
-            channel: $STORE_SET,
-            payload: {
-                key: c._.storageKeys.userCredentials,
-                value: c._.userCredentials ? c._.userCredentials : null,
-            },
-        });
-        await c.msgBus.request({
-            channel: $STORE_SET,
-            payload: {
                 key: c._.storageKeys.authInfo,
-                value: c._.authInfo ? c._.authInfo : null,
-            },
-        });
-        await c.msgBus.request({
-            channel: $STORE_SET,
-            payload: {
-                key: c._.storageKeys.acl,
-                value: c._.acl ? c._.acl : null,
+                value: m.authInfo || null,
             },
         });
     }
 
-    function loadAuthInfo(json: unknown) {
-        c._.authInfo = json;
-
-        const accessToken = json['access_token'] || json['accessToken'] || json['token'];
-        const refreshToken = json['refresh_token'] || json['refreshToken'];
-        // const userInfo = json['user'];
-        // const tokenType = json['token_type'] || json['tokenType'];
-        // const expiresAt = json['expires_at'] || json['expiresAt'];
-
-        c._.accessToken = accessToken;
-        c._.refreshToken = refreshToken;
-        // c.internals.acl = ...;
+    function loadBearerAuthInfo(json: unknown) {
+        const authInfo = m.authInfo as BearerAuthInfo;
+        const {
+            access_token,
+            accessToken,
+            token,
+            refresh_token,
+            refreshToken,
+            // user,
+            // token_type,
+            // tokenType,
+            // expires_at,
+            // expiresAt,
+            ...rest
+        } = json as Record<string, unknown>;
+        authInfo.accessToken = (access_token || accessToken || token) as string;
+        authInfo.refreshToken = (refresh_token || refreshToken) as string;
+        authInfo.properties = Object.assign(authInfo.properties ?? {}, rest);
     }
 
-    // setSession
-    function loadSession(session: AuthSession) {
-        c._.accessToken = session.accessToken;
-        c._.refreshToken = session.refreshToken;
-        c._.authInfo = session.authInfo;
-        c._.authProvider = session.authProvider;
-        c._.domain = session.domain;
-        c._.tokenExpiresAt = session.tokenExpiresAt;
+    async function bearerSignIn(credentials: BearerSignInCredentials) {
+        let url = m.domainConfig.endpoints?.authSignIn;
+
+        url = url.replace(/[?&]$/, '');
+
+        const content = JSON.stringify({
+            grant_type: 'password',
+            username: credentials.userName,
+            password: credentials.password,
+        });
+
+        // application/x-www-form-urlencoded?
+
+        const requestParams: IRequestParams = {
+            url: url,
+            body: content,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'text/plain',
+            },
+        };
+
+        const request: IRequestState = {
+            ...requestParams,
+            status: 'executing',
+        };
+
+        const response: IResponseState = await fetcher.fetch(url, requestParams);
+
+        await getResponseResult(response, request);
+        ApiError.assert(response, request);
+        const json = response.resolved.json;
+        loadBearerAuthInfo(json);
     }
 
-    async function signIn(credentials: UserCredentials) {
+    async function signIn(credentials: SignInCredentials, authInfo?: AuthInfo) {
         await init();
 
-        if (!m.useConventions) {
-            let url = c._.domainConfig.routes?.authSignIn;
+        if (!authInfo) {
+            authInfo = m.authInfo;
+        }
 
-            url = url.replace(/[?&]$/, '');
-
-            const content = JSON.stringify({
-                grant_type: 'password',
-                username: credentials.userName,
-                password: credentials.password,
-            });
-
-            // TODO: support other schemas
-            // application/x-www-form-urlencoded?
-            // ?userName=&password=
-            // userName:password (BASIC)
-
-            const requestParams: IRequestParams = {
-                url: url,
-                body: content,
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'text/plain',
-                },
-            };
-
-            const request: IRequestState = {
-                ...requestParams,
-                status: 'executing',
-            };
-
-            const response: IResponseState = await fetcher.fetch(url, requestParams);
-            await getResponseResult(response, request);
-            ApiError.assert(response, request);
-
-            c._.userCredentials = credentials;
-
-            const json = response.resolved.json;
-
-            loadAuthInfo(json);
+        if (m.useConventions) {
+            // && m.domainConfig.endpoints.authSignIn
+            const scheme = credentials.scheme || authInfo.scheme;
+            switch (scheme) {
+                case 'Bearer':
+                    await bearerSignIn(credentials as BearerSignInCredentials);
+                    break;
+            }
         } else {
             const msg = await c.msgBus.request({
                 channel: $AUTH_SIGNIN_REQUEST,
-                payload: credentials,
+                payload: {
+                    credentials: credentials,
+                    auth: m.authInfo,
+                },
             });
 
-            loadSession(msg.payload);
+            Object.assign(m.authInfo, msg.payload);
         }
 
         await saveData();
 
-        return await getSession();
+        return await getAuthInfo();
     }
 
-    async function signOut(accessToken?: string) {
+    async function bearerSignOut(authInfo?: BearerAuthInfo) {
+        if (!authInfo) {
+            authInfo = m.authInfo as BearerAuthInfo;
+        }
+
+        let url = m.domainConfig.endpoints?.authSignOut;
+        if (!url) {
+            throw new Error(
+                'Sign out endpoint is not configured (domainConfig.endpoints.authSignOut)',
+            );
+        }
+        url = url.replace(/[?&]$/, '');
+
+        const content = JSON.stringify({ accessToken: authInfo.accessToken });
+
+        const requestParams: IRequestParams = {
+            url: url,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'text/plain',
+            },
+            body: content,
+        };
+
+        const request: IRequestState = {
+            ...requestParams,
+            status: 'executing',
+        };
+
+        const response: IResponseState = await fetcher.fetch(url, requestParams);
+        await getResponseResult(response, request);
+        ApiError.assert(response, request);
+    }
+
+    async function signOut(authInfo?: AuthInfo) {
         await init();
 
-        if (!m.useConventions) {
-            let url = c._.domainConfig.routes?.authSignOut;
-            if (url) {
-                url = url.replace(/[?&]$/, '');
+        if (!authInfo) {
+            authInfo = m.authInfo;
+        }
+
+        if (m.useConventions) {
+            // && m.domainConfig.endpoints.authSignOut
+            switch (authInfo.scheme) {
+                case 'Bearer':
+                    await bearerSignOut(authInfo);
+                    break;
             }
-
-            const content = JSON.stringify({ accessToken: c._.accessToken });
-
-            const requestParams: IRequestParams = {
-                url: url,
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'text/plain',
-                },
-                body: content,
-            };
-
-            const request: IRequestState = {
-                ...requestParams,
-                status: 'executing',
-            };
-
-            const response: IResponseState = await fetcher.fetch(url, requestParams);
-            await getResponseResult(response, request);
-            ApiError.assert(response, request);
         } else {
             await c.msgBus.request({
                 channel: $AUTH_SIGNOUT_REQUEST,
-                payload: {
-                    accessToken: c._.accessToken,
-                },
+                payload: authInfo,
             });
         }
+
+        m.authInfo = {
+            scheme: m.authInfo.scheme,
+        };
 
         await clearSavedData();
     }
 
-    async function refreshAuth(refreshToken1?: string) {
+    async function bearerRefreshAuth(authInfo?: BearerAuthInfo) {
+        if (!authInfo) {
+            authInfo = m.authInfo as BearerAuthInfo;
+        }
+
+        let url = m.domainConfig.endpoints?.authRefresh;
+        if (url) {
+            url = url.replace(/[?&]$/, '');
+        }
+
+        const content = JSON.stringify({
+            refreshToken: authInfo.refreshToken,
+            // refresh_token: authInfo.refreshToken
+        });
+
+        const requestParams: IRequestParams = {
+            url: url,
+            body: content,
+            method: 'POST',
+            // useAuth: true,
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'text/plain',
+            },
+        };
+
+        const request: IRequestState = {
+            ...requestParams,
+            status: 'executing',
+        };
+
+        const response: IResponseState = await fetcher.fetch(url, requestParams);
+        await getResponseResult(response, request);
+        ApiError.assert(response, request);
+
+        const json = response.resolved.json;
+
+        loadBearerAuthInfo(json);
+    }
+
+    async function refreshAuth(authInfo?: AuthInfo) {
         await init();
 
-        if (!m.useConventions) {
-            let url = c._.domainConfig.routes?.authRefresh;
-            if (url) {
-                url = url.replace(/[?&]$/, '');
+        if (!authInfo) {
+            authInfo = m.authInfo;
+        }
+
+        if (m.useConventions) {
+            // && m.domainConfig.endpoints.authRefresh
+            switch (authInfo.scheme) {
+                case 'Bearer':
+                    await bearerRefreshAuth(authInfo);
+                    break;
             }
-
-            const content = JSON.stringify({
-                refreshToken: c._.refreshToken,
-                // refresh_token: c.internals.refreshToken
-            });
-
-            const requestParams: IRequestParams = {
-                url: url,
-                body: content,
-                method: 'POST',
-                // useAuth: true,
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'text/plain',
-                },
-            };
-
-            const request: IRequestState = {
-                ...requestParams,
-                status: 'executing',
-            };
-
-            const response: IResponseState = await fetcher.fetch(url, requestParams);
-            await getResponseResult(response, request);
-            ApiError.assert(response, request);
-
-            const json = response.resolved.json;
-
-            loadAuthInfo(json);
         } else {
             const msg = await c.msgBus.request({
                 channel: $AUTH_REFRESH_REQUEST,
-                payload: {
-                    refreshToken: c._.refreshToken,
-                },
+                payload: authInfo,
             });
 
-            loadSession(msg.payload);
+            Object.assign(authInfo, msg.payload);
         }
 
         await saveData();
 
-        return await getSession();
+        return await getAuthInfo();
     }
 
     // async function getAcl<T extends ISecurable>(obj: T) {
@@ -523,6 +450,9 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
     const def: ComponentDef<Struct> = {
         props: {
             useConventions: true,
+            authInfo: {
+                scheme: 'Bearer',
+            },
         },
         msgBroker: {
             subscribe: {
@@ -535,31 +465,31 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 },
             },
             provide: {
-                [$AUTH_SESSION_GET]: {
+                [$AUTH_INFO_GET]: {
                     in: {
                         callback: (msg) => {
-                            return getSession();
+                            return getAuthInfo();
                         },
                     },
                 },
                 [$AUTH_SIGNIN]: {
                     in: {
                         callback: (msg) => {
-                            return signIn(msg.payload);
+                            return signIn(msg.payload.credentials, msg.payload.auth);
                         },
                     },
                 },
                 [$AUTH_SIGNOUT]: {
                     in: {
                         callback: (msg) => {
-                            return signOut(msg.payload?.accessToken);
+                            return signOut(msg.payload);
                         },
                     },
                 },
                 [$AUTH_REFRESH]: {
                     in: {
                         callback: (msg) => {
-                            return refreshAuth(msg.payload?.refreshToken);
+                            return refreshAuth(msg.payload);
                         },
                     },
                 },

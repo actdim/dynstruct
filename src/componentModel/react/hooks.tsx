@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, ReactNode } from 'react';
 import React from 'react';
-import { Func, MaybePromise, Mutable } from '@actdim/utico/typeCore';
+import { Func, Mutable } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
 import { runInAction } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
@@ -15,6 +15,7 @@ import {
     Component,
     ComponentChildren,
     ComponentDef,
+    ComponentErrorPayload,
     ComponentImpl,
     ComponentMsgHeaders,
     ComponentParams,
@@ -87,16 +88,14 @@ function createComponent<
     const abortController = new AbortController();
 
     const onError = (err: unknown) => {
-        const src = import.meta.env.DEV
-            ? {
-                  component: component,
-              }
-            : {
-                  component: {
-                      id: component.id,
-                      hierarchyId: component.getHierarchyId(),
-                  },
-              };
+        const state = component.model.$;
+
+        state.errors.push(err);
+
+        const hierarchyId = component.getHierarchyId();
+        const src: ComponentErrorPayload['source'] = import.meta.env.DEV
+            ? (component as Component)
+            : component.id;
 
         const errPayload = {
             error: err,
@@ -110,19 +109,19 @@ function createComponent<
             channel: $ERROR,
             topic: $SYSTEM_TOPIC,
             payload: errPayload,
+            headers: {
+                sourceId: hierarchyId,
+            },
         });
-        def.events?.onCatch?.(component, err);
-        params.onCatch?.(component, err);
+        def.events?.onCatch?.(err, component);
+        params.onCatch?.(err, component);
     };
 
-    function run<TFunc extends () => MaybePromise<any>>(
-        handler: TFunc,
-        silent = false,
-    ): ReturnType<TFunc> {
+    function run<TResult>(handler: () => TResult, silent = false): TResult {
         if (!handler) return undefined;
 
         const handleError = (err: unknown) => {
-            onError?.(err);
+            onError(err);
             if (silent) {
                 return undefined;
             }
@@ -137,13 +136,13 @@ function createComponent<
         }
 
         if (result instanceof Promise) {
-            return result.catch(handleError) as ReturnType<TFunc>;
+            return result.catch(handleError) as TResult;
         }
 
         return result;
     }
 
-    function runSafe<TFunc extends () => MaybePromise<any>>(handler: TFunc): ReturnType<TFunc> {
+    function runSafe<TResult>(handler: () => TResult): TResult {
         return run(handler, true);
     }
 
@@ -256,7 +255,7 @@ function createComponent<
         }
 
         const scopeContext = useMemo(
-            () => ({ ...context, currentId: component.id }),
+            () => ({ ...context, currentId: component.id }) as typeof context,
             [def, params, context],
         );
 
@@ -384,11 +383,13 @@ export function useComponent<
     const c = ref.current;
     if (c && def.props) {
         runInAction(() => {
-            for (const [key, val] of Object.entries(params)) {
-                if (key in def.props && !isBinding(val)) {
-                    const current = c.model[key];
-                    if (current !== val) {
-                        Reflect.set(c.model, key, val);
+            if (params) {
+                for (const [key, val] of Object.entries(params)) {
+                    if (key in def.props && !isBinding(val)) {
+                        const current = c.model[key];
+                        if (current !== val) {
+                            Reflect.set(c.model, key, val);
+                        }
                     }
                 }
             }

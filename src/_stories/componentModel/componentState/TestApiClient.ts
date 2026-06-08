@@ -1,5 +1,5 @@
 import { BaseAppContext } from "@/componentModel/contracts";
-import { ClientBase } from "@/net/client";
+import { HttpClient } from "@/net/httpClient";
 import { IRequestCallbacks } from "@/net/request";
 
 type FakerTextItem = { content: string };
@@ -13,7 +13,7 @@ export async function requestFakeData() {
     return json.data.map((item) => item.content);
 }
 
-export class TestApiClient extends ClientBase {
+export class TestApiClient extends HttpClient {
     static readonly name = "TestApiClient" as const;
     readonly name = "TestApiClient" as const;
     constructor(configuration: BaseAppContext, baseUrl?: string) {

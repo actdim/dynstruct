@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { CustomMsgChannels, CustomMsgHeaders, CustomMsgStruct, TodoItem } from './CustomMsgStruct';
 import { detailsStyle, labelStyle, row } from '../styles';
@@ -24,7 +24,7 @@ type Struct = ComponentStruct<
     }
 >;
 
-export const useTodoEdit = (params: ComponentParams<Struct>) => {
+export const useTodoEdit = (params?: ComponentParams<Struct>) => {
     let c: Component<Struct, CustomMsgHeaders>;
     let m: ComponentModel<Struct>;
     const def: ComponentDef<Struct, CustomMsgHeaders> = {

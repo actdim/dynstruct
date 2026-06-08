@@ -31,9 +31,49 @@ Use public package paths (or equivalent local source paths in this repo):
 - `@actdim/dynstruct/appDomain/securityContracts` — auth channels and security types
 - `@actdim/dynstruct/services/react/ServiceProvider`
 - `@actdim/dynstruct/services/react/SecurityService`
+- `@actdim/dynstruct/net/httpClient` — `HttpClient` base class for auth-aware API clients
 - `@actdim/msgmesh/contracts`
 - `@actdim/msgmesh/core`
 - `@actdim/msgmesh/adapters`
+
+## SecurityService and HttpClient
+
+### SecurityService
+
+`SecurityService` is a built-in service component — mount it near the app root. It manages `AuthInfo` state and exposes auth channels to all descendants.
+
+- `useConventions: true` (default): handles Bearer token flow (HTTP sign-in, storage, refresh). Configure via `domainConfig.endpoints.*`.
+- `useConventions: false`: delegates to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use for demos, mocks, or custom backends.
+
+Key channels (constants from `appDomain/securityContracts`):
+- `$AUTH_SIGNIN` — sign in, returns `AuthInfo`
+- `$AUTH_SIGNOUT` — sign out, clears state
+- `$AUTH_ENSURE` — ensure authenticated; redirects to login if not
+- `$AUTH_INFO_GET` — get current `AuthInfo`
+- `$AUTH_INFO_CHANGED` — event published on auth state change
+
+### HttpClient
+
+`HttpClient` is the base class for typed API service clients. Extend it for each API — each public method becomes a typed bus channel via the service adapter.
+
+- Call `this.fetch({ url, method, useAuth?, body?, contentType? })` inside methods.
+- Set `useAuth: true` on a request to inject the `Authorization` header automatically (reads current `AuthInfo` from SecurityService via the bus).
+- Requests are aborted on `[Symbol.dispose]()` / unmount.
+
+Pattern: extend `HttpClient` → register via `ServiceProvider` alongside `SecurityService` → consume via `c.msgBus.request(...)`.
+
+```ts
+export class MyApiClient extends HttpClient {
+    static readonly name = 'MyApiClient' as const;
+    readonly name = 'MyApiClient' as const;
+
+    getUser(id: string): Promise<User> {
+        return this.fetch({ url: `/api/users/${id}`, method: 'GET', useAuth: true });
+    }
+}
+```
+
+See `src/_stories/componentModel/securityService/SecureApiClient.ts` for a working example.
 
 When editing this repo source, mirror existing import style from nearby files.
 
@@ -63,7 +103,7 @@ Use hook-constructors as the primary component format:
   - `onChangingX` to validate/sanitize before set
   - `onChangeX` after set
   - `onPropChanging`/`onPropChange` for generic handlers
-  - `onCatch` (not `onError`) for error handling — signature: `(component, error, info?) => void`
+  - `onCatch` (not `onError`) for error handling — signature: `(error, component?) => void`
   - Lifecycle handlers may be `async`:
     - `onInit` — once on creation, before first render; sync setup only, no DOM
     - `onLayoutReady` / `onLayoutDestroy` — maps to `useLayoutEffect` / its cleanup; sync, DOM is available
@@ -136,7 +176,7 @@ const def: ComponentDef<Struct> = {
     useErrorBoundary: false, // async errors; no render-time throwing expected
     events: {
         onReady: async () => { await load(); }, // framework routes rejection → onCatch
-        onCatch: (_, err) => { handleError(err); },
+        onCatch: (err) => { handleError(err); },
     },
     view: () => (
         // load() calls a plain fetchData() — not a dynstruct call, so catch manually

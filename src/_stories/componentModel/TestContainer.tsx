@@ -1,17 +1,15 @@
 import {
     ComponentMsgFilter,
-    ComponentMsgHeaders,
     type Component,
     type ComponentDef,
     type ComponentModel,
     type ComponentParams,
     type ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap'; // appDomain
 import { TestChildStruct, useTestChild } from './TestChild';
-import { bind } from '@/componentModel/core';
 import { detailsStyle, labelStyle, row } from './styles';
 
 type Struct = ComponentStruct<
@@ -50,7 +48,7 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
             subscribe: {
                 'TEST-EVENT': {
                     in: {
-                        callback: (msg, c) => {
+                        callback: (msg) => {
                             m.text = msg.payload;
                         },
                         componentFilter: ComponentMsgFilter.FromDescendants,
@@ -60,7 +58,7 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
             provide: {
                 'LOCAL-EVENT': {
                     in: {
-                        callback: (msgIn, headers, c) => {
+                        callback: (msgIn) => {
                             return `Hi ${msgIn.payload} from parent ${c.id}!`;
                         },
                         componentFilter: ComponentMsgFilter.FromDescendants,
@@ -70,7 +68,7 @@ export const useTestContainer = (params: ComponentParams<Struct>) => {
         },
 
         children: {
-            child1: useTestChild({}),
+            child1: useTestChild(),
             child2: useTestChild({
                 // direct binding
                 // value: bind(

@@ -5,7 +5,7 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { AppMsgStruct } from './bootstrap';
 import { detailsStyle, labelStyle, row } from './styles';
@@ -20,7 +20,7 @@ type ErrorDemoStruct = ComponentStruct<
     }
 >;
 
-const useStandardFallbackDemo = (params: ComponentParams<ErrorDemoStruct>) => {
+const useStandardFallbackDemo = (params?: ComponentParams<ErrorDemoStruct>) => {
     let c: Component<ErrorDemoStruct>;
     let m: ComponentModel<ErrorDemoStruct>;
 
@@ -47,7 +47,7 @@ const useStandardFallbackDemo = (params: ComponentParams<ErrorDemoStruct>) => {
     return c;
 };
 
-const useCustomFallbackDemo = (params: ComponentParams<ErrorDemoStruct>) => {
+const useCustomFallbackDemo = (params?: ComponentParams<ErrorDemoStruct>) => {
     let c: Component<ErrorDemoStruct>;
     let m: ComponentModel<ErrorDemoStruct>;
 
@@ -101,7 +101,7 @@ type AsyncErrorDemoStruct = ComponentStruct<
     }
 >;
 
-const useAsyncErrorDemo = (params: ComponentParams<AsyncErrorDemoStruct>) => {
+const useAsyncErrorDemo = (params?: ComponentParams<AsyncErrorDemoStruct>) => {
     let c: Component<AsyncErrorDemoStruct>;
     let m: ComponentModel<AsyncErrorDemoStruct>;
 
@@ -142,7 +142,7 @@ const useAsyncErrorDemo = (params: ComponentParams<AsyncErrorDemoStruct>) => {
             onReady: async () => {
                 await load();
             },
-            onCatch: (_, err) => {
+            onCatch: (err) => {
                 handleError(err);
             },
         },
@@ -209,9 +209,9 @@ export const useErrorBoundaryDemo = (params: ComponentParams<DemoStruct>) => {
 
     const def: ComponentDef<DemoStruct> = {
         children: {
-            standard: useStandardFallbackDemo({}),
-            custom: useCustomFallbackDemo({}),
-            asyncError: useAsyncErrorDemo({}),
+            standard: useStandardFallbackDemo(),
+            custom: useCustomFallbackDemo(),
+            asyncError: useAsyncErrorDemo(),
         },
         view: () => (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

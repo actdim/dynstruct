@@ -1,6 +1,7 @@
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import {
     $CG_OUT,
+    ErrorPayload,
     Msg,
     MsgBus,
     MsgHeaders,
@@ -9,7 +10,7 @@ import {
     MsgSubParams,
     OutStruct,
 } from '@actdim/msgmesh/contracts';
-import { HasKeys, KeyPath, KeyPathValue, MaybeKeyOf, MaybePromise, Require, Skip } from '@actdim/utico/typeCore';
+import { HasKeys, KeyPath, KeyPathValue, MaybeKeyOf, MaybePromise, Overwrite, Require, Skip } from '@actdim/utico/typeCore';
 
 export type BaseContext<
     TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct,
@@ -311,7 +312,7 @@ export type ComponentEvents<
     // onUnmount
     onDestroy?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<void>; // onDispose/onCleanup
     // onError
-    onCatch?: (component: Component<TStruct, TMsgHeaders>, error: unknown, info?: unknown) => void;
+    onCatch?: (error: unknown, component: Component<TStruct, TMsgHeaders>) => void;
     onValidate?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<Partial<Record<KeyPath<TStruct["props"], boolean>, ValidationResult>>>;
 } & {
         [P in keyof TStruct['props']as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
@@ -473,10 +474,10 @@ export type Component<
         EffectController
     >;
     readonly View: ComponentViewFn;
-    readonly run: <TFunc extends () => MaybePromise<any>>(
-        handler: TFunc,
+    readonly run: <TResult>(
+        handler: () => TResult,
         silent: boolean,
-    ) => ReturnType<TFunc>;
+    ) => TResult;
     readonly abortSignal: AbortSignal;
     readonly model: ComponentModel<TStruct>;
     readonly children: ComponentChildren<TStruct['children']>;
@@ -508,6 +509,7 @@ export type ComponentState<TStruct extends ComponentStruct<any> = ComponentStruc
     isVisible: boolean;
     isValid: boolean;
     pendingRequestCount: number; // for busy indicators etc
+    readonly errors: unknown[];
     readonly propState: Record<KeyPath<TStruct["props"], boolean>, ComponentPropState>;
 }
 
@@ -543,3 +545,7 @@ export const $SYSTEM_TOPIC = 'dynstruct' as const;
 // export type CommonAppContext<TMsgStruct extends CommonAppMsgStruct = CommonAppMsgStruct> = BaseContext<TMsgStruct>;
 export type BaseAppContext<TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct> =
     BaseContext<TMsgStruct>;
+
+export type ComponentErrorPayload = Overwrite<ErrorPayload, {
+    source: Component | string;
+}>;

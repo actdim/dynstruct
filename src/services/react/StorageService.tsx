@@ -6,7 +6,7 @@ import {
     ComponentDef,
     ComponentImpl,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { PropsWithChildren } from 'react';

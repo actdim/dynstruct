@@ -8,7 +8,7 @@ import type {
 } from '@/componentModel/contracts';
 import type { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import React from 'react';
-import { useComponent } from './react/react';
+import { useComponent } from './react/hooks';
 
 export type DynamicContentStruct<
     TData = any,

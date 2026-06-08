@@ -52,11 +52,11 @@ import {
     getByKeyPath,
     KeyPath,
     KeyPathValue,
-    MaybePromise,
     Mutable,
     setByKeyPath,
 } from '@actdim/utico/typeCore';
 import { capitalize } from './util';
+import { isPlainObject } from '@actdim/utico/typeUtils';
 
 // onReactionError((err, derivation) => {
 //     console.error(`Reaction "${derivation.name_}" error:`, err);
@@ -77,7 +77,7 @@ export function bind<T, TFrom = any>(
         get: get,
         set: set,
         converter: converter,
-        readOnly: !!set,
+        readOnly: !set,
         [$isBinding]: true,
     };
 }
@@ -304,7 +304,7 @@ export function createModel<
     def: ComponentDef<TStruct, TMsgHeaders>,
     params?: ComponentParams<TStruct>,
 ) {
-    function runSafe<TFunc extends () => MaybePromise<any>>(handler: TFunc): ReturnType<TFunc> {
+    function runSafe<TResult>(handler: () => TResult): TResult {
         return component.run(handler, true);
     }
 
@@ -315,6 +315,7 @@ export function createModel<
         isVisible: true,
         isValid: true,
         pendingRequestCount: 0,
+        errors: [],
         propState: {},
     };
 
@@ -484,12 +485,6 @@ export function createModel<
     const handlers = createEventHandlers();
 
     const deepProxyCache = new WeakMap<object, Map<string, object>>();
-
-    function isPlainObject(val: unknown): val is Record<string, unknown> {
-        if (val === null || typeof val !== 'object') return false;
-        const proto = Object.getPrototypeOf(val);
-        return proto === Object.prototype || proto === null;
-    }
 
     function isNumericKey(key: string | symbol): key is string {
         return typeof key === 'string' && key !== '' && !isNaN(Number(key));
@@ -798,6 +793,41 @@ export function registerMsgBroker<
     }
 }
 
+export function normalizePayload<T>(input: T): T {
+        
+    if (input === null || typeof input !== 'object') {
+        return input;
+    }
+    
+    if (isObservable(input)) {
+        return toJS(input);
+    }
+    
+    if (Array.isArray(input)) {
+        return input.map(normalizePayload) as T;
+    }
+
+    const result: any = {};
+
+    for (const key of Object.keys(input)) {
+        const value = input[key];
+
+        if (isObservable(value)) {
+            result[key] = toJS(value);
+            continue;
+        }
+
+        if (isPlainObject(value)) {
+            result[key] = structuredClone(value);
+            continue;
+        }
+
+        result[key] = normalizePayload(value);
+    }
+
+    return result;
+}
+
 export function getComponentMsgBus<
     TStruct extends ComponentStruct<any>,
     TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
@@ -821,7 +851,7 @@ export function getComponentMsgBus<
         }
         headerSetter?.(params.headers);
         if (params.payload != undefined) {
-            params.payload = structuredClone(toJS(params.payload));
+            params.payload = normalizePayload(params.payload);
         }
         if (!params.options) {
             params.options = {};
@@ -927,9 +957,15 @@ export function createEffect<
 //     };
 // }
 
+// TODO: handle user code properly in all places (runSafe)
 // TODO: support granular access control
-// TODO: support async resources via msgbus (TanStack Query/SWR + Suspense)
 // TODO: support control persistence (with providers)
 // TODO: component type (resource-boundary/layout/UI) support
-// TODO: add skeleton/not-ready state support
+// TODO: add skeleton/"not-ready" state support
 // TODO: visibility (visible/none/hidden) & interaction (disabled/readOnly) support (security etc) with fallback view
+// TODO: automatic children validation
+// TODO: bind with only one function (getter)
+// TODO: TRPC integration
+// TODO: SignalR integration
+// TODO: QraphQL integration
+// TODO: React (TanStack) Query integration

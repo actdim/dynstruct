@@ -6,10 +6,7 @@ import {
     useParams,
     useSearchParams,
 } from 'react-router-dom';
-import {
-    BaseAppMsgChannels,
-    BaseAppMsgStruct,
-} from '@/appDomain/appContracts';
+import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import type {
     Component,
     ComponentDef,
@@ -17,9 +14,10 @@ import type {
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import { PropsWithChildren } from 'react';
 import { NavContext, NavRoutes } from '@/appDomain/commonContracts';
+import { getUrlBuilder } from '@/appDomain/navigation';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -61,14 +59,19 @@ export const useNavService = (params: ComponentParams<Struct>) => {
             provide: {
                 'APP.NAV.GOTO': {
                     in: {
-                        callback: async (msg) => {                            
-                            navigate(msg.payload as To);
+                        callback: async (msg) => {
+                            if (typeof msg.payload.path == 'number') {
+                                navigate(msg.payload.path);
+                            } else {
+                                const toUrl = getUrlBuilder(msg.payload.path);
+                                navigate(toUrl(msg.payload.params));
+                            }
                         },
                     },
                     ex: {
                         callback: async (msg) => {
                             const route = msg.payload.route;
-                            navigate(m.routes[route].path(msg.payload.params));
+                            navigate(m.routes[route].url(msg.payload.params));
                         },
                     },
                 },
@@ -120,7 +123,7 @@ export const useNavService = (params: ComponentParams<Struct>) => {
     c = useComponent(def, params);
     m = c.model;
 
-    // deps
+    // TODO: support deps
     // location, navType, params, searchParams
 
     return c;

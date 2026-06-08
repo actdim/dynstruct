@@ -1,13 +1,12 @@
 import type {
     Component,
     ComponentDef,
-    ComponentImpl,
     ComponentStructExt,
     ComponentModel,
     ComponentParams,
     ComponentStruct,
 } from '@/componentModel/contracts';
-import { toReact, useComponent } from '@/componentModel/react/react';
+import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { AppMsgStruct } from './bootstrap';
 import { SimpleEditStruct, useSimpleEdit } from './SimpleEdit';
