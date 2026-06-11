@@ -45,7 +45,7 @@ export const useSimpleComponent = (params: ComponentParams<Struct>) => {
                 return <div>Counter: {m.counter}</div>;
             },
             button: useSimpleButton({
-                content: 'Add input',
+                content: 'Add input',                
                 onClick: () => {
                     m.counter++;
                 },

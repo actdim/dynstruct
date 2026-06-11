@@ -17,8 +17,7 @@ export interface IApiErrorOptions<TDetails = any> extends ErrorOptions {
     response?: Partial<IResponseState>;
 }
 
-// RequestError
-export class ApiError<TDetails = any> extends Error {
+export class HttpClientError<TDetails = any> extends Error {
     public isApiError = true;
 
     readonly name: string;
@@ -39,12 +38,12 @@ export class ApiError<TDetails = any> extends Error {
         this.request = options.request;
         this.response = options.response;
         this.name = options.name || API_ERROR_INTERNAL_ERROR;
-        Object.setPrototypeOf(this, ApiError.prototype);
+        Object.setPrototypeOf(this, HttpClientError.prototype);
     }
 
     static create(response: Partial<IResponseState>, request?: IRequestState) {
         if (!response) {
-            return new ApiError("Invalid request", {
+            return new HttpClientError("Invalid request", {
                 request
             });
         }
@@ -63,7 +62,7 @@ export class ApiError<TDetails = any> extends Error {
         // response.resolved.json:        
         // 400/404: { message?: string, error?: string; }
         // 422: { errors: ValidationError[] }
-        const error = new ApiError(msg, {
+        const error = new HttpClientError(msg, {
             status,
             request,
             response,
@@ -73,13 +72,13 @@ export class ApiError<TDetails = any> extends Error {
     }
 
     static async assert(response: IResponseState, request: IRequestState) {
-        const err = await ApiError.create(response, request);
+        const err = await HttpClientError.create(response, request);
         if (err) {
             throw err;
         }
     }
 
-    static isApiError(obj: any): obj is ApiError {
+    static isApiError(obj: any): obj is HttpClientError {
         return obj.isApiError === true;
     }
 }

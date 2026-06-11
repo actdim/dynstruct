@@ -64,7 +64,7 @@ import { isPlainObject } from '@actdim/utico/typeUtils';
 
 const blankView = () => null;
 
-export function toPlain<T>(value: T): T {
+export function toPlain<T>(value: T) {
     return toJS(value) as T;
 }
 
@@ -180,7 +180,7 @@ export async function validate<
             }
         }
     } else {
-        let handler = params.onValidate;
+        let handler = params.$events?.onValidate;
         let results = (await Promise.resolve(handler(component))) as ValidationResults;
         mergeResults(results);
 
@@ -258,9 +258,9 @@ export function defineByKeyPath<
     MaxDepth extends number = 3,
 >(obj: T, path: P, descriptor: PropertyDescriptor & ThisType<KeyPathValue<T, P>>): void {
     const keys = path.split('.');
-    const last = keys.pop()!;
+    const last = keys.pop();
     const target = keys.reduce((acc: any, key) => acc?.[key], obj);
-    if (target != null) Object.defineProperty(target, last, descriptor);
+    if (target !== null) Object.defineProperty(target, last, descriptor);
 }
 
 export function observableWithPaths<T extends object>(
@@ -284,7 +284,7 @@ export function observableWithPaths<T extends object>(
 
     for (const [key, nestedAnnotations] of Object.entries(nested)) {
         const nestedObj = value[key];
-        if (nestedObj != null && typeof nestedObj === 'object' && !Array.isArray(nestedObj)) {
+        if (nestedObj !== null && typeof nestedObj === 'object' && !Array.isArray(nestedObj)) {
             value[key] = observableWithPaths(nestedObj, nestedAnnotations, {
                 ...options,
                 deep: false,
@@ -304,10 +304,6 @@ export function createModel<
     def: ComponentDef<TStruct, TMsgHeaders>,
     params?: ComponentParams<TStruct>,
 ) {
-    function runSafe<TResult>(handler: () => TResult): TResult {
-        return component.run(handler, true);
-    }
-
     const state: ComponentState = {
         bindings: {},
         isDisabled: false,
@@ -328,7 +324,7 @@ export function createModel<
     const annotationMap: Record<PropertyKey, any> = {};
     if (def.props) {
         for (const key of Object.getOwnPropertyNames(def.props)) {
-            const descriptor = Object.getOwnPropertyDescriptor(def.props, key)!;
+            const descriptor = Object.getOwnPropertyDescriptor(def.props, key);
             const path = key as TPropPath;
             let prop: any;
             let value: any;
@@ -364,7 +360,7 @@ export function createModel<
 
     if (def.actions) {
         for (const [key, fn] of Object.entries(def.actions)) {
-            Reflect.set(model, key, (...args: any[]) => component.run(() => fn(...args), false));
+            Reflect.set(model, key, fn);
         }
     }
 
@@ -404,10 +400,7 @@ export function createModel<
     function createEventHandlers() {
         function resolveOnGetEventHandler(prop: string) {
             const key = `${$ON_GET}${capitalize(prop)}`;
-            let handler = (params[key] || def.events?.[key]) as () => any;
-            if (handler) {
-                handler = runSafe(() => handler());
-            }
+            let handler = params.$events?.[key] || def.events?.[key];
             return handler;
         }
 
@@ -415,14 +408,14 @@ export function createModel<
             const key = `${$ON_CHANGING}${capitalize(prop)}`;
             return ((oldValue: any, newValue: any) => {
                 let result = true;
-                let handler = params[key] as ValueChangingHandler<any>;
+                let handler = params.$events?.[key] as ValueChangingHandler<any>;
                 if (handler) {
-                    result = runSafe(() => handler(oldValue, newValue));
+                    result = handler(oldValue, newValue);
                 }
                 if (result) {
                     handler = def.events?.[key] as ValueChangingHandler<any>;
                     if (handler) {
-                        result = runSafe(() => handler(oldValue, newValue));
+                        result = handler(oldValue, newValue);
                     }
                 }
                 return result;
@@ -432,37 +425,35 @@ export function createModel<
         function resolveOnChangeEventHandler(prop: string) {
             const key = `${$ON_CHANGE}${capitalize(prop)}`;
             return ((value: any) => {
-                runSafe(() => (params[key] as ValueChangeHandler<any>)?.(value));
-                runSafe(() => (def.events?.[key] as ValueChangeHandler<any>)?.(value));
+                (params.$events?.[key] as ValueChangeHandler<any>)?.(value);
+                (def.events?.[key] as ValueChangeHandler<any>)?.(value);
             }) as ValueChangeHandler;
         }
 
         const commonHandlers: Pick<ComponentModelEventHandlers, 'onPropChanging' | 'onPropChange'> =
             {
                 onPropChanging:
-                    params.onPropChanging || def.events?.onPropChanging
+                    params.$events?.onPropChanging || def.events?.onPropChanging
                         ? (prop, oldValue, newValue) => {
                               let result = true;
-                              let handler = params.onPropChanging;
+                              let handler = params.$events?.onPropChanging;
                               if (handler) {
-                                  result = runSafe(() => handler(String(prop), oldValue, newValue));
+                                  result = handler(String(prop), oldValue, newValue);
                               }
                               if (result) {
                                   handler = def.events?.onPropChanging;
                                   if (handler) {
-                                      result = runSafe(() =>
-                                          handler(String(prop), oldValue, newValue),
-                                      );
+                                      result = handler(String(prop), oldValue, newValue);
                                   }
                               }
                               return result;
                           }
                         : undefined,
                 onPropChange:
-                    params.onPropChange || def.events?.onPropChange
+                    params.$events?.onPropChange || def.events?.onPropChange
                         ? (prop, value) => {
-                              runSafe(() => params.onPropChange?.(String(prop), value));
-                              runSafe(() => def.events?.onPropChange?.(String(prop), value));
+                              params.$events?.onPropChange?.(String(prop), value);
+                              def.events?.onPropChange?.(String(prop), value);
                           }
                         : undefined,
             };
@@ -504,6 +495,7 @@ export function createModel<
         if (Array.isArray(obj)) {
             proxy = new Proxy(obj, {
                 get(target, key, receiver) {
+                    if (key === 'toJSON') return () => toPlain(target);
                     const val = Reflect.get(target, key, receiver);
                     if (isNumericKey(key) && (isPlainObject(val) || Array.isArray(val))) {
                         const childPath = basePath ? `${basePath}.${key}` : key;
@@ -533,13 +525,12 @@ export function createModel<
         } else {
             proxy = new Proxy(obj, {
                 get(target, key, receiver) {
+                    if (key === 'toJSON') return () => toPlain(target);
                     const childPath = basePath ? `${basePath}.${String(key)}` : String(key);
                     const binding = state.bindings[childPath] as Binding | undefined;
                     if (binding?.get) {
-                        const raw = runSafe(() => binding.get());
-                        return binding.converter
-                            ? runSafe(() => binding.converter!.convert(raw))
-                            : raw;
+                        const raw = binding.get();
+                        return binding.converter ? binding.converter.convert(raw) : raw;
                     }
                     const val = Reflect.get(target, key, receiver);
                     if (isPlainObject(val) || Array.isArray(val)) {
@@ -565,10 +556,8 @@ export function createModel<
                     const result = runInAction(() => Reflect.set(target, key, val, receiver));
                     const binding = state.bindings[fullPath] as Binding | undefined;
                     if (binding?.set) {
-                        const outVal = binding.converter
-                            ? runSafe(() => binding.converter!.convertBack(val))
-                            : val;
-                        runSafe(() => binding.set!(outVal));
+                        const outVal = binding.converter ? binding.converter.convertBack(val) : val;
+                        binding.set(outVal);
                     }
                     handlers.onPropChange?.(fullPath, val);
                     const prop = def.props[fullPath];
@@ -590,6 +579,8 @@ export function createModel<
 
     model = new Proxy(model, {
         get(obj, key, receiver) {
+            if (key === 'toJSON') return () => toPlain(obj);
+
             const onGet = handlers?.[key]?.onGet;
             if (onGet) return onGet();
 
@@ -597,8 +588,8 @@ export function createModel<
 
             const val = Reflect.get(obj, key, receiver);
             if (binding?.get) {
-                const raw = runSafe(() => binding.get());
-                return binding.converter ? runSafe(() => binding.converter!.convert(raw)) : raw;
+                const raw = binding.get();
+                return binding.converter ? binding.converter.convert(raw) : raw;
             }
 
             if (val && typeof val === 'object') {
@@ -638,10 +629,8 @@ export function createModel<
             // bindings
             const binding = state.bindings[key as TPropPath];
             if (binding?.set) {
-                const outVal = binding.converter
-                    ? runSafe(() => binding.converter!.convertBack(val))
-                    : val;
-                runSafe(() => binding.set!(outVal));
+                const outVal = binding.converter ? binding.converter.convertBack(val) : val;
+                binding.set(outVal);
             }
 
             // after-change hooks
@@ -720,7 +709,9 @@ export function registerMsgBroker<
     const providers = component?.msgBroker.provide;
     if (providers) {
         for (const [channel, providerGroups] of Object.entries(providers)) {
+            if (!providerGroups) continue;
             for (const [g, p] of Object.entries(providerGroups)) {
+                if (!p) continue;
                 const providerParams = p as MsgChannelGroupProviderParams;
                 const callback = providerParams.callback;
                 if (callback) {
@@ -757,7 +748,9 @@ export function registerMsgBroker<
     const subscribers = component?.msgBroker?.subscribe;
     if (subscribers) {
         for (const [channel, subscriberGroups] of Object.entries(subscribers)) {
+            if (!subscriberGroups) continue;
             for (const [g, s] of Object.entries(subscriberGroups)) {
+                if (!s) continue;
                 const subscriberParams = s as MsgChannelGroupSubscriberParams;
                 const callback = subscriberParams.callback;
                 if (callback) {
@@ -794,15 +787,14 @@ export function registerMsgBroker<
 }
 
 export function normalizePayload<T>(input: T): T {
-        
     if (input === null || typeof input !== 'object') {
         return input;
     }
-    
+
     if (isObservable(input)) {
-        return toJS(input);
+        return toPlain(input);
     }
-    
+
     if (Array.isArray(input)) {
         return input.map(normalizePayload) as T;
     }
@@ -813,7 +805,7 @@ export function normalizePayload<T>(input: T): T {
         const value = input[key];
 
         if (isObservable(value)) {
-            result[key] = toJS(value);
+            result[key] = toPlain(value);
             continue;
         }
 
@@ -861,10 +853,6 @@ export function getComponentMsgBus<
             abortSignal = AbortSignal.any([params.options.abortSignal, abortSignal]);
         }
         params.options.abortSignal = abortSignal;
-        if (params.callback) {
-            const callback = params.callback;
-            params.callback = (...args) => component.run(() => callback(...args), true);
-        }
         return params;
     }
 
@@ -917,7 +905,7 @@ export function createEffect<
             disposer = autorun(
                 () => {
                     if (!paused.get()) {
-                        component.run(() => fn(component), false);
+                        fn(component);
                     }
                 },
                 {

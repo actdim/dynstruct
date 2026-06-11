@@ -9,9 +9,8 @@ import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
 import { LoginDialogStruct, useLoginDialog } from './LoginDialog';
 import { SecurityDemoMsgChannels, SecurityDemoMsgStruct } from './SecureApiServiceProvider';
-import { AuthInfo } from '@/appDomain/securityContracts';
+import { AuthInfo, BasicAuthInfo } from '@/appDomain/securityContracts';
 import { detailsStyle, labelStyle, row } from '../styles';
-import { toJS } from 'mobx';
 
 type Struct = ComponentStruct<
     SecurityDemoMsgStruct,
@@ -32,6 +31,7 @@ type Struct = ComponentStruct<
                 | 'APP.SECURITY.AUTH.SIGNIN.REQUEST'
                 | 'APP.SECURITY.AUTH.SIGNOUT.REQUEST'
                 | 'APP.NAV.GOTO'
+                | 'APP.SECURITY.AUTH.APPLY'
             >;
             publish: SecurityDemoMsgChannels<
                 | 'API.SECURE.GETDATA'
@@ -103,22 +103,36 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                 'APP.SECURITY.AUTH.SIGNIN.REQUEST': {
                     in: {
                         callback: (msg) => {
-                            const creds = msg.payload.credentials;
-                            if (creds.scheme === 'Basic' || creds.scheme === 'Bearer') {
+                            const credentials = msg.payload.credentials;
+                            const authInfoExtras = {
+                                user: {
+                                    user_name: 'admin',
+                                    email: 'admin@mail.com',
+                                },
+                            } as AuthInfoExtras;
+                            if (credentials.scheme === 'Basic') {
                                 if (
-                                    (creds.userName.toLowerCase() === 'admin' ||
-                                        creds.userName.toLowerCase() === 'admin@mail.com') &&
-                                    creds.password.toLowerCase() === 'admin'
+                                    (credentials.userName.toLowerCase() === 'admin' ||
+                                        credentials.userName.toLowerCase() === 'admin@mail.com') &&
+                                    credentials.password.toLowerCase() === 'admin'
+                                ) {
+                                    return {
+                                        scheme: credentials.scheme,
+                                        password: credentials.password,
+                                        userName: credentials.userName,
+                                        properties: authInfoExtras,
+                                    } as AuthInfo;
+                                }
+                            } else if (credentials.scheme === 'Bearer') {
+                                if (
+                                    (credentials.userName.toLowerCase() === 'admin' ||
+                                        credentials.userName.toLowerCase() === 'admin@mail.com') &&
+                                    credentials.password.toLowerCase() === 'admin'
                                 ) {
                                     return {
                                         accessToken: 'token',
-                                        scheme: creds.scheme,
-                                        properties: {
-                                            user: {
-                                                user_name: 'admin',
-                                                email: 'admin@mail.com',
-                                            },
-                                        } as AuthInfoExtras,
+                                        scheme: credentials.scheme,
+                                        properties: authInfoExtras,
                                     } as AuthInfo;
                                 }
                             }
@@ -130,6 +144,33 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                 'APP.SECURITY.AUTH.SIGNOUT.REQUEST': {
                     in: {
                         callback: (msg) => {},
+                    },
+                },
+                'APP.SECURITY.AUTH.APPLY': {
+                    in: {
+                        callback: async (inMsg, outMsg) => {
+                            let msg = await c.msgBus.request({
+                                channel: 'APP.SECURITY.AUTH.INFO.GET',
+                            });
+                            let authInfo = msg.payload as BasicAuthInfo;
+                            if (!authInfo || !authInfo.userName || !authInfo.password) {
+                                let msg = await await c.msgBus.request({
+                                    channel: 'APP.SECURITY.AUTH.ENSURE',
+                                });
+                                authInfo = msg.payload as BasicAuthInfo;
+                            }
+
+                            const authorizationHeader = 'Authorization';
+                            const accessToken = btoa(`${authInfo.userName}:${authInfo.password}`);
+                            const headerValue = `Basic ${accessToken}`;
+                            return {
+                                credentials: 'include',
+                                query: {},
+                                headers: {
+                                    [authorizationHeader]: headerValue,
+                                },
+                            };
+                        },
                     },
                 },
             },
@@ -159,17 +200,20 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                                 },
                             },
                         });
-                        alert(`Login success. Token: ${msg.payload.accessToken}`);
+                        alert(`Login success. User: ${(msg.payload as BasicAuthInfo).userName}`);
                         await updateActiveUser();
                     } catch (err) {
                         alert(`Login failed: ${err.message}`);
                     }
                 },
+                onCancel: () => {
+                    m.showLoginDialog = false;
+                },
             }),
         },
         view: () => {
             return (
-                <>
+                <div id={c.id}>
                     <details open style={detailsStyle}>
                         <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
                             Security Service
@@ -240,23 +284,27 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                             <summary style={{ color: '#c00', cursor: 'pointer' }}>
                                 {m.$.errors.length} error{m.$.errors.length > 1 ? 's' : ''}
                             </summary>
-                            {m.$.errors.map((err, i) => (
-                                <pre
-                                    key={i}
-                                    style={{
-                                        margin: '6px 0',
-                                        fontSize: 12,
-                                        whiteSpace: 'pre-wrap',
-                                    }}
-                                >
-                                    {err instanceof Error
-                                        ? err.message
-                                        : JSON.stringify(err, null, 2)}
-                                </pre>
-                            ))}
+                            {m.$.errors.length && (
+                                <>
+                                    {m.$.errors.map((err, i) => (
+                                        <pre
+                                            key={i}
+                                            style={{
+                                                margin: '6px 0',
+                                                fontSize: 12,
+                                                whiteSpace: 'pre-wrap',
+                                            }}
+                                        >
+                                            {err instanceof Error
+                                                ? err.message
+                                                : JSON.stringify(err, null, 2)}
+                                        </pre>
+                                    ))}
+                                </>
+                            )}
                         </details>
                     )}
-                </>
+                </div>
             );
         },
     };

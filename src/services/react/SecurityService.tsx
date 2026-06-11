@@ -14,11 +14,13 @@ import {
     BearerSignInCredentials,
     SignInCredentials,
     BearerAuthInfo,
+    $AUTH_APPLY,
+    BasicAuthInfo,
 } from '@/appDomain/securityContracts';
 import { getValuePrefixer } from '@actdim/utico/typeCore';
 import { jwtDecode } from 'jwt-decode';
 import { getResponseResult, IRequestParams, IRequestState, IResponseState } from '@/net/request';
-import { ApiError } from '@/net/apiError';
+import { HttpClientError } from '@/net/httpClientError';
 import {
     $STORE_GET,
     $STORE_REMOVE,
@@ -26,6 +28,7 @@ import {
     $NAV_GOTO,
     BaseSecurityDomainConfig,
 } from '@/appDomain/commonContracts';
+import httpStatus from 'http-status';
 
 const userNameClaim = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name';
 
@@ -61,11 +64,14 @@ import {
     ComponentImpl,
     ComponentModel,
     ComponentParams,
+    ComponentRegistryContext,
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { BaseAppMsgChannels, BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { toReact, useComponent } from '@/componentModel/react/hooks';
 import { AsyncLock } from '@actdim/utico/asyncLock';
+import { HttpClient } from '@/net/httpClient';
+import { useComponentContext } from '@/componentModel/react/componentContext';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -84,6 +90,7 @@ type Struct = ComponentStruct<
                 | typeof $AUTH_REFRESH
                 | typeof $AUTH_INFO_GET
                 | typeof $AUTH_ENSURE
+                | typeof $AUTH_APPLY
             >;
             publish: BaseAppMsgChannels<
                 // | typeof $CONFIG_GET
@@ -103,15 +110,20 @@ type Struct = ComponentStruct<
 
 const lock = new AsyncLock();
 
+const defaultAuthInfo: AuthInfo = {
+    scheme: 'Bearer',
+};
+
 export const useSecurityService = (params: ComponentParams<Struct>): Component<Struct> => {
     type Internals = {
         storageKeys?: typeof baseStorageKeys;
+        httpСlient: HttpClient;
     };
 
     let c: ComponentImpl<Struct, Internals>;
     let m: ComponentModel<Struct>;
 
-    let fetcher: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> } = window;
+    const context = useComponentContext() as ComponentRegistryContext<BaseAppMsgStruct>;
 
     async function updateConfig(config?: BaseSecurityDomainConfig) {
         if (!config) {
@@ -151,6 +163,10 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         return m.authInfo;
     }
 
+    async function resetData() {
+        m.authInfo = defaultAuthInfo;
+    }
+
     async function restoreData() {
         let msg = await c.msgBus.request({
             channel: $STORE_GET,
@@ -160,8 +176,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         });
         const authInfo = msg.payload?.data.value as AuthInfo;
         if (authInfo) {
-            // m.authInfo = authInfo;
-            Object.assign(m.authInfo, authInfo);
+            m.authInfo = authInfo;
         }
     }
 
@@ -173,16 +188,21 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 key: c._.storageKeys.authInfo,
             },
         });
+        resetData();
         // await saveData();
     }
 
     async function ensureAuth() {
         // await init();
 
-        const signIn = c.msgBus.once({
-            channel: $AUTH_SIGNIN,
-            group: 'out',
-        });
+        let authInfo: AuthInfo;
+        const signIn = async () => {
+            const msg = await c.msgBus.once({
+                channel: $AUTH_SIGNIN,
+                group: 'out',
+            });
+            authInfo = msg.payload;
+        };
 
         const signOut = async () => {
             await c.msgBus.once({
@@ -203,7 +223,8 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             },
         });
 
-        await Promise.race([signIn, signOut]);
+        await Promise.race([signIn(), signOut()]);
+        return authInfo;
     }
 
     async function saveData() {
@@ -257,31 +278,24 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 'Content-Type': 'application/json',
                 Accept: 'text/plain',
             },
+            // signal: c.abortSignal
         };
 
-        const request: IRequestState = {
-            ...requestParams,
-            status: 'executing',
-        };
+        const json = await c._.httpСlient.fetch<unknown>(requestParams);
 
-        const response: IResponseState = await fetcher.fetch(url, requestParams);
-
-        await getResponseResult(response, request);
-        ApiError.assert(response, request);
-        const json = response.resolved.json;
         loadBearerAuthInfo(json);
     }
 
     async function signIn(credentials: SignInCredentials, authInfo?: AuthInfo) {
         await init();
 
-        if (!authInfo) {
-            authInfo = m.authInfo;
+        if (authInfo) {
+            m.authInfo = authInfo;
         }
 
         if (m.useConventions) {
             // && m.domainConfig.endpoints.authSignIn
-            const scheme = credentials.scheme || authInfo.scheme;
+            const scheme = credentials.scheme || m.authInfo.scheme;
             switch (scheme) {
                 case 'Bearer':
                     await bearerSignIn(credentials as BearerSignInCredentials);
@@ -296,7 +310,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 },
             });
 
-            Object.assign(m.authInfo, msg.payload);
+            m.authInfo = msg.payload;
         }
 
         await saveData();
@@ -304,10 +318,8 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         return await getAuthInfo();
     }
 
-    async function bearerSignOut(authInfo?: BearerAuthInfo) {
-        if (!authInfo) {
-            authInfo = m.authInfo as BearerAuthInfo;
-        }
+    async function bearerSignOut() {
+        const authInfo = m.authInfo as BearerAuthInfo;
 
         let url = m.domainConfig.endpoints?.authSignOut;
         if (!url) {
@@ -327,50 +339,38 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 Accept: 'text/plain',
             },
             body: content,
+            // signal: c.abortSignal
         };
 
-        const request: IRequestState = {
-            ...requestParams,
-            status: 'executing',
-        };
-
-        const response: IResponseState = await fetcher.fetch(url, requestParams);
-        await getResponseResult(response, request);
-        ApiError.assert(response, request);
+        await c._.httpСlient.fetch<void>(requestParams);
     }
 
     async function signOut(authInfo?: AuthInfo) {
         await init();
 
-        if (!authInfo) {
-            authInfo = m.authInfo;
+        if (authInfo) {
+            m.authInfo = authInfo;
         }
 
         if (m.useConventions) {
             // && m.domainConfig.endpoints.authSignOut
-            switch (authInfo.scheme) {
+            switch (m.authInfo.scheme) {
                 case 'Bearer':
-                    await bearerSignOut(authInfo);
+                    await bearerSignOut();
                     break;
             }
         } else {
             await c.msgBus.request({
                 channel: $AUTH_SIGNOUT_REQUEST,
-                payload: authInfo,
+                payload: m.authInfo,
             });
         }
-
-        m.authInfo = {
-            scheme: m.authInfo.scheme,
-        };
 
         await clearSavedData();
     }
 
-    async function bearerRefreshAuth(authInfo?: BearerAuthInfo) {
-        if (!authInfo) {
-            authInfo = m.authInfo as BearerAuthInfo;
-        }
+    async function bearerRefreshAuth() {
+        const authInfo = m.authInfo as BearerAuthInfo;
 
         let url = m.domainConfig.endpoints?.authRefresh;
         if (url) {
@@ -391,18 +391,10 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 'Content-Type': 'application/json',
                 Accept: 'text/plain',
             },
+            // signal: c.abortSignal
         };
 
-        const request: IRequestState = {
-            ...requestParams,
-            status: 'executing',
-        };
-
-        const response: IResponseState = await fetcher.fetch(url, requestParams);
-        await getResponseResult(response, request);
-        ApiError.assert(response, request);
-
-        const json = response.resolved.json;
+        const json = await c._.httpСlient.fetch<unknown>(requestParams);
 
         loadBearerAuthInfo(json);
     }
@@ -410,29 +402,107 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
     async function refreshAuth(authInfo?: AuthInfo) {
         await init();
 
-        if (!authInfo) {
-            authInfo = m.authInfo;
+        if (authInfo) {
+            m.authInfo = authInfo;
         }
 
         if (m.useConventions) {
             // && m.domainConfig.endpoints.authRefresh
-            switch (authInfo.scheme) {
+            switch (m.authInfo.scheme) {
                 case 'Bearer':
-                    await bearerRefreshAuth(authInfo);
+                    await bearerRefreshAuth();
                     break;
             }
         } else {
             const msg = await c.msgBus.request({
                 channel: $AUTH_REFRESH_REQUEST,
-                payload: authInfo,
+                payload: m.authInfo,
             });
 
-            Object.assign(authInfo, msg.payload);
+            m.authInfo = msg.payload;
         }
 
         await saveData();
 
         return await getAuthInfo();
+    }
+
+    function applyBearerAuth(request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in']) {
+        const authInfo = m.authInfo;
+
+        const result: BaseAppMsgStruct[typeof $AUTH_APPLY]['out'] = {
+            headers: {},
+            credentials: 'include',
+            query: {},
+        };
+
+        let accessToken = authInfo?.accessToken;
+        if (!accessToken) {
+            throw HttpClientError.create({
+                status: httpStatus.UNAUTHORIZED,
+            });
+        }
+
+        const authorizationHeader = 'Authorization';
+        const headerValue = `Bearer ${authInfo.accessToken}`;
+        result.headers[authorizationHeader] = headerValue;
+
+        return result;
+    }
+
+    function applyBasicAuth(request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in']) {
+        const authInfo = m.authInfo as BasicAuthInfo;
+
+        const result: BaseAppMsgStruct[typeof $AUTH_APPLY]['out'] = {
+            headers: {},
+            credentials: 'include',
+            query: {},
+        };
+
+        let accessToken: string = null;
+        if (authInfo) {
+            let accessToken = authInfo.accessToken;
+            if (!accessToken) {
+                if (authInfo.userName && authInfo.password) {
+                    accessToken = btoa(`${authInfo.userName}:${authInfo.password}`);
+                }
+            }
+        }
+
+        if (!accessToken) {
+            throw HttpClientError.create({
+                status: httpStatus.UNAUTHORIZED,
+            });
+        }
+
+        const authorizationHeader = 'Authorization';
+        const headerValue = `Basic ${accessToken}`;
+        result.headers[authorizationHeader] = headerValue;
+
+        return result;
+    }
+
+    function applyAuth(
+        request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in'],
+    ): BaseAppMsgStruct[typeof $AUTH_APPLY]['out'] {
+        // TODO: support "WWW-Authenticate" header from the server ("WWW-Authenticate: Bearer" etc)
+        const authInfo = m.authInfo;
+        if (m.useConventions) {
+            switch (authInfo.scheme) {
+                case 'Basic':
+                    return applyBasicAuth(request);
+                case 'Bearer':
+                    return applyBearerAuth(request);
+                default:
+                    throw new Error(`Unsupported auth scheme: ${authInfo.scheme}`);
+                // Authorization: Digest ...
+                // Authorization: Negotiate ...
+                // Authorization: ApiKey ...
+                // X-API-Key
+                // X-Auth-Token
+            }
+        }
+        return undefined;
     }
 
     // async function getAcl<T extends ISecurable>(obj: T) {
@@ -450,9 +520,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
     const def: ComponentDef<Struct> = {
         props: {
             useConventions: true,
-            authInfo: {
-                scheme: 'Bearer',
-            },
+            authInfo: defaultAuthInfo,
         },
         msgBroker: {
             subscribe: {
@@ -467,7 +535,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             provide: {
                 [$AUTH_INFO_GET]: {
                     in: {
-                        callback: (msg) => {
+                        callback: () => {
                             return getAuthInfo();
                         },
                     },
@@ -495,14 +563,33 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 },
                 [$AUTH_ENSURE]: {
                     in: {
-                        callback: (msg) => {
+                        callback: () => {
                             return ensureAuth();
                         },
                     },
                 },
+                [$AUTH_APPLY]: params.useConventions
+                    ? {
+                          in: {
+                              callback: (inMsg, outMsg) => {
+                                  // if (!m.useConventions) {
+                                  //     outMsg.status = 'skipped';
+                                  //     return undefined;
+                                  // }
+                                  return applyAuth(inMsg.payload);
+                              },
+                          },
+                      }
+                    : undefined,
             },
         },
-        events: {},
+        events: {
+            onReady: () => {
+                const httpClient = new HttpClient(context);
+                httpClient.baseUrl = window.location.origin;
+                c._.httpСlient = httpClient;
+            },
+        },
     };
 
     c = useComponent(def, params, {

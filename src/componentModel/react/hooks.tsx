@@ -10,6 +10,7 @@ import {
     useComponentContext,
 } from '@/componentModel/react/componentContext';
 import {
+    $isBinding,
     $isComponent,
     $SYSTEM_TOPIC,
     Component,
@@ -24,6 +25,7 @@ import {
     ComponentViewImplFn,
     ComponentViewProps,
     EffectController,
+    EffectFn,
     isBinding,
     isComponent,
 } from '../contracts';
@@ -44,6 +46,9 @@ import { ErrorPayload, MsgBus } from '@actdim/msgmesh/contracts';
 import { $ERROR } from '@/appDomain/commonContracts';
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { capitalize } from '../util';
+import { isPlainObject } from '@actdim/utico/typeUtils';
+
+let _lastDispatchedError: unknown;
 
 function cleanSourceRef(sourceRef: string) {
     // remove origin
@@ -61,14 +66,6 @@ function createComponent<
     // result
     let component: Mutable<Component<TStruct, TMsgHeaders>>;
 
-    if (!def) {
-        def = {};
-    }
-
-    if (def.useErrorBoundary == undefined) {
-        def.useErrorBoundary = true;
-    }
-
     let regType = def.regType;
     if (!regType) {
         regType = getComponentSourceByCaller(6);
@@ -77,52 +74,56 @@ function createComponent<
         // throw new Error('Valid component definition is required');
     }
 
-    if (!params) {
-        params = {};
-    }
-
     const view = def.view;
 
     let msgBus = def.msgBus || context.msgBus;
 
-    const abortController = new AbortController();
-
+    let catching = false;
     const onError = (err: unknown) => {
-        const state = component.model.$;
+        if (catching) return;
+        catching = true;
+        try {
+            const state = component.model.$;
 
-        state.errors.push(err);
+            state.errors.push(err);
 
-        const hierarchyId = component.getHierarchyId();
-        const src: ComponentErrorPayload['source'] = import.meta.env.DEV
-            ? (component as Component)
-            : component.id;
+            const src: ComponentErrorPayload['source'] = import.meta.env.DEV
+                ? (component as Component)
+                : component.id;
 
-        const errPayload = {
-            error: err,
-            source: src,
-            // properties: {}
-        } satisfies ErrorPayload & {
-            properties?: Record<string | number, any>;
-        };
+            const errPayload = {
+                error: err,
+                source: src,
+                // properties: {}
+            } satisfies ErrorPayload & {
+                properties?: Record<string | number, any>;
+            };
 
-        (msgBus as MsgBus<BaseAppMsgStruct>)?.send({
-            channel: $ERROR,
-            topic: $SYSTEM_TOPIC,
-            payload: errPayload,
-            headers: {
-                sourceId: hierarchyId,
-            },
-        });
-        def.events?.onCatch?.(err, component);
-        params.onCatch?.(err, component);
+            (msgBus as MsgBus<BaseAppMsgStruct>)?.send({
+                channel: $ERROR,
+                topic: $SYSTEM_TOPIC,
+                payload: errPayload,
+                headers: {
+                    sourceId: component.id,
+                },
+            });
+            def.events?.onCatch?.(err, component);
+            params.$events?.onCatch?.(err, component);
+        } finally {
+            catching = false;
+        }
     };
 
     function run<TResult>(handler: () => TResult, silent = false): TResult {
         if (!handler) return undefined;
 
         const handleError = (err: unknown) => {
-            onError(err);
+            if (err !== _lastDispatchedError) {
+                _lastDispatchedError = err;
+                onError(err);
+            }
             if (silent) {
+                _lastDispatchedError = undefined;
                 return undefined;
             }
             throw err;
@@ -142,9 +143,30 @@ function createComponent<
         return result;
     }
 
-    function runSafe<TResult>(handler: () => TResult): TResult {
-        return run(handler, true);
+    function wrapUserCode<T>(value: T, silent = false): T {
+        if (typeof value === 'function') {
+            const fn = value as (...args: unknown[]) => unknown;
+            return ((...args: unknown[]) => run(() => fn(...args), silent)) as T;
+        }
+        if (isPlainObject(value)) {
+            const result: Record<PropertyKey, unknown> = {};
+            for (const key of Reflect.ownKeys(value)) {
+                Reflect.set(result, key, wrapUserCode(Reflect.get(value, key), silent));
+            }
+            return result as T;
+        }
+        return value;
     }
+
+    def = {
+        ...def,
+        actions: def.actions ? wrapUserCode(def.actions, false) : undefined,
+        events: def.events ? wrapUserCode(def.events, true) : undefined,
+        effects: def.effects ? wrapUserCode(def.effects, true) : undefined,
+        msgBroker: def.msgBroker ? wrapUserCode(def.msgBroker, false) : undefined,
+        useErrorBoundary: def.useErrorBoundary == undefined ? true : def.useErrorBoundary,
+    };
+    params = wrapUserCode(params, true) || {};
 
     const initEffects = () => {
         if (def.effects) {
@@ -152,12 +174,13 @@ function createComponent<
                 component.effects[name] = createEffect(
                     component,
                     name,
-                    () => runSafe(fn as Func), // as EffectFn<TStruct, ComponentMsgHeaders>
+                    fn as EffectFn<TStruct, TMsgHeaders>,
                 );
             }
         }
     };
 
+    const abortController = new AbortController();
     const OrigView = observer((props: ComponentViewProps) => {
         const context = useComponentContext() as ComponentRegistryContext<
             TStruct['msg'],
@@ -188,8 +211,8 @@ function createComponent<
             try {
                 context.register(component.id, regType, parentId);
                 initEffects();
-                runSafe(() => def.events?.onLayoutReady?.(component));
-                runSafe(() => params.onLayoutReady?.(component));
+                def.events?.onLayoutReady?.(component);
+                params.$events?.onLayoutReady?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>layout-ready`);
@@ -203,8 +226,8 @@ function createComponent<
             }
             return () => {
                 context.unregister(component.id);
-                runSafe(() => def.events?.onLayoutDestroy?.(component));
-                runSafe(() => params.onLayoutDestroy?.(component));
+                def.events?.onLayoutDestroy?.(component);
+                params.$events?.onLayoutDestroy?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>layout-destroy`);
@@ -213,10 +236,12 @@ function createComponent<
         }, [def, params, context]);
 
         useEffect(() => {
+            // const abortController = new AbortController();
+            component.abortSignal = abortController.signal;
             try {
                 registerMsgBroker(component);
-                runSafe(() => def.events?.onReady?.(component));
-                runSafe(() => params.onReady?.(component));
+                def.events?.onReady?.(component);
+                params.$events?.onReady?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>ready`);
@@ -229,10 +254,12 @@ function createComponent<
                 }
             }
             return () => {
-                abortController?.abort();
-                runSafe(() => def.events?.onDestroy?.(component));
-                runSafe(() => params.onDestroy?.(component));
-                component[Symbol.dispose]();
+                // abortController.abort();
+                for (const [, fn] of Object.entries(component.effects)) {
+                    (fn as EffectController).stop();
+                }
+                def.events?.onDestroy?.(component);
+                params.$events?.onDestroy?.(component);
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>destroy`);
@@ -270,6 +297,7 @@ function createComponent<
     if (def.fallbackView || def.useErrorBoundary) {
         View = ((props) => (
             <ErrorBoundary
+                id={() => component.id}
                 onCatch={onError}
                 fallback={
                     def.fallbackView && (() => def.fallbackView(props, component) as ReactNode)
@@ -332,7 +360,7 @@ function createComponent<
         // view: componentDef.view,
         View: View,
         run: run,
-        abortSignal: abortController.signal,
+        abortSignal: null,
         children: children,
         get model() {
             return model();
@@ -344,14 +372,12 @@ function createComponent<
             return mapToEdit(component, def, params, path, exclude);
         },
         [Symbol.dispose]: () => {
-            for (const [name, fn] of Object.entries(component.effects)) {
-                (fn as EffectController).stop();
-            }
+            abortController.abort();
         },
     };
 
-    runSafe(() => def.events?.onInit?.(component));
-    runSafe(() => params.onInit?.(component));
+    def.events?.onInit?.(component);
+    params.$events?.onInit?.(component);
 
     return component;
 }
@@ -398,9 +424,10 @@ export function useComponent<
 
     useLayoutEffect(() => {
         return () => {
+            ref.current[Symbol.dispose]();
             ref.current = null;
         };
-    }, []); // [params]?
+    }, []); // using [] here as deps - means real unmount!
     return c;
 }
 

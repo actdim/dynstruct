@@ -1,10 +1,10 @@
 import { v4 as uuid } from "uuid";
 import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
-import { ApiError } from "./apiError";
+import { HttpClientError } from "./httpClientError";
 import { BaseAppMsgStruct, BaseApiConfig } from "@/appDomain/appContracts";
 import { MsgBus, MsgSubOptions } from "@actdim/msgmesh/contracts";
-import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_INFO_GET, $AUTH_SIGNOUT, AuthInfo } from "@/appDomain/securityContracts";
+import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_INFO_GET, $AUTH_SIGNOUT, AuthInfo, $AUTH_APPLY } from "@/appDomain/securityContracts";
 import { $CONFIG_CHANGED, $CONFIG_GET, BaseAppDomainConfig } from "@/appDomain/commonContracts";
 import { BaseAppContext } from "@/componentModel/contracts";
 
@@ -27,8 +27,6 @@ const API_SUFFIXES = ["api", "controller", "client", "fetcher"];
 export class HttpClient {
 
     public baseUrl: string;
-
-    public authInfo: AuthInfo;
 
     public name: string;
 
@@ -69,27 +67,6 @@ export class HttpClient {
                 await this.update(msg.payload);
             }, options
         });
-
-        this.msgBus.on({
-            channel: $AUTH_SIGNIN,
-            group: "out",
-            callback: (msg) => {
-                this.authInfo = msg.payload;
-                // this.updateSecurity();
-            },
-            options
-        });
-
-        this.msgBus.on({
-            channel: $AUTH_SIGNOUT,
-            group: "out",
-            callback: (msg) => {
-                this.authInfo = null;
-                // this.updateSecurity();
-            },
-            options
-        });
-
     }
 
     [Symbol.dispose]() {
@@ -99,9 +76,6 @@ export class HttpClient {
     protected async init() {
         if (!this.baseUrl) {
             await this.update();
-        }
-        if (!this.authInfo) {
-            await this.updateSecurity();
         }
     }
 
@@ -131,35 +105,33 @@ export class HttpClient {
         this.updateConfig(apiEntry?.[1]);
     }
 
-    private async updateSecurity() {
-        const msg = await this.msgBus.request({
-            channel: $AUTH_INFO_GET
-        });
-        this.authInfo = msg.payload;
-        return this.authInfo;
-    }
-
-    protected async addAuthorization(request: IRequestParams) {
-        if (!this.authInfo) {
-            await this.updateSecurity();
-        }
-        const authInfo = this.authInfo;
-        if (!authInfo || !authInfo.accessToken) {
-            throw ApiError.create({
-                status: httpStatus.UNAUTHORIZED
-            });
-        }
-        const authorizationHeader = "Authorization";
+    protected async applyAuth(request: IRequestParams) {
         const headers = request.headers;
-        const headerValue = `Bearer ${authInfo.accessToken}`;
-        if (headers instanceof Headers) {
-            // if (headers.has(authorizationHeader)) {
-            //     headers.delete(authorizationHeader)
-            // }
-            // headers.append(authorizationHeader, headerValue);
-            headers.set(authorizationHeader, headerValue);
-        } else {
-            throw new Error("Unsupported headers"); // object type
+        if (!(headers instanceof Headers)) {
+            throw new Error('Unsupported headers'); // object type
+        }
+        const msg = await this.msgBus.request({
+            channel: $AUTH_APPLY,
+            payload: {
+                url: request.url,
+                headers: null
+            }
+        });
+        const options = msg.payload;
+        if (options) {
+            request.credentials = options.credentials;
+            if (options.headers) {
+                for (const [key, val] of Object.entries(options.headers)) {
+                    headers.set(key, val);
+                }
+            }
+            if (options.query) {
+                const url = new URL(request.url, window.location.origin);
+                for (const [key, val] of Object.entries(options.query)) {
+                    if (val != null) url.searchParams.append(key, String(val));
+                }
+                request.url = url.href;
+            }
         }
     }
 
@@ -189,7 +161,7 @@ export class HttpClient {
             if (proceed) {
                 request.status = "executing";
                 const response = await this.fetcher.fetch(request.url, request);
-                ApiError.assert(response, request);
+                HttpClientError.assert(response, request);
                 let onResponseRead = request.callbacks && request.callbacks.onResponseRead;
                 if (!onResponseRead) {
                     onResponseRead = async (event) => {
@@ -219,11 +191,11 @@ export class HttpClient {
         do {
             try {
                 if (request.useAuth) {
-                    await this.addAuthorization(request);
+                    await this.applyAuth(request);
                 }
                 return await this.executeRequestInternal(request);
             } catch (err) {
-                if (err instanceof ApiError) {
+                if (err instanceof HttpClientError) {
                     if (attempt > 0) {
                         throw err;
                     }
@@ -248,7 +220,6 @@ export class HttpClient {
                         // TOKEN_INVALID
                         // TOKEN_MISSING
                         // AUTH_REQUIRED
-                        // header: WWW-Authenticate
                         continue;
                     } else if (err.status >= httpStatus.INTERNAL_SERVER_ERROR) {
                         continue;
@@ -272,7 +243,8 @@ export class HttpClient {
             headers: {},
             cache: "default",
             credentials: "same-origin",
-            mode: "cors"
+            mode: "cors",
+            signal: this.abortController.signal
         };
 
         requestParams = { ...defaultParams, ...requestParams };

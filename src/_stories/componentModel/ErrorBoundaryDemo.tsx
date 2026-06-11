@@ -4,6 +4,7 @@ import type {
     ComponentModel,
     ComponentParams,
     ComponentStruct,
+    ComponentStructExt,
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react/hooks';
 import React from 'react';
@@ -26,11 +27,12 @@ const useStandardFallbackDemo = (params?: ComponentParams<ErrorDemoStruct>) => {
 
     const def: ComponentDef<ErrorDemoStruct> = {
         props: { triggered: false },
+        regType: 'StandardFallbackDemo',
         // useErrorBoundary defaults to true — standard fallback is used automatically
         view: () => {
             if (m.triggered) throw new Error('Simulated render error in component');
             return (
-                <details open style={detailsStyle}>
+                <details id={c.id} open style={detailsStyle}>
                     <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
                         Standard Fallback
                     </summary>
@@ -71,7 +73,7 @@ const useCustomFallbackDemo = (params?: ComponentParams<ErrorDemoStruct>) => {
         view: () => {
             if (m.triggered) throw new Error('Simulated render error in component');
             return (
-                <details open style={detailsStyle}>
+                <details id={c.id} open style={detailsStyle}>
                     <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
                         Custom Fallback
                     </summary>
@@ -102,8 +104,18 @@ type AsyncErrorDemoStruct = ComponentStruct<
 >;
 
 const useAsyncErrorDemo = (params?: ComponentParams<AsyncErrorDemoStruct>) => {
-    let c: Component<AsyncErrorDemoStruct>;
-    let m: ComponentModel<AsyncErrorDemoStruct>;
+    type ImplStruct = ComponentStructExt<
+        AsyncErrorDemoStruct,
+        {
+            actions: {
+                load: () => Promise<any>;
+            };
+        }
+    >;
+
+    let c: Component<ImplStruct>;
+
+    let m: ComponentModel<ImplStruct>;
 
     async function simulateRequest() {
         await new Promise<void>((r) => setTimeout(r, 600));
@@ -122,8 +134,11 @@ const useAsyncErrorDemo = (params?: ComponentParams<AsyncErrorDemoStruct>) => {
         m.errorMessage = err instanceof Error ? err.message : String(err);
     }
 
-    const def: ComponentDef<AsyncErrorDemoStruct> = {
+    const def: ComponentDef<ImplStruct> = {
         props: { status: 'idle', errorMessage: '' },
+        actions: {
+            load,
+        },
         useErrorBoundary: false,
         msgBroker: {
             subscribe: {
@@ -138,16 +153,16 @@ const useAsyncErrorDemo = (params?: ComponentParams<AsyncErrorDemoStruct>) => {
             },
         },
         events: {
-            // Framework wraps onReady in runSafe — async errors propagate to onCatch
             onReady: async () => {
-                await load();
+                // await load();
+                await m.load();
             },
             onCatch: (err) => {
                 handleError(err);
             },
         },
         view: () => (
-            <details open style={detailsStyle}>
+            <details id={c.id} open style={detailsStyle}>
                 <summary style={{ cursor: 'pointer', marginBottom: 8 }}>
                     Async Error / onCatch
                 </summary>
@@ -169,17 +184,10 @@ const useAsyncErrorDemo = (params?: ComponentParams<AsyncErrorDemoStruct>) => {
                     </div>
                 )}
                 <div style={{ ...row, marginTop: 10 }}>
-                    {/* Button calls load() directly — framework doesn't wrap clicks,
-                        so we catch manually with the same handler */}
                     <button
                         disabled={m.status === 'loading'}
-                        onClick={async () => {
-                            try {
-                                await load();
-                            } catch (err) {
-                                handleError(err);
-                            }
-                        }}
+                        // onClick={() => c.run(() => load(), true)}
+                        onClick={() => m.load()}
                     >
                         Retry
                     </button>
@@ -214,7 +222,7 @@ export const useErrorBoundaryDemo = (params: ComponentParams<DemoStruct>) => {
             asyncError: useAsyncErrorDemo(),
         },
         view: () => (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div id={c.id} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <c.children.Standard />
                 <c.children.Custom />
                 <c.children.AsyncError />

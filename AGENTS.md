@@ -93,8 +93,33 @@ Use hook-constructors as the primary component format:
 4. Instantiate via `useComponent(def, params)`.
 5. Prefer `let c` and `let m` pattern:
 - `c` is component instance
-- `m` is `c.model` reactive model
+- `m` is `c.model` reactive model — **actions are blended into the model**, so call `m.actionName(...)` not `c.actions.actionName(...)`. `Component` has no `.actions` property.
 6. Export `toReact(useXxx)` only when React component interoperability is needed.
+
+## Component Identity (`id`, `regType`, `$key`)
+
+Every component instance gets a unique `id` at runtime. The framework does **not** apply it to any DOM element automatically — the component author must do so explicitly:
+
+```tsx
+view: () => <div id={c.id}>...</div>
+```
+
+**ID formation (priority order):**
+1. `$id` param provided → used as-is
+2. `$key` param provided → `toHtmlId(regType) + '#' + key`
+3. Neither → `toHtmlId(regType) + '#' + N` (sequential per `regType` within the context)
+
+**`regType`** — set in `def.regType` (shared across all instances). If omitted, auto-detected from source file path via stack inspection.
+
+**`$id` / `$key`** — instance-level, passed via `ComponentParams` in JSX, in the hook-constructor call, or via binding:
+
+```tsx
+<MyComponent $id="main-card" />          // explicit, stable id
+<MyComponent $key={userId} />            // → "myComponent#userId"
+useMyComponent({ $key: bind(() => m.id) }) // dynamic via binding
+```
+
+Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predictable ids from domain keys. Omit both when page uniqueness is sufficient.
 
 ## State and Reactivity Rules
 
@@ -156,13 +181,21 @@ Use hook-constructors as the primary component format:
 
 ### Error handling pattern
 
-`onCatch` is called automatically whenever an error crosses the **dynstruct API boundary**. This covers:
-- Lifecycle hooks: `onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy` — sync and async
-- Actions (`def.actions`) — wrapped by the framework; action calls are batched automatically and errors propagate to `onCatch`
+`onCatch` is called automatically whenever an error crosses the **dynstruct API boundary**. The framework wraps all user code at component creation time. There are two propagation modes:
+
+**Routes to `onCatch` only — error is swallowed after dispatch:**
+- Lifecycle hooks: `onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`
+- Effect bodies (`def.effects`)
 - Property event handlers: `onGetX`, `onChangingX`, `onChangeX`, `onPropChanging`, `onPropChange`
 - Binding get/set functions (`bind`, `bindProp`)
-- Effect bodies (`def.effects`)
-- MsgBus subscriber and provider callbacks; `c.msgBus.request(...)` calls
+
+These have no caller waiting for a return value, so swallowing after `onCatch` is safe.
+
+**Routes to `onCatch` AND re-throws to caller:**
+- Actions (`def.actions`) — caller may `await m.action()` and expect a result or a rejection
+- MsgBus provider/subscriber callbacks — provider must return a response; subscriber may be awaited
+
+Swallowing in these cases would silently return `undefined` to the caller and cause hard-to-diagnose bugs.
 
 Manual `try/catch` is needed only for code that is **outside** this boundary — a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
 
@@ -188,6 +221,43 @@ const def: ComponentDef<Struct> = {
 ```
 
 When `view` itself may throw, keep `useErrorBoundary: true` (default) and optionally provide `fallbackView`.
+
+### `c.run` — manual boundary entry
+
+`c.run(handler, silent?)` executes any code inside the framework error boundary — errors are routed to `onCatch` exactly like any framework-managed call:
+
+```ts
+// silent=true: error → onCatch, swallowed (no re-throw)
+onClick={() => c.run(() => load(), true)}
+
+// silent=false (default): error → onCatch + re-throws to caller
+onClick={() => c.run(() => submit())}
+```
+
+**In practice prefer `def.actions`** — they combine error routing with automatic MobX action batching (all reactive prop mutations within the call commit as one transaction):
+
+```ts
+actions: {
+    load: async () => {
+        m.status = 'loading';
+        await fetchData();    // all changes batched, errors → onCatch
+        m.status = 'idle';
+    },
+},
+// called as: m.load()
+```
+
+If an action is an implementation detail not needed in the public contract, declare it privately via `ComponentStructExt` — callers see only the original `Struct`:
+
+```ts
+type ImplStruct = ComponentStructExt<Struct, {
+    actions: { load: () => Promise<void> };
+}>;
+
+// inside hook-constructor:
+c = useComponent(def, params) as Component<ImplStruct>;
+// m.load() works internally; callers receive Component<Struct>
+```
 
 Avoid:
 - introducing local `useState`/`useReducer` for state that belongs to component model

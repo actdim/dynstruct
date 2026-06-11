@@ -7,8 +7,8 @@ export class SecureApiClient extends HttpClient {
     readonly name = "SecureApiClient" as const;
     constructor(configuration: BaseAppContext, baseUrl?: string) {
         super(configuration);
-    }    
-    
+    }
+
     getData(param: string, callbacks?: IRequestCallbacks<string>): Promise<unknown> {
         return this.fetch({
             url: `https://jsonplaceholder.typicode.com/posts/1`,

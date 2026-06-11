@@ -18,6 +18,7 @@ Build scalable applications with dynamic structured components, explicit wiring,
   - [Component Definition](#component-definition)
   - [Implementation Extension (ComponentStructExt)](#implementation-extension-componentstructext)
   - [Instance Internals (ComponentImpl)](#instance-internals-componentimpl)
+  - [Component Identity (id, regType, $key)](#component-identity-id-regtype-key)
   - [Reactive Properties](#reactive-properties)
     - [Nested Props and Validators](#nested-props-and-validators)
     - [Component State ($)](#component-state-)
@@ -526,7 +527,7 @@ const useMyComponent = (params: ComponentParams<Struct>) => {
 |---|---|
 | `regType` | Component type identifier used when registering in the component tree. Also used to form the instance ID (can be used as HTML `id`). |
 | `props` | Default property values. Provided `params` are applied automatically by the framework on top of these defaults — no manual `params.x ?? default` needed. |
-| `actions` | Method implementations (signatures match the structure). Optimized for batching reactive property changes. |
+| `actions` | Method implementations (signatures match the structure). Optimized for batching reactive property changes. Actions are blended into `ComponentModel` — call them as `m.actionName(...)`, not `c.actions.actionName(...)`. |
 | `effects` | Effect implementations — methods that run automatically when any property accessed within them changes. An effect runs on component creation and can be paused, resumed, or stopped via `c.effects.<name>`. Returns an optional cleanup function. |
 | `children` | Child component instances created via hook-constructors (`use*`). Properties can be initialized with values or bindings; external event handlers can be assigned. |
 | `events` | Component event handlers (lifecycle, property changes). See [Component Events](#component-events). |
@@ -648,6 +649,69 @@ export const useStorageService = (params: ComponentParams<Struct>): Component<St
 - Return `Component<Struct>` (not `ComponentImpl`) from the hook-constructor to keep internals private.
 
 > **Full working example:** [`src/services/react/StorageService.tsx`](src/services/react/StorageService.tsx)
+
+### Component Identity (`id`, `regType`, `$key`)
+
+Every component instance has a unique `id` that the framework generates at runtime. The id is available as `c.id` and is used to register the component in the component tree, route messages, and can optionally identify the component's DOM element.
+
+#### Applying `c.id` to the DOM
+
+The framework does **not** automatically add an id to any DOM element. It is the component author's responsibility to apply `c.id` where needed:
+
+```tsx
+view: () => (
+    <details id={c.id} open>
+        ...
+    </details>
+)
+```
+
+This enables DOM-based targeting: testing selectors, error overlays, accessibility anchors, automation tools.
+
+#### ID formation rules
+
+The id is derived in priority order:
+
+| Condition | Resulting id |
+|---|---|
+| `$id` param provided | used as-is |
+| `$key` param provided | `toHtmlId(regType) + '#' + key` |
+| Neither provided | `toHtmlId(regType) + '#' + N` (sequential per `regType` within the context) |
+
+**`toHtmlId`** converts a source path to a valid HTML id — splits by `/`, joins with `-`, strips non-ASCII and special characters.
+
+**Example:** A component whose source file is `/src/stories/componentModel/MyWidget.tsx` without `regType` or `$key` gets id `src-stories-componentModel-MyWidget.tsx#1`.
+
+#### Controlling the id
+
+**`regType`** — component type identifier, set once in `ComponentDef` and shared across all instances:
+
+```ts
+const def: ComponentDef<Struct> = {
+    regType: 'UserCard',  // all instances: "userCard#1", "userCard#2", ...
+    ...
+};
+```
+
+If omitted, the framework auto-detects it from the source file path via stack inspection.
+
+**`$id`** and **`$key`** — instance-level overrides, passed via `ComponentParams`. Can be provided in JSX, in the hook-constructor call, or via a binding:
+
+```tsx
+// in JSX (via toReact adapter)
+<UserCard $id="header-user-card" />
+<UserCard $key="123" />  // → "userCard#123"
+
+// in hook-constructor
+const card = useUserCard({ $id: 'sidebar-card' });
+
+// via binding (dynamic)
+const card = useUserCard({ $key: bind(() => m.userId) });
+```
+
+Use `$id` when you need a fully explicit, stable id. Use `$key` when you want a predictable id composed of `regType` + a meaningful domain key (e.g., entity id). Omit both when uniqueness within the page is sufficient and the exact value does not matter.
+
+> **Full working example:** [`src/_stories/componentModel/ErrorBoundaryDemo.tsx`](src/_stories/componentModel/ErrorBoundaryDemo.tsx) — applies `c.id` to `<details id={c.id}>` for error overlay highlighting.
 
 ### Reactive Properties
 
@@ -904,7 +968,13 @@ const def: ComponentDef<Struct> = {
 
 **1. Errors from lifecycle hooks and other framework-managed calls**
 
-The framework routes errors to `onCatch` from every call it wraps — synchronous throws and async rejections alike. This includes lifecycle hooks (`onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`), **effect bodies** (`def.effects`), property event handlers, bindings, and msgBus callbacks. This is the primary pattern for handling errors from initial data loads or setup logic:
+The framework wraps all user code at component creation time and routes errors to `onCatch` — synchronous throws and async rejections alike. There are two propagation modes:
+
+**Routes to `onCatch` only (error swallowed after dispatch):** lifecycle hooks, effect bodies, property event handlers, bindings. These have no caller waiting for a return value.
+
+**Routes to `onCatch` AND re-throws to caller:** actions (`def.actions`) and msgBroker callbacks. The caller may `await m.action()` or use the provider response — swallowing would silently return `undefined` and cause hard-to-diagnose bugs.
+
+This is the primary pattern for handling errors from initial data loads or setup logic:
 
 ```typescript
 type Struct = ComponentStruct<AppMsgStruct, {
@@ -995,6 +1065,42 @@ const def: ComponentDef<Struct> = {
 ```
 
 Set `useErrorBoundary: false` to opt out of the boundary (useful when `onCatch` handles async errors and a render-time throw should propagate normally).
+
+#### `c.run` — Manual Boundary Entry
+
+`c.run(handler, silent?)` executes code inside the framework error boundary — errors route to `onCatch` the same way as any other framework-managed call. Use it when you need boundary protection outside of `def.actions` (e.g., in an `onClick` that isn't declared as an action).
+
+```typescript
+view: () => (
+    // silent=true: errors → onCatch, swallowed (no re-throw)
+    <button onClick={() => c.run(() => load(), true)}>Load</button>
+),
+```
+
+**In practice, prefer `def.actions`** — they give you error routing plus automatic MobX action batching (all reactive prop changes in the call commit in one transaction):
+
+```typescript
+actions: {
+    load: async () => {
+        m.status = 'loading';
+        await fetchData();   // errors → onCatch automatically
+        m.status = 'idle';
+    },
+},
+// called as: m.load()
+```
+
+If an action doesn't need to be part of the public contract, declare it privately with `ComponentStructExt` — callers only see the original `Struct`:
+
+```typescript
+type ImplStruct = ComponentStructExt<Struct, {
+    actions: { load: () => Promise<void> };
+}>;
+
+// inside hook-constructor, after useComponent:
+c = useComponent(def, params) as Component<ImplStruct>;
+m = c.model; // m.load() available internally, hidden from callers
+```
 
 #### Global Property Change Events
 
@@ -2133,8 +2239,8 @@ const usePage = (params: ComponentParams<PageStruct>) => {
         },
         view: () => (
             <div>
-                <button onClick={c.actions.navigateToHome}>Home</button>
-                <button onClick={() => c.actions.navigateToProfile('123')}>
+                <button onClick={m.navigateToHome}>Home</button>
+                <button onClick={() => m.navigateToProfile('123')}>
                     View Profile
                 </button>
             </div>
@@ -2217,9 +2323,9 @@ const useSecurePage = (params: ComponentParams<SecurePageStruct>) => {
         view: () => (
             <div>
                 {m.isAuthenticated ? (
-                    <button onClick={c.actions.signOut}>Sign Out</button>
+                    <button onClick={m.signOut}>Sign Out</button>
                 ) : (
-                    <button onClick={() => c.actions.signIn({ username: 'user', password: 'pass' })}>
+                    <button onClick={() => m.signIn({ username: 'user', password: 'pass' })}>
                         Sign In
                     </button>
                 )}
@@ -2990,6 +3096,51 @@ Use dedupe for the following packages to avoid version conflicts:
 - @actdim/msgmesh
 - rxjs
 - uuid
+
+## Changelog
+
+### 1.4.8
+- Extendable auth system — `$AUTH_APPLY` channel for custom auth header injection per-request
+- Unified `AuthInfo` type across sign-in, refresh, and session flows
+- Error boundary: all user code wrapped automatically; `onCatch` receives errors from actions, events, effects, bindings
+- Propagation modes — events/effects swallow after dispatch; actions/msgBroker re-throw to caller
+- `c.run(handler, silent?)` — manually execute code inside the error boundary
+- Proxy `toJSON` — `JSON.stringify(m.nested)` works automatically without explicit `toPlain`
+
+### 1.4.1
+- `toPlain()` — strips MobX/dynstruct proxies for safe serialization and external API usage
+
+### 1.4.0
+- Computed properties — getter-only props in `def.props` auto-registered as MobX computed values
+- `prop({ reactive: false | 'shallow' })` — per-prop reactivity control
+- Array observability — nested arrays and objects propagate reactive annotations correctly
+
+### 1.3.8
+- `ComponentStructExt` — private props/actions/effects inside hook-constructor without exposing them in the public contract
+- `ComponentImpl` — per-instance non-reactive internals (`c._`) for caches, locks, imperative state
+- `mapToEdit()` — maps model paths to `<input>` / `<textarea>` props for form integration
+- Binding system — `bind()` / `bindProp()` for two-way reactive value flow between parent and child
+
+### 1.3.7
+- Validation refactoring — `validate()` with typed path-based error reporting
+
+### 1.3.0
+- Hierarchy navigation — `getParent()`, `getChildren()`, `getChainUp()`, `getChainDown()` on every component instance
+- Unmount support — abort signal propagation on component destroy
+
+### 1.2.7
+- Error boundary — `fallbackView` renders error fallback UI when `view` throws; `useErrorBoundary` flag
+- Effect fixes — effects correctly stop/restart on component lifecycle events
+- Dynamic content — `DynamicContent` component, factory function children, `React.FC` fragment children
+
+### 1.1.0
+- Effect system — `EffectFn` and `EffectController` with `pause`/`resume`/`stop`; effects auto-track reactive dependencies
+- Strict API — formalized component contracts, removed deprecated patterns
+
+### 1.0.4
+- Component ID system — `$id`, `$key`, `regType`, sequential fallback IDs
+- Service adapter system — `registerAdapters()`, `ServiceProvider` for typed API clients
+- `msgBroker` — inline message provider/subscriber declarations on components
 
 ## Contributing
 

@@ -2,6 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
 import { AppContextProvider, appMsgBus } from './bootstrap';
 import { ErrorBoundaryDemo } from './ErrorBoundaryDemo';
+import { toReact } from '@/componentModel/react/hooks';
+import { useErrorOverlay } from './ErrorOverlay';
+
+const ErrorOverlay = toReact(useErrorOverlay);
 
 const meta: Meta<typeof ErrorBoundaryDemo> = {
     title: 'dynstruct/Basics',
@@ -10,6 +14,7 @@ const meta: Meta<typeof ErrorBoundaryDemo> = {
         (Story) => (
             <AppContextProvider value={{ msgBus: appMsgBus }}>
                 <Story />
+                <ErrorOverlay />
             </AppContextProvider>
         ),
     ],
@@ -32,8 +37,8 @@ export const ErrorBoundaryDemoStory: Story = {
                 <i>Trigger error</i> to see each; reload the story to reset. <b>Async Error</b>{' '}
                 shows a different pattern: an async call fails in <code>onReady</code>, the
                 framework routes it to <code>onCatch</code>, which updates component state — no
-                boundary involved, the view keeps rendering normally. The{' '}
-                <i>Retry</i> button repeats the same call with the same handler.
+                boundary involved, the view keeps rendering normally. The <i>Retry</i> button
+                repeats the same call with the same handler.
             </p>
             <ErrorBoundaryDemo />
         </div>

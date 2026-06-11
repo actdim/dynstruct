@@ -2,6 +2,7 @@ import { MaybePromise } from '@actdim/utico/typeCore';
 import React, { PropsWithChildren } from 'react';
 
 export type ErrorBoundaryProps = {
+    id?: () => string | undefined;
     fallback?: (error: unknown) => React.ReactNode;
     onCatch?: (error: unknown, info?: unknown) => MaybePromise<void>;
 } & PropsWithChildren;
@@ -72,6 +73,7 @@ export class ErrorBoundary extends React.Component<
         } else {
             content = this.props.children;
         }
-        return content;
+        const id = this.props.id?.();
+        return id ? <div id={id}>{content}</div> : content;
     }
 }

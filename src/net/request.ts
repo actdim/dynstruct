@@ -1,8 +1,8 @@
 // Transport
 
 import httpStatus from "http-status";
-import { AsyncFunc, AwaitedReturnType, Func } from "@actdim/utico/typeCore";
-import { ApiError } from "./apiError";
+import { AwaitedReturnType, Func } from "@actdim/utico/typeCore";
+import { HttpClientError } from "./httpClientError";
 
 export type IFetcher = {
     fetch(url: RequestInfo | URL, init?: RequestInit): Promise<Response>;
@@ -125,7 +125,7 @@ export async function getResponseResult(response: IResponseState, request: IRequ
     }
     if (!(response.status === httpStatus.OK || response.status === httpStatus.NO_CONTENT)) {
         // JSON.stringify(resolved)
-        throw ApiError.create(response, request);
+        throw HttpClientError.create(response, request);
     }
 
     request.result = result;

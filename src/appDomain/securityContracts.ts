@@ -28,6 +28,7 @@ export const $AUTH_REFRESH_REQUEST = "APP.SECURITY.AUTH.REFRESH.REQUEST" as cons
 export const $AUTH_REFRESH = "APP.SECURITY.AUTH.REFRESH" as const;
 // require
 export const $AUTH_ENSURE = "APP.SECURITY.AUTH.ENSURE" as const;
+export const $AUTH_APPLY = "APP.SECURITY.AUTH.APPLY" as const;
 export const $AUTH_INFO_GET = "APP.SECURITY.AUTH.INFO.GET" as const;
 export const $AUTH_INFO_CHANGED = "APP.SECURITY.AUTH.INFO.CHANGED" as const; // UPDATED?
 export const $CONFIG_GET = "APP.SECURITY.CONFIG.GET" as const;
@@ -76,6 +77,19 @@ export type BaseSecurityMsgStruct = MsgStruct<
         };
         [$AUTH_ENSURE]: {
             in: void;
+            out: AuthInfo;
+        };
+        // ENRICH
+        [$AUTH_APPLY]: {
+            in: Partial<RequestInit> & {
+                url: string;
+                headers: Record<string, string>;
+            };
+            out: {
+                query?: Record<string, string>;
+                headers?: Record<string, string>;
+                credentials?: RequestCredentials;
+            };
         };
         [$AUTH_INFO_GET]: {
             in: void;
@@ -179,7 +193,7 @@ type AuthInfoBase = {
 
 export type BasicAuthInfo = AuthInfoBase & {
     scheme: "Basic";
-};
+} & BasicSignInCredentials;
 
 export type BearerAuthInfo = AuthInfoBase & {
     scheme: "Bearer";

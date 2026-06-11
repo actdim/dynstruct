@@ -28,7 +28,7 @@ type SecureApiMsgStruct = ToMsgStruct<
 
 export const services: Record<SecureApiChannelPrefix, any> = {
     'API.SECURE.': new SecureApiClient({
-        msgBus: appMsgBus
+        msgBus: appMsgBus,
     }),
 };
 

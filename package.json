@@ -1,6 +1,6 @@
 {
     "name": "@actdim/dynstruct",
-    "version": "1.4.7",
+    "version": "1.4.8",
     "description": "A type-safe component system for large-scale apps: explicit dependencies, message bus communication, and structure-first, declarative design",
     "author": "Pavel Borodaev",
     "license": "BUSL-1.1",
@@ -57,6 +57,8 @@
     "scripts": {
         "test": "npx vitest --config=vitest.node.config.ts --no-cache",
         "test:w": "npx vitest --config=vitest.node.config.ts --watch",
+        "test:react": "npx vitest --config=vitest.react.config.ts --no-cache",
+        "test:react:w": "npx vitest --config=vitest.react.config.ts --watch",
         "test:v8": "npx vite",
         "lint": "eslint \"./**/*.{ts,tsx}\" -f visualstudio --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
         "build": "tsc -b tsconfig.json --noEmit && vite build",
@@ -74,8 +76,8 @@
         "typecheck": "tsc -p tsconfig.json --noEmit"
     },
     "peerDependencies": {
-        "@actdim/msgmesh": ">=1.5.1",
-        "@actdim/utico": ">=1.2.5",
+        "@actdim/msgmesh": ">=1.5.2",
+        "@actdim/utico": ">=1.2.6",
         "http-status": ">=2.1.0",
         "jwt-decode": ">=4.0.0",
         "mobx": ">=6.15.0",
@@ -95,6 +97,9 @@
         "@storybook/addon-onboarding": "10.0.7",
         "@storybook/react-vite": "10.0.7",
         "@swc/core": "^1.15.1",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^14.6.1",
         "@types/chai": "^5.2.3",
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.10.0",
@@ -113,6 +118,7 @@
         "eslint-plugin-react-refresh": "^0.4.24",
         "eslint-plugin-storybook": "10.0.7",
         "globals": "^16.5.0",
+        "happy-dom": "^20.10.2",
         "mocha": "^11.7.5",
         "npm-check-updates": "^19.1.2",
         "prettier": "^3.6.2",

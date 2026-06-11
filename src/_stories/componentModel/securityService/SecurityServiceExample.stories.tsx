@@ -14,6 +14,7 @@ const appConfig: BaseAppDomainConfig = {
         // authType: "bearer",
         endpoints: {
             authSignIn: null,
+            // authSignIn: 'https://jsonplaceholder.typicode.com/posts/1',
             authSignOut: null,
         },
         routes: {

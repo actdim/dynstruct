@@ -23,6 +23,8 @@
         "vite.config.ts",
         "vitest.config.ts",
         "vitest.node.config.ts",
-        "vitest.setup.ts"
+        "vitest.react.config.ts",
+        "vitest.setup.ts",
+        "vitest.react.setup.ts"
     ]
 }

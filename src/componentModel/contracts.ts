@@ -67,7 +67,7 @@ export type MsgChannelGroupProviderParams<
     // resolve
     callback?: (
         msgIn: Msg<TStruct, TChannel, TGroup, TMsgHeaders>,
-        headers: TMsgHeaders,
+        outMsg: Msg<TStruct, TChannel, typeof $CG_OUT, TMsgHeaders>,
         scope: TScope,
     ) => MaybePromise<OutStruct<TStruct, TChannel>>;
     filter?: (msg: Msg<TStruct, TChannel, TGroup, TMsgHeaders>, scope: TScope) => boolean;
@@ -100,9 +100,6 @@ export type MsgBrokerScope<
 };
 
 export type ComponentPropStruct = Record<string, any>;
-// export type ComponentPropStruct = {
-//     [prop: string]: any;
-// };
 
 export type ComponentActionStruct = Record<string, Function>;
 // export type ComponentActionStruct = {
@@ -217,12 +214,12 @@ export const $isBinding = Symbol('isBinding'); // brand
 
 export type Binding<T = any, TFrom = any> = {
     // getter
-    readonly get: () => T;
+    get: () => T;
     // setter
-    readonly set?: (value: T) => void;
-    readonly converter?: ValueConverter<T, TFrom>;
-    readonly readOnly?: boolean;
-    readonly [$isBinding]: true;
+    set?: (value: T) => void;
+    converter?: ValueConverter<T, TFrom>;
+    readOnly?: boolean;
+    [$isBinding]: true;
 };
 
 export function isBinding(obj: any): obj is Binding {
@@ -429,8 +426,8 @@ export type ComponentMsgStruct<TStruct extends ComponentStruct<any> = ComponentS
 >;
 
 export type ComponentParams<TStruct extends ComponentStruct<any> = ComponentStruct<any>> =
-    ComponentPropParams<TStruct['props']> &
-    ComponentEvents<TStruct> & {
+    ComponentPropParams<TStruct['props']> & {
+        $events?: ComponentEvents<TStruct>;
         $id?: string;
         $key?: string;
     }; // & PropsWithChildren?
