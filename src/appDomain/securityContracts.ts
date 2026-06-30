@@ -30,9 +30,9 @@ export const $AUTH_REFRESH = "APP.SECURITY.AUTH.REFRESH" as const;
 export const $AUTH_ENSURE = "APP.SECURITY.AUTH.ENSURE" as const;
 export const $AUTH_APPLY = "APP.SECURITY.AUTH.APPLY" as const;
 export const $AUTH_INFO_GET = "APP.SECURITY.AUTH.INFO.GET" as const;
-export const $AUTH_INFO_CHANGED = "APP.SECURITY.AUTH.INFO.CHANGED" as const; // UPDATED?
+// export const $AUTH_INFO_CHANGED = "APP.SECURITY.AUTH.INFO.CHANGED" as const;
 export const $CONFIG_GET = "APP.SECURITY.CONFIG.GET" as const;
-export const $CONFIG_CHANGED = "APP.SECURITY.CONFIG.CHANGED" as const;  // UPDATED?
+export const $CONFIG_CHANGED = "APP.SECURITY.CONFIG.CHANGED" as const;
 
 export type AuthProvider = {
     signIn(email: string, password: string): Promise<AuthInfo>;
@@ -95,9 +95,9 @@ export type BaseSecurityMsgStruct = MsgStruct<
             in: void;
             out: AuthInfo;
         };
-        [$AUTH_INFO_CHANGED]: {
-            in: AuthInfo;
-        };
+        // [$AUTH_INFO_CHANGED]: {
+        //     in: AuthInfo;
+        // };
         [$CONFIG_GET]: {
             in: void;
             out: BaseSecurityDomainConfig;

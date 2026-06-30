@@ -4,8 +4,8 @@ import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IReques
 import { HttpClientError } from "./httpClientError";
 import { BaseAppMsgStruct, BaseApiConfig } from "@/appDomain/appContracts";
 import { MsgBus, MsgSubOptions } from "@actdim/msgmesh/contracts";
-import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_SIGNIN, $AUTH_INFO_GET, $AUTH_SIGNOUT, AuthInfo, $AUTH_APPLY } from "@/appDomain/securityContracts";
-import { $CONFIG_CHANGED, $CONFIG_GET, BaseAppDomainConfig } from "@/appDomain/commonContracts";
+import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_APPLY } from "@/appDomain/securityContracts";
+import { $CONFIG_CHANGED, $CONFIG_GET, $RELOAD, BaseAppDomainConfig } from "@/appDomain/commonContracts";
 import { BaseAppContext } from "@/componentModel/contracts";
 
 export function extractApiName(name: string, suffixes: string[]): string | null {
@@ -201,7 +201,7 @@ export class HttpClient {
                     }
                     if (err.status === httpStatus.UPGRADE_REQUIRED) {
                         // await this.context.msgBus.request({
-                        //     channel: "APP.RELOAD"
+                        //     channel: $RELOAD
                         // });
                         throw err;
                     } else if (err.status === httpStatus.UNAUTHORIZED) {

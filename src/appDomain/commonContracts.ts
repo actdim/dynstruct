@@ -10,6 +10,7 @@ export const $NAV_HISTORY_READ = "APP.NAV.HISTORY.READ";
 export const $NAV_HISTORY_BACK = "APP.NAV.HISTORY.BACK";
 export const $NAV_HISTORY_FORWARD = "APP.NAV.HISTORY.FORWARD";
 
+export const $RELOAD = "APP.RELOAD";
 export const $NOTICE = "APP.NOTICE";
 export const $CONFIG_GET = "APP.CONFIG.GET";
 export const $CONFIG_SET = "APP.CONFIG.SET";
@@ -403,6 +404,9 @@ export type CommonAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes, TTypeRe
         // "APP.VERSION.GET": {
         //     in: void;
         // };
+        [$RELOAD]: {
+            in: void;
+        },
         [$NOTICE]: {
             // based on HTTP Problem Details RFC 7807 
             in: {

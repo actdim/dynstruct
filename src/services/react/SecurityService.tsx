@@ -8,7 +8,7 @@ import {
     $AUTH_REFRESH_REQUEST,
     $AUTH_ENSURE,
     $AUTH_INFO_GET,
-    $AUTH_INFO_CHANGED,
+    // $AUTH_INFO_CHANGED,
     $CONFIG_GET as $SECURITY_CONFIG_GET,
     $CONFIG_CHANGED as $SECURITY_CONFIG_CHANGED,
     BearerSignInCredentials,
@@ -19,7 +19,7 @@ import {
 } from '@/appDomain/securityContracts';
 import { getValuePrefixer } from '@actdim/utico/typeCore';
 import { jwtDecode } from 'jwt-decode';
-import { getResponseResult, IRequestParams, IRequestState, IResponseState } from '@/net/request';
+import { IRequestParams } from '@/net/request';
 import { HttpClientError } from '@/net/httpClientError';
 import {
     $STORE_GET,
@@ -99,7 +99,7 @@ type Struct = ComponentStruct<
                 | typeof $STORE_SET
                 | typeof $STORE_GET
                 | typeof $STORE_REMOVE
-                | typeof $AUTH_INFO_CHANGED
+                // | typeof $AUTH_INFO_CHANGED
                 | typeof $AUTH_SIGNIN_REQUEST
                 | typeof $AUTH_SIGNOUT_REQUEST
                 | typeof $AUTH_REFRESH_REQUEST
@@ -259,6 +259,12 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
 
     async function bearerSignIn(credentials: BearerSignInCredentials) {
         let url = m.domainConfig.endpoints?.authSignIn;
+
+        if (!url) {
+            throw new Error(
+                'Sign in endpoint is not configured (domainConfig.endpoints.authSignIn)',
+            );
+        }
 
         url = url.replace(/[?&]$/, '');
 
@@ -427,8 +433,8 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         return await getAuthInfo();
     }
 
-    function applyBearerAuth(request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in']) {
-        const authInfo = m.authInfo;
+    async function applyBearerAuth(request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in']) {
+        let authInfo = m.authInfo as BearerAuthInfo;
 
         const result: BaseAppMsgStruct[typeof $AUTH_APPLY]['out'] = {
             headers: {},
@@ -436,22 +442,30 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             query: {},
         };
 
-        let accessToken = authInfo?.accessToken;
-        if (!accessToken) {
-            throw HttpClientError.create({
-                status: httpStatus.UNAUTHORIZED,
+        if (!authInfo?.accessToken) {
+            const msg = await c.msgBus.request({
+                channel: 'APP.SECURITY.AUTH.ENSURE',
             });
+            authInfo = msg.payload as BearerAuthInfo;
         }
 
-        const authorizationHeader = 'Authorization';
-        const headerValue = `Bearer ${authInfo.accessToken}`;
-        result.headers[authorizationHeader] = headerValue;
+        // if (!authInfo?.accessToken) {
+        //     throw HttpClientError.create({
+        //         status: httpStatus.UNAUTHORIZED,
+        //     });
+        // }
+
+        if (authInfo?.accessToken) {
+            const authorizationHeader = 'Authorization';
+            const headerValue = `Bearer ${authInfo.accessToken}`;
+            result.headers[authorizationHeader] = headerValue;
+        }
 
         return result;
     }
 
-    function applyBasicAuth(request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in']) {
-        const authInfo = m.authInfo as BasicAuthInfo;
+    async function applyBasicAuth(request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in']) {
+        let authInfo = m.authInfo as BasicAuthInfo;
 
         const result: BaseAppMsgStruct[typeof $AUTH_APPLY]['out'] = {
             headers: {},
@@ -460,31 +474,39 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         };
 
         let accessToken: string = null;
-        if (authInfo) {
-            let accessToken = authInfo.accessToken;
-            if (!accessToken) {
-                if (authInfo.userName && authInfo.password) {
-                    accessToken = btoa(`${authInfo.userName}:${authInfo.password}`);
-                }
+        if (!authInfo?.accessToken) {
+            const msg = await c.msgBus.request({
+                channel: 'APP.SECURITY.AUTH.ENSURE',
+            });
+            authInfo = msg.payload as BasicAuthInfo;
+        }
+
+        accessToken = authInfo?.accessToken;
+
+        if (authInfo && !accessToken) {
+            if (authInfo.userName && authInfo.password) {
+                accessToken = btoa(`${authInfo.userName}:${authInfo.password}`);
             }
         }
 
-        if (!accessToken) {
-            throw HttpClientError.create({
-                status: httpStatus.UNAUTHORIZED,
-            });
-        }
+        // if (!accessToken) {
+        //     throw HttpClientError.create({
+        //         status: httpStatus.UNAUTHORIZED,
+        //     });
+        // }
 
-        const authorizationHeader = 'Authorization';
-        const headerValue = `Basic ${accessToken}`;
-        result.headers[authorizationHeader] = headerValue;
+        if (accessToken) {
+            const authorizationHeader = 'Authorization';
+            const headerValue = `Basic ${accessToken}`;
+            result.headers[authorizationHeader] = headerValue;
+        }
 
         return result;
     }
 
     function applyAuth(
         request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in'],
-    ): BaseAppMsgStruct[typeof $AUTH_APPLY]['out'] {
+    ): Promise<BaseAppMsgStruct[typeof $AUTH_APPLY]['out']> {
         // TODO: support "WWW-Authenticate" header from the server ("WWW-Authenticate: Bearer" etc)
         const authInfo = m.authInfo;
         if (m.useConventions) {
@@ -572,10 +594,10 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                     ? {
                           in: {
                               callback: (inMsg, outMsg) => {
-                                  // if (!m.useConventions) {
-                                  //     outMsg.status = 'skipped';
-                                  //     return undefined;
-                                  // }
+                                  //   if (!m.useConventions) {
+                                  //       outMsg.status = 'skipped';
+                                  //       return undefined;
+                                  //   }
                                   return applyAuth(inMsg.payload);
                               },
                           },
