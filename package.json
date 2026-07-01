@@ -29,16 +29,10 @@
         "README.md",
         "LICENSE"
     ],
-    "files(src)": [
-        "src",
-        "docs",
-        "README.md",
-        "LICENSE"
-    ],
     "exports": {
         "./*": {
-            "import": "./dist/*.es.js",
-            "types": "./dist/*.d.ts"
+            "types": "./dist/*.d.ts",
+            "import": "./dist/*.es.js"
         }
     },
     "typesVersions": {
@@ -52,7 +46,6 @@
         "access": "public"
     },
     "sideEffects": false,
-    "sideEffects?": [],
     "packageManager": "pnpm@10.21.0",
     "scripts": {
         "test": "npx vitest --config=vitest.node.config.ts --no-cache",
@@ -76,7 +69,7 @@
         "typecheck": "tsc -p tsconfig.json --noEmit"
     },
     "peerDependencies": {
-        "@actdim/msgmesh": ">=1.5.2",
+        "@actdim/msgmesh": ">=1.5.3",
         "@actdim/utico": ">=1.2.6",
         "http-status": ">=2.1.0",
         "jwt-decode": ">=4.0.0",
