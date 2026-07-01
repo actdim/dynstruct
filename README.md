@@ -36,8 +36,12 @@ Build scalable applications with dynamic structured components, explicit wiring,
   - [Service Integration](#service-integration-api-calls)
   - [Navigation](#navigation)
   - [Authentication & Security](#authentication--security)
+    - [Auth schemes, credentials, and AuthInfo](#auth-schemes-credentials-and-authinfo)
 - [Key Advantages](#key-advantages-react-examples)
 - [Architecture](#architecture)
+  - [Message Channels](#message-channels)
+    - [Common channels](#common-channels-commonappmsgstruct)
+    - [Authentication channels](#authentication-basesecuritymsgstruct)
 - [API Reference](#api-reference)
 - [Storybook Examples](#storybook-examples)
 - [Development](#development)
@@ -2260,20 +2264,73 @@ export const Page = toReact(usePage);
 
 `SecurityService` is a built-in service component that manages authentication state and auth flows via the message bus. Mount it near the app root — it provides auth channels to all descendant components automatically.
 
-**Key channels** (constants from `@actdim/dynstruct/appDomain/securityContracts`):
+**Key channels** (string constants exported from `@actdim/dynstruct/appDomain/securityContracts` — reference the channels by their string value, e.g. `'APP.SECURITY.AUTH.SIGNIN'`, not by the `$AUTH_*` variable name). The table below is the operational summary; see the [full auth channel reference](#authentication-basesecuritymsgstruct) for exact input/output payloads.
 
-| Channel | Direction | Description |
+| Channel | Kind | Description |
 |---|---|---|
-| `APP.SECURITY.AUTH.SIGNIN` | request/response | Sign in. Payload: credentials. Response: `AuthInfo`. |
-| `APP.SECURITY.AUTH.SIGNOUT` | request/response | Sign out and clear auth state. |
-| `APP.SECURITY.AUTH.REFRESH` | request/response | Refresh access token (Bearer). |
-| `APP.SECURITY.AUTH.ENSURE` | request | Ensure user is authenticated; redirects to login page if not. |
-| `APP.SECURITY.AUTH.INFO.GET` | request/response | Get current `AuthInfo` (access token, scheme, properties). |
-| `APP.SECURITY.AUTH.INFO.CHANGED` | event | Published when auth state changes. |
+| `APP.SECURITY.AUTH.SIGNIN` | request → `AuthInfo` | Authenticate and register the result. Uses the built-in flow (`domainConfig.endpoints.authSignIn`) or the custom handler behind `…SIGNIN.REQUEST`. |
+| `APP.SECURITY.AUTH.SIGNOUT` | request | Sign out, clear state. Uses the built-in flow (`endpoints.authSignOut`) or `…SIGNOUT.REQUEST`. |
+| `APP.SECURITY.AUTH.REFRESH` | request → `AuthInfo` | Refresh auth data without a full re-login (schemes that support it). Uses the built-in flow (`endpoints.authRefresh`) or `…REFRESH.REQUEST`. |
+| `APP.SECURITY.AUTH.ENSURE` | request → `AuthInfo` | Ensure valid auth is present; if missing, navigates (`APP.NAV.GOTO`) to `domainConfig.routes.authSignInPage` and waits for sign-in. |
+| `APP.SECURITY.AUTH.APPLY` | request → request enrichment | Apply authorization to an outgoing request (headers / query / credentials). Provided **only when `useConventions: true`**. |
+| `APP.SECURITY.AUTH.INFO.GET` | request → `AuthInfo` | Get the current `AuthInfo` (scheme, tokens, properties). |
+| `APP.SECURITY.CONFIG.GET` | request → `BaseSecurityDomainConfig` | Get the active security config. |
+| `APP.SECURITY.CONFIG.CHANGED` | event | Notify that `BaseSecurityDomainConfig` changed (SecurityService re-reads it). |
+
+The `…SIGNIN.REQUEST` / `…SIGNOUT.REQUEST` / `…REFRESH.REQUEST` channels are the **custom-handler hooks** used when `useConventions: false` (see below).
 
 **Modes:**
-- `useConventions: true` (default) — SecurityService handles the full Bearer flow (HTTP sign-in, token storage, refresh). Configure via `domainConfig.endpoints.*`.
-- `useConventions: false` — delegate to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use this for mock providers in demos or custom backends.
+- `useConventions: true` (default) — SecurityService performs the flow itself over HTTP against `domainConfig.endpoints.*` (sign-in, sign-out, refresh), persists `AuthInfo` through the storage channels, and authorizes outgoing requests via `APP.SECURITY.AUTH.APPLY`. The built-in conventions implement the **`Bearer`** scheme for sign-in/refresh and **`Bearer`** + **`Basic`** for request authorization.
+- `useConventions: false` — SecurityService delegates the real work to **your** handlers. On sign-in/out/refresh it issues a request on the matching `*.REQUEST` channel (`APP.SECURITY.AUTH.SIGNIN.REQUEST`, `APP.SECURITY.AUTH.SIGNOUT.REQUEST`, `APP.SECURITY.AUTH.REFRESH.REQUEST`) that your app must provide, and it does **not** provide `APP.SECURITY.AUTH.APPLY` — register your own if requests need authorization. Use this for mock providers in demos, custom backends, or non-Bearer schemes.
+
+#### Auth schemes, credentials, and `AuthInfo`
+
+SecurityService is **scheme-aware**. The scheme is a discriminant carried both on the sign-in credentials (`SignInCredentials`) and on the resulting auth state (`AuthInfo`).
+
+```typescript
+export type AuthScheme =
+    // IANA-registered
+    | 'Basic' | 'Bearer' | 'Digest' | 'NTLM' | 'Negotiate' | 'VAPID'
+    // de facto
+    | 'Session' | 'ApiKey';
+```
+
+**`SignInCredentials`** — the discriminated union passed to `APP.SECURITY.AUTH.SIGNIN` (and to `…SIGNIN.REQUEST`). Each member is selected by its `scheme`:
+
+| `scheme` | Type | Fields |
+|---|---|---|
+| `Basic` | `BasicSignInCredentials` | `userName`, `password` |
+| `Bearer` | `BearerSignInCredentials` | `userName`, `password` |
+| `Digest` | `DigestSignInCredentials` | `userName`, `password` |
+| `NTLM` | `NtlmSignInCredentials` | `userName`, `password`, `domain?` |
+| `Negotiate` | `NegotiateSignInCredentials` | `userName`, `password`, `domain?` |
+| `VAPID` | `VapidSignInCredentials` | `privateKey`, `subject` |
+| `Session` | `SessionSignInCredentials` | `userName`, `password` |
+| `ApiKey` | `ApiKeySignInCredentials` | `apiKey` |
+
+**`AuthInfo`** — the discriminated union returned by sign-in/refresh/`INFO.GET` and persisted by SecurityService. All members extend a common base:
+
+```typescript
+type AuthInfoBase = {
+    isAuthenticated?: boolean;
+    authority?: string;
+    provider?: string;
+    accessToken?: string;
+    properties?: Record<string, unknown>;
+    domain?: string;              // protection space / scope
+};
+```
+
+| `scheme` | Type | Scheme-specific fields (added to `AuthInfoBase`) |
+|---|---|---|
+| `Basic` | `BasicAuthInfo` | (also carries `userName`, `password` from `BasicSignInCredentials`) |
+| `Bearer` | `BearerAuthInfo` | `refreshToken?`, `tokenExpiresAt?` (for proactive refresh) |
+| `Digest` | `DigestAuthInfo` | `realm?`, `nonce?`, `algorithm?` |
+| `NTLM` | `NtlmAuthInfo` | `negotiationToken?` |
+| `Negotiate` | `NegotiateAuthInfo` | `negotiationToken?` |
+| `VAPID` | `VapidAuthInfo` | `publicKey?`, `subject?` |
+| `Session` | `SessionAuthInfo` | `sessionId?`, `refreshToken?`, `tokenExpiresAt?` |
+| `ApiKey` | `ApiKeyAuthInfo` | `apiKey?`, `keyName?`, `keyLocation?` (`'header' \| 'query' \| 'cookie'`) |
 
 ```typescript
 // React implementation
@@ -2346,9 +2403,10 @@ export const SecurePage = toReact(useSecurePage);
 `HttpClient` is a base class for typed API clients that integrate with the dynstruct service adapter system and `SecurityService`. Extend it to create a service class — each public method becomes a typed message bus channel via the adapter pattern.
 
 **What it does automatically:**
-- Injects `Authorization` header when `useAuth: true` is set on a request (pulls `AuthInfo` from SecurityService via the bus)
+- **Authorizes requests** when `useAuth: true` is set: before sending, it requests `APP.SECURITY.AUTH.APPLY` and merges the returned `headers` / `query` / `credentials` into the outgoing request. With `useConventions: true` SecurityService injects the `Authorization` header for the current scheme (`Bearer …` / `Basic …`); with `useConventions: false` your own `APPLY` provider decides.
+- **Recovers from `401`** once: on `Unauthorized` it requests `APP.SECURITY.AUTH.REFRESH` (when the response carries a `token-expired` header) or `APP.SECURITY.AUTH.ENSURE` (otherwise), then retries the request a single time.
 - Tracks in-flight requests and aborts them on `[Symbol.dispose]()` / component unmount
-- Applies base URL and API config from `domainConfig`
+- Reads base URL and per-API config from `domainConfig` (via `APP.CONFIG.GET` / `APP.CONFIG.CHANGED`)
 
 ```typescript
 import { HttpClient } from '@actdim/dynstruct/net/httpClient';
@@ -2909,41 +2967,59 @@ This separation means you can refactor logic, add validation, or change behavior
 
 ### Message Channels
 
-The framework provides standard message channels for common operations. Constants are exported from `appDomain/commonContracts` and `appDomain/securityContracts`.
+dynstruct declares a set of **standard, typed bus channels** that its own subsystems use and that application code may reuse. They are the members of two message structs:
 
-#### Navigation
-- `APP.NAV.GOTO` — Navigate to a path
-- `APP.NAV.CONTEXT.GET` — Get current navigation context
-- `APP.NAV.CONTEXT.CHANGED` — Navigation context changed event
-- `APP.NAV.HISTORY.READ` — Read history entry
-- `APP.NAV.HISTORY.BACK` / `APP.NAV.HISTORY.FORWARD` — Navigate history
+- **`CommonAppMsgStruct`** (`appDomain/commonContracts.ts`) — navigation, notifications, errors, fetch, storage, config, and DI.
+- **`BaseSecurityMsgStruct`** (`appDomain/securityContracts.ts`) — authentication and security config.
 
-#### Notifications
-- `APP.NOTICE` — Display user notification
+Each channel exports a string constant (e.g. `$NAV_GOTO = 'APP.NAV.GOTO'`). **In code and docs, reference channels by their string value** (`'APP.NAV.GOTO'`), not by the `$…` variable name.
 
-#### Errors
-- `APP.ERROR` — Global error handler
+Channels are typed over `@actdim/msgmesh` and fall into two shapes:
+- **request/response** — declares both `in` and `out`; call with `c.msgBus.request(...)` and await the `out` payload.
+- **event (fire-and-forget)** — declares only `in` (no `out`); publish with `c.msgBus.send(...)` and handle with a subscriber. For these you register an event handler; there is no response.
 
-#### HTTP
-- `APP.FETCH` — HTTP request
+#### Common channels (`CommonAppMsgStruct`)
 
-#### Storage
-- `APP.STORE.GET` — Get item from storage
-- `APP.STORE.SET` — Set item in storage
-- `APP.STORE.REMOVE` — Remove item from storage
+| Channel | In | Out | Shape | Purpose |
+|---|---|---|---|---|
+| `APP.RELOAD` | `void` | — | event | Reload the application. |
+| `APP.NOTICE` | `{ text; title?; detail?; severity?; presentation?; userAction?; category?; scope?; source?; properties? }` | `void` | request | Show a user-facing notification (RFC 7807-style problem details). |
+| `APP.CONFIG.GET` | `void` | `BaseAppDomainConfig` | request | Get the current app config. |
+| `APP.CONFIG.SET` | `BaseAppDomainConfig` | `void` | request | Replace the app config. |
+| `APP.CONFIG.CHANGED` | `BaseAppDomainConfig` | `void` | event | App config changed. |
+| `APP.NAV.GOTO` | `{ path: string \| number; params: any }` | `void` | request | Navigate to a path/route (or history delta). |
+| `APP.NAV.CONTEXT.GET` | `void` | `NavContext` | request | Get the current navigation context. |
+| `APP.NAV.CONTEXT.CHANGED` | `NavContext` | `void` | event | Navigation context changed. |
+| `APP.NAV.HISTORY.READ` | `number` | `NavContext` | request | Read a history entry by offset. |
+| `APP.ERROR` | `ErrorPayload & { properties? }` | `boolean` | request | Route an error to the global handler; `out` = handled. |
+| `APP.FETCH` | `{ url: string; params: RequestInit }` | `Response` | request | Perform a raw HTTP request through the app fetch channel. |
+| `APP.STORE.GET` | `{ key: string; useEncryption? }` | `StoreItem` | request | Read an item from storage. |
+| `APP.STORE.SET` | `{ key: string; value: any; useEncryption? }` | `void` | request | Write an item to storage. |
+| `APP.STORE.REMOVE` | `{ key: string }` | `void` | request | Remove an item from storage. |
+| `APP.CONTAINER.REGISTER` | `{ id; factory }` | `void` | request | Register a factory in the DI container. |
+| `APP.CONTAINER.RESOLVE` | `id` | `(params) => T` | request | Resolve a registered factory from the DI container. |
 
-#### Configuration
-- `APP.CONFIG.GET` — Get app configuration
-- `APP.SECURITY.CONFIG.GET` — Get security configuration
+> The constants `$NAV_HISTORY_BACK` / `$NAV_HISTORY_FORWARD` and `$MSGBUS_ERROR` (`= $C_ERROR`) are exported for convenience but are not members of `CommonAppMsgStruct`.
 
-#### Authentication
-- `APP.SECURITY.AUTH.SIGNIN` — Sign in user (broadcast after successful sign-in)
-- `APP.SECURITY.AUTH.SIGNIN.REQUEST` — Request sign-in (provider handles credentials)
-- `APP.SECURITY.AUTH.SIGNOUT` — Sign out user
-- `APP.SECURITY.AUTH.SIGNOUT.REQUEST` — Request sign-out
-- `APP.SECURITY.AUTH.REFRESH` — Refresh authentication token
-- `APP.SECURITY.AUTH.ENSURE` — Ensure user is authenticated (triggers login flow if not)
-- `APP.SECURITY.AUTH.INFO.GET` — Get current auth info
+#### Authentication (`BaseSecurityMsgStruct`)
+
+Auth channels live in `securityContracts.ts` and are provided by `SecurityService`. The `*.REQUEST` variants are the **custom-handler hooks**: they are used when `SecurityService` runs with `useConventions: false`, in which case your app must provide the handler behind each `*.REQUEST` channel (and, if requests must be authorized, provide `APP.SECURITY.AUTH.APPLY` yourself). With `useConventions: true`, SecurityService fulfils sign-in/out/refresh through `domainConfig.endpoints.*` and provides `APPLY` itself.
+
+| Channel | In | Out | Shape | Purpose |
+|---|---|---|---|---|
+| `APP.SECURITY.AUTH.SIGNIN.REQUEST` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` | request | Custom sign-in handler (used when `useConventions: false`). |
+| `APP.SECURITY.AUTH.SIGNIN` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` | request | Authenticate and register the fact/event. Uses the custom handler or `endpoints.authSignIn`. |
+| `APP.SECURITY.AUTH.SIGNOUT.REQUEST` | `AuthInfo` | — | event | Custom sign-out handler (used when `useConventions: false`). |
+| `APP.SECURITY.AUTH.SIGNOUT` | `AuthInfo` | — | event | Cancel authentication and register the fact/event. Uses the custom handler or `endpoints.authSignOut`. |
+| `APP.SECURITY.AUTH.REFRESH.REQUEST` | `AuthInfo` | `AuthInfo` | request | Custom refresh handler — refresh without a full re-login, for schemes that support it. |
+| `APP.SECURITY.AUTH.REFRESH` | `AuthInfo` | `AuthInfo` | request | Refresh auth data and register the fact/event. Uses the custom handler or `endpoints.authRefresh`. |
+| `APP.SECURITY.AUTH.ENSURE` | `void` | `AuthInfo` | request | Ensure auth is available; if not, navigate (`APP.NAV.GOTO`) to `routes.authSignInPage` and wait for sign-in. |
+| `APP.SECURITY.AUTH.APPLY` | `Partial<RequestInit> & { url: string; headers: Record<string,string> }` | `{ query?; headers?; credentials? }` | request | Apply custom authorization to a request (enrich headers/query/credentials). Provided only when `useConventions: true`. |
+| `APP.SECURITY.AUTH.INFO.GET` | `void` | `AuthInfo` | request | Get the current auth data. |
+| `APP.SECURITY.CONFIG.GET` | `void` | `BaseSecurityDomainConfig` | request | Get the security config (e.g. from `BaseAppDomainConfig.security`). |
+| `APP.SECURITY.CONFIG.CHANGED` | `BaseSecurityDomainConfig` | — | event | Security config changed; SecurityService re-reads it and restores stored `AuthInfo`. |
+
+See [Auth schemes, credentials, and `AuthInfo`](#auth-schemes-credentials-and-authinfo) for the `SignInCredentials` / `AuthInfo` payloads carried by these channels.
 
 ### Component Lifecycle
 
@@ -3100,7 +3176,7 @@ Use dedupe for the following packages to avoid version conflicts:
 ## Changelog
 
 ### 1.4.8
-- Extendable auth system — `$AUTH_APPLY` channel for custom auth header injection per-request
+- Extendable auth system — `APP.SECURITY.AUTH.APPLY` channel for custom auth header injection per-request
 - Unified `AuthInfo` type across sign-in, refresh, and session flows
 - Error boundary: all user code wrapped automatically; `onCatch` receives errors from actions, events, effects, bindings
 - Propagation modes — events/effects swallow after dispatch; actions/msgBroker re-throw to caller

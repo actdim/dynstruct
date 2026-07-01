@@ -24,5 +24,5 @@ export function getGlobalFlags() {
         return defaultGlobalFlags;
     }
 
-    return window.__DYNSTRUCT__ || defaultGlobalFlags;
+    return globalObj.__DYNSTRUCT__ || defaultGlobalFlags;
 }

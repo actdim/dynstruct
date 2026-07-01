@@ -594,10 +594,10 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                     ? {
                           in: {
                               callback: (inMsg, outMsg) => {
-                                  //   if (!m.useConventions) {
-                                  //       outMsg.status = 'skipped';
-                                  //       return undefined;
-                                  //   }
+                                  // if (!m.useConventions) {
+                                  //     outMsg.status = 'skipped';
+                                  //     return undefined;
+                                  // }
                                   return applyAuth(inMsg.payload);
                               },
                           },

@@ -2,6 +2,8 @@
 
 This file defines how agents should implement and modify code in this repository.
 
+> `CLAUDE.md` is a symlink to this file — edit `AGENTS.md` only; changes apply to both.
+
 ## Goal
 
 Produce framework-consistent `dynstruct` code:
@@ -45,12 +47,15 @@ Use public package paths (or equivalent local source paths in this repo):
 - `useConventions: true` (default): handles Bearer token flow (HTTP sign-in, storage, refresh). Configure via `domainConfig.endpoints.*`.
 - `useConventions: false`: delegates to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use for demos, mocks, or custom backends.
 
-Key channels (constants from `appDomain/securityContracts`):
-- `$AUTH_SIGNIN` — sign in, returns `AuthInfo`
-- `$AUTH_SIGNOUT` — sign out, clears state
-- `$AUTH_ENSURE` — ensure authenticated; redirects to login if not
-- `$AUTH_INFO_GET` — get current `AuthInfo`
-- `$AUTH_INFO_CHANGED` — event published on auth state change
+Key channels (string constants from `appDomain/securityContracts` — reference by the string value, e.g. `'APP.SECURITY.AUTH.SIGNIN'`, not by the `$AUTH_*` variable name):
+- `APP.SECURITY.AUTH.SIGNIN` — authenticate and register the result; returns `AuthInfo`
+- `APP.SECURITY.AUTH.SIGNOUT` — sign out, clears state
+- `APP.SECURITY.AUTH.REFRESH` — refresh auth data without a full re-login; returns `AuthInfo`
+- `APP.SECURITY.AUTH.ENSURE` — ensure authenticated; navigates to the sign-in page if not; returns `AuthInfo`
+- `APP.SECURITY.AUTH.APPLY` — authorize an outgoing request (provided only when `useConventions: true`)
+- `APP.SECURITY.AUTH.INFO.GET` — get current `AuthInfo`
+- `APP.SECURITY.CONFIG.GET` / `APP.SECURITY.CONFIG.CHANGED` — read / react to `BaseSecurityDomainConfig`
+- `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `…SIGNOUT.REQUEST` / `…REFRESH.REQUEST` — custom-handler hooks used when `useConventions: false`
 
 ### HttpClient
 
@@ -75,7 +80,67 @@ export class MyApiClient extends HttpClient {
 
 See `src/_stories/componentModel/securityService/SecureApiClient.ts` for a working example.
 
+### Auth schemes, credentials, and `AuthInfo`
+
+SecurityService is scheme-aware. The scheme is a discriminant on both the sign-in request and the auth state:
+
+```ts
+type AuthScheme =
+    | "Basic" | "Bearer" | "Digest" | "NTLM" | "Negotiate" | "VAPID"  // IANA
+    | "Session" | "ApiKey";                                            // de facto
+```
+
+- `SignInCredentials` — discriminated union by `scheme`, passed to `APP.SECURITY.AUTH.SIGNIN` (and `…SIGNIN.REQUEST`). Members: `Basic`/`Bearer`/`Digest`/`Session` (`userName`, `password`), `NTLM`/`Negotiate` (+ `domain?`), `VAPID` (`privateKey`, `subject`), `ApiKey` (`apiKey`).
+- `AuthInfo` — discriminated union by `scheme`, returned by sign-in/refresh/`INFO.GET` and persisted by SecurityService. All members extend `AuthInfoBase` (`isAuthenticated?`, `authority?`, `provider?`, `accessToken?`, `properties?`, `domain?`). Scheme extras: `Bearer` (`refreshToken?`, `tokenExpiresAt?`), `Session` (`sessionId?`, `refreshToken?`, `tokenExpiresAt?`), `Digest` (`realm?`, `nonce?`, `algorithm?`), `NTLM`/`Negotiate` (`negotiationToken?`), `VAPID` (`publicKey?`, `subject?`), `ApiKey` (`apiKey?`, `keyName?`, `keyLocation?`).
+
+Built-in conventions (`useConventions: true`) currently implement `Bearer` for sign-in/refresh and `Bearer` + `Basic` for request authorization (`APPLY`). Other schemes require `useConventions: false` with your own `*.REQUEST` / `APPLY` handlers.
+
 When editing this repo source, mirror existing import style from nearby files.
+
+## Standard Bus Channels
+
+dynstruct declares typed bus channels (`@actdim/msgmesh`) used by its subsystems and reusable by app code. They are members of `CommonAppMsgStruct` (`commonContracts.ts`) and `BaseSecurityMsgStruct` (`securityContracts.ts`). Each exports a string constant (`$NAV_GOTO = 'APP.NAV.GOTO'`); **reference channels by string value, not by the `$…` variable**. Channels with both `in`/`out` are request/response (`msgBus.request`); channels with only `in` are events (`msgBus.send` + subscriber).
+
+### Common channels (`CommonAppMsgStruct`)
+
+| Channel | In | Out |
+|---|---|---|
+| `APP.RELOAD` | `void` | — (event) |
+| `APP.NOTICE` | `{ text; title?; detail?; severity?; presentation?; userAction?; category?; scope?; source?; properties? }` | `void` |
+| `APP.CONFIG.GET` | `void` | `BaseAppDomainConfig` |
+| `APP.CONFIG.SET` | `BaseAppDomainConfig` | `void` |
+| `APP.CONFIG.CHANGED` | `BaseAppDomainConfig` | `void` (event) |
+| `APP.NAV.GOTO` | `{ path: string \| number; params: any }` | `void` |
+| `APP.NAV.CONTEXT.GET` | `void` | `NavContext` |
+| `APP.NAV.CONTEXT.CHANGED` | `NavContext` | `void` (event) |
+| `APP.NAV.HISTORY.READ` | `number` | `NavContext` |
+| `APP.ERROR` | `ErrorPayload & { properties? }` | `boolean` |
+| `APP.FETCH` | `{ url: string; params: RequestInit }` | `Response` |
+| `APP.STORE.GET` | `{ key: string; useEncryption? }` | `StoreItem` |
+| `APP.STORE.SET` | `{ key: string; value: any; useEncryption? }` | `void` |
+| `APP.STORE.REMOVE` | `{ key: string }` | `void` |
+| `APP.CONTAINER.REGISTER` | `{ id; factory }` | `void` |
+| `APP.CONTAINER.RESOLVE` | `id` | `(params) => T` |
+
+(`$NAV_HISTORY_BACK` / `$NAV_HISTORY_FORWARD` / `$MSGBUS_ERROR` are exported constants but not members of `CommonAppMsgStruct`.)
+
+### Auth channels (`BaseSecurityMsgStruct`)
+
+Provided by `SecurityService`. The `*.REQUEST` channels are the custom-handler hooks activated when `useConventions: false`.
+
+| Channel | In | Out |
+|---|---|---|
+| `APP.SECURITY.AUTH.SIGNIN.REQUEST` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` |
+| `APP.SECURITY.AUTH.SIGNIN` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` |
+| `APP.SECURITY.AUTH.SIGNOUT.REQUEST` | `AuthInfo` | — (event) |
+| `APP.SECURITY.AUTH.SIGNOUT` | `AuthInfo` | — (event) |
+| `APP.SECURITY.AUTH.REFRESH.REQUEST` | `AuthInfo` | `AuthInfo` |
+| `APP.SECURITY.AUTH.REFRESH` | `AuthInfo` | `AuthInfo` |
+| `APP.SECURITY.AUTH.ENSURE` | `void` | `AuthInfo` |
+| `APP.SECURITY.AUTH.APPLY` | `Partial<RequestInit> & { url: string; headers: Record<string,string> }` | `{ query?; headers?; credentials? }` |
+| `APP.SECURITY.AUTH.INFO.GET` | `void` | `AuthInfo` |
+| `APP.SECURITY.CONFIG.GET` | `void` | `BaseSecurityDomainConfig` |
+| `APP.SECURITY.CONFIG.CHANGED` | `BaseSecurityDomainConfig` | — (event) |
 
 ## Component Authoring Standard
 
@@ -308,6 +373,19 @@ For service APIs:
 When adding a feature:
 - update or add Storybook example if behavior is user-visible
 - keep naming aligned with existing stories and component files
+
+## TypeScript Config Layout
+
+Solution-style split — do not collapse it back into one config:
+
+- `tsconfig.base.json` — shared `compilerOptions` only. `moduleResolution: "bundler"` (this is a Vite package; do NOT switch to `"node"`/`node10` (deprecated) or `nodenext` (would force `.js` import extensions)). No `baseUrl` (deprecated in TS 6.0) — `paths` targets are relative: `"@/*": ["./src/*"]`. `extends` inherits only `compilerOptions`, not `include`/`files`/`references`.
+- `tsconfig.json` — pure orchestrator: `{ "files": [], "references": [...] }`. It compiles nothing itself; it only wires the leaf projects.
+- `tsconfig.build.json` — library build; emits `.d.ts` to `dist`. Consumed by `vite-plugin-dts` via its `tsconfigPath` (must stay a config WITHOUT `references`, else the plugin emits zero declarations).
+- `tsconfig.dev.json` — editor/dev + tests; broad `types` (node, vitest/globals, vite/client, …).
+
+Rules:
+- Root Node files (`packageConfig.ts`, `vite.config.ts`, `vitest*.config.ts`) get node types via `types: ["node"]` in the build/dev projects — NOT by editing includes elsewhere or adding `node` to a shared `types` array (that leaks node globals into browser `src`). If the editor shows "Cannot find name 'path'/'__dirname'" on such a file, it means the file isn't routed to a project — check the `references` chain, don't hack the source with `/// <reference>`.
+- Always type-check the solution with `tsc -b` (build mode), never `tsc -p` — `-p` sees `files: []` and checks nothing. Both `typecheck` and `build` scripts already use `tsc -b tsconfig.json`.
 
 ## Validation Checklist (before finishing)
 

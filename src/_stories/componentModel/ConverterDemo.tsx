@@ -40,7 +40,10 @@ export const useConverterDemo = (params: ComponentParams<Struct>): Component<Str
                 value: bind(
                     () => new Date(m.timestamp).toISOString(),
                     (v) => {
-                        m.timestamp = +new Date(v);
+                        const ts = +new Date(v);
+                        if (!isNaN(ts)) {
+                            m.timestamp = ts;
+                        }
                     },
                 ),
             }),

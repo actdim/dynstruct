@@ -54,7 +54,7 @@
         "test:react:w": "npx vitest --config=vitest.react.config.ts --watch",
         "test:v8": "npx vite",
         "lint": "eslint \"./**/*.{ts,tsx}\" -f visualstudio --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
-        "build": "tsc -b tsconfig.json --noEmit && vite build",
+        "build": "tsc -b tsconfig.json && vite build",
         "pnpm:u": "pnpm update",
         "pnpm:ou": "pnpm outdated",
         "ncu:l": "ncu",
@@ -66,11 +66,11 @@
         "format:check": "prettier --check .",
         "storybook": "storybook dev -p 6006",
         "build-storybook": "storybook build",
-        "typecheck": "tsc -p tsconfig.json --noEmit"
+        "typecheck": "tsc -b tsconfig.json"
     },
     "peerDependencies": {
-        "@actdim/msgmesh": ">=1.5.3",
-        "@actdim/utico": ">=1.2.6",
+        "@actdim/msgmesh": ">=1.5.5",
+        "@actdim/utico": ">=1.2.7",
         "http-status": ">=2.1.0",
         "jwt-decode": ">=4.0.0",
         "mobx": ">=6.15.0",

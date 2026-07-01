@@ -20,7 +20,7 @@ function getSrcFiles(dir: string): string[] {
         if (entry.name.startsWith("_")) return [];
         if (entry.isDirectory()) {
             return getSrcFiles(fileName);
-        }        
+        }
         return fileName.endsWith(".ts") || fileName.endsWith(".tsx") ? [fileName] : [];
     });
 }

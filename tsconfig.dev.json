@@ -1,0 +1,41 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "composite": true,
+        "noEmit": true,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "declarationMap": true,
+        "declarationDir": "./.out",
+        "outDir": "./.out",
+        "sourceMap": true,
+        "inlineSources": true,
+        "inlineSourceMap": false,
+        "types": [
+            "node",
+            "mocha",
+            "chai",
+            "vitest/globals",
+            "vite/client",
+            "@testing-library/jest-dom"
+        ],
+        "paths": {
+            "@/*": ["./src/*"]
+        }
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "tests/**/*.ts",
+        "tests/**/*.tsx",
+        "packageConfig.ts",
+        "package.json",
+        "vite.config.ts",
+        "vitest.config.ts",
+        "vitest.node.config.ts",
+        "vitest.setup.ts",
+        "vitest.react.config.ts",
+        "vitest.react.setup.ts"
+    ],
+    "exclude": [".out", "node-modules"]
+}

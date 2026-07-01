@@ -13,7 +13,7 @@ export default defineConfig({
         setupFiles: [resolve('./vitest.react.setup.ts')],
         include: ['tests/react/**/*.{test,spec}.{ts,tsx}'],
         typecheck: {
-            tsconfig: 'tsconfig.react.vitest.json',
+            tsconfig: 'tsconfig.dev.json',
         },
         root: resolve('.'),
     },

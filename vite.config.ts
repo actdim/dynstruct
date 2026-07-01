@@ -24,18 +24,21 @@ export default defineConfig({
             external: config.externals,
             output: {
                 exports: "named",
-                preserveModules: true,
+                preserveModules: true, // incompatible with inlineDynamicImports: true
                 preserveModulesRoot: "src",
                 format: "esm",
                 entryFileNames: "[name].es.js", // mjs
-                sourcemapExcludeSources: true
+                sourcemapExcludeSources: false
             }
         },
         sourcemap: true,
-        // minify: "esbuild",
+        minify: false,
+        emptyOutDir: true
     },
     esbuild: {
-        // keepNames: true
+        // sourcemap: true,
+        // target: "esnext",
+        keepNames: true // important if minify: "esbuild"
     },
     server: {
         port: 5173,
@@ -51,9 +54,9 @@ export default defineConfig({
         // }),
         tsConfigPaths(),
         dts({
+            tsconfigPath: "./tsconfig.build.json",
             outDir: "dist",
             entryRoot: "src",
-            // include: ["src"],
             include: ["src/**/*.ts", "src/**/*.tsx"],
             exclude: ["src/_stories/**/*"],
             rollupTypes: false,

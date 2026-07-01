@@ -1,7 +1,7 @@
 {
-    "extends": "../../tsconfig.react.vitest.json",
-    "include": [
-        "**/*.ts",
-        "**/*.tsx"
-    ]
+    "extends": "../../tsconfig.dev.json",
+    "compilerOptions": {
+        "composite": false
+    },
+    "include": ["**/*.ts", "**/*.tsx"]
 }

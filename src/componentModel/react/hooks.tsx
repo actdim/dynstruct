@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, ReactNode } from 'react';
 import React from 'react';
-import { Func, Mutable } from '@actdim/utico/typeCore';
+import { Mutable } from '@actdim/utico/typeCore';
 import { observer } from 'mobx-react-lite';
 import { runInAction } from 'mobx';
 import { useLazyRef } from '@/reactHooks';
@@ -10,7 +10,6 @@ import {
     useComponentContext,
 } from '@/componentModel/react/componentContext';
 import {
-    $isBinding,
     $isComponent,
     $SYSTEM_TOPIC,
     Component,
