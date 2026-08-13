@@ -936,24 +936,3 @@ export function createEffect<
 
     return { pause, resume, stop };
 }
-
-// TODO: move to utico
-// function asyncToGeneratorFlow(asyncFn: (...args: any[]) => Promise<any>) {
-//     return function* (...args: any[]) {
-//         const result = yield asyncFn(...args);
-//         return result;
-//     };
-// }
-
-// TODO: handle user code properly in all places (runSafe)
-// TODO: support granular access control
-// TODO: support control persistence (with providers)
-// TODO: component type (resource-boundary/layout/UI) support
-// TODO: add skeleton/"not-ready" state support
-// TODO: visibility (visible/none/hidden) & interaction (disabled/readOnly) support (security etc) with fallback view
-// TODO: automatic children validation
-// TODO: bind with only one function (getter)
-// TODO: TRPC integration
-// TODO: SignalR integration
-// TODO: QraphQL integration
-// TODO: React (TanStack) Query integration

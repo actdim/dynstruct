@@ -5,9 +5,6 @@ import HttpStatus from "http-status";
 export const API_ERROR_INTERNAL_ERROR = "API_ERROR_INTERNAL_ERROR";
 
 // "notmodified", "nocontent", "error", "timeout", "abort", or "parsererror"
-
-// TODO: use http-problem-details or error-http-response (application/problem+json)
-
 export interface IApiErrorOptions<TDetails = any> extends ErrorOptions {
     cause?: TDetails;
     // type/code

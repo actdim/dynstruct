@@ -24,8 +24,6 @@ export const $FETCH = "APP.FETCH";
 export const $STORE_GET = "APP.STORE.GET";
 export const $STORE_SET = "APP.STORE.SET";
 export const $STORE_REMOVE = "APP.STORE.REMOVE";
-// TODO: HAS, CLEAR
-
 export const $CONTAINER_REGISTER = "APP.CONTAINER.REGISTER";
 export const $CONTAINER_RESOLVE = "APP.CONTAINER.RESOLVE";
 

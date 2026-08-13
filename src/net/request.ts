@@ -146,16 +146,13 @@ export interface IRequestCallbacks<TResult = any> {
 
 // IRequestOptions
 export interface IRequestParams<TResult = any> extends RequestInit {
-    // TODO: support WebSocket transport
     id?: string;
     tag?: string;
     url: string;
     // authType?: ...;
     useAuth?: boolean;
     // authToken?: string; // bearerToken
-    // TODO: support
     // accepts: string[]; // https://developer.mozilla.org/ru/docs/Web/HTTP/Headers/Accept
-    // TODO: support
     crossDomain?: boolean;
     // contentType?: MimeType;
     contentType?: string;

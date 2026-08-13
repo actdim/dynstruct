@@ -278,8 +278,6 @@ export class HttpClient {
         return request.result;
     }
 }
-
-// TODO: support request cancellation
 // https://stackoverflow.com/questions/31061838/how-do-i-cancel-an-http-fetch-request
 // https://mukeshprajapati0251.medium.com/cancel-rest-api-pending-request-1af65e70366d
 

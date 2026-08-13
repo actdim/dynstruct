@@ -169,5 +169,3 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
 
 export type ComponentStateExampleStruct = Struct;
 export const ComponentStateExample = toReact(useComponentStateExample);
-
-// TODO: automatic children validation

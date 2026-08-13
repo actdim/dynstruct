@@ -123,9 +123,6 @@ export const useNavService = (params: ComponentParams<Struct>) => {
     c = useComponent(def, params);
     m = c.model;
 
-    // TODO: support deps
-    // location, navType, params, searchParams
-
     return c;
 };
 

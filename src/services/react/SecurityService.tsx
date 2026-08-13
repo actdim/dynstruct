@@ -507,7 +507,6 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
     function applyAuth(
         request: BaseAppMsgStruct[typeof $AUTH_APPLY]['in'],
     ): Promise<BaseAppMsgStruct[typeof $AUTH_APPLY]['out']> {
-        // TODO: support "WWW-Authenticate" header from the server ("WWW-Authenticate: Bearer" etc)
         const authInfo = m.authInfo;
         if (m.useConventions) {
             switch (authInfo.scheme) {
