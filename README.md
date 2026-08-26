@@ -67,9 +67,9 @@ Build scalable applications with dynamic structured components, explicit wiring,
 
 **Planned Support:**
 - 🚧 **SolidJS** - In development
-- 🚧 **Vue.js** - Planned
+### UI Component Adapters & Companion Libraries
 
-The architectural core is framework-agnostic, allowing the same component structures and patterns to work across different UI frameworks.
+- 🎨 **[@actdim/dynstruct-mui](https://github.com/actdim/dynstruct-mui)** — Official Material UI (MUI v5/v6) component adapters for dynstruct. Provides ready-to-use reactive hook-constructors and React components (`Button`, `TextField`, `Dialog`, `Drawer`, `Table`, `Tabs`, `Autocomplete`, etc.).
 
 ## Features
 
