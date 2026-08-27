@@ -78,36 +78,75 @@ export const getResponseText = (response: Response) => response.text();
 
 export const getResponseArrayBuffer = (response: Response) => response.arrayBuffer();
 
+export const getHeaderValue = (headers: HeadersInit | Headers | undefined | null, name: string): string | undefined => {
+    if (!headers) {
+        return undefined;
+    }
+    if (headers instanceof Headers || typeof (headers as any).get === "function") {
+        return (headers as Headers).get(name) ?? undefined;
+    }
+    if (Array.isArray(headers)) {
+        const entry = headers.find(([key]) => {
+            return key.toLowerCase() === name.toLowerCase();
+        });
+        return entry ? entry[1] : undefined;
+    }
+    const key = Object.keys(headers).find((k) => {
+        return k.toLowerCase() === name.toLowerCase();
+    });
+    return key ? (headers as Record<string, string>)[key] : undefined;
+};
+
+export const getBaseContentType = (contentType?: string | null): string => {
+    if (!contentType) {
+        return "";
+    }
+    return contentType.split(";")[0].trim().toLowerCase();
+};
+
 // https://stackoverflow.com/questions/64781995/how-to-get-mime-type-of-an-array-buffer-object
 export async function getResponseResult(response: IResponseState, request: IRequestState): Promise<any> {
-    // const headers: { [key: string]: string } = {};
-    let contentType =
-        request.contentType ||
-        (request.headers && request.headers instanceof Headers ? request.headers.get("content-type") : request.headers["Content-Type"]);
+    const requestContentType = request.contentType || getHeaderValue(request.headers, "content-type");
+    let responseContentType: string | undefined = undefined;
     if (response.headers) {
-        // for (const k in response.headers.keys()) {
-        //     headers[k] = response.headers.get[k];
-        // }
-        // if (response.headers.forEach) {
-        //     response.headers.forEach((v, k) => headers[k] = v);
-        // }
-        contentType = response.headers instanceof Headers ? response.headers.get("content-type") : response.headers["content-type"];
+        responseContentType = getHeaderValue(response.headers, "content-type");
     }
+
+    const baseRequestContentType = getBaseContentType(requestContentType);
+    const baseResponseContentType = getBaseContentType(responseContentType);
+
+    if (
+        baseRequestContentType &&
+        baseResponseContentType &&
+        baseRequestContentType !== "*/*" &&
+        baseResponseContentType !== baseRequestContentType
+    ) {
+        throw new HttpClientError(
+            `Response Content-Type '${responseContentType}' does not match requested Content-Type '${requestContentType}'`,
+            {
+                status: response.status,
+                request,
+                response,
+                name: "CONTENT_TYPE_MISMATCH"
+            }
+        );
+    }
+
     let result: any = undefined;
     if (!response.resolved) {
         response.resolved = {};
     }
     const resolved = response.resolved;
-    contentType = (contentType || "").toLowerCase();
+    const contentType = baseResponseContentType || baseRequestContentType;
     if (contentType.startsWith("text/")) {
         result = await response.text();
-    } else if (contentType.startsWith("image/")) {
+    } else if (contentType.startsWith("image/") || contentType.startsWith("audio/") || contentType.startsWith("video/")) {
         result = await response.blob();
     } else {
         if (contentType.startsWith("application/json")) {
             result = await response.json();
             resolved.json = result;
-        } else if (contentType.startsWith("octet-stream")) {
+        } else if (contentType.startsWith("application/octet-stream")) {
             result = await response.blob();
             resolved.blob = result;
         } else {
@@ -132,7 +171,7 @@ export async function getResponseResult(response: IResponseState, request: IRequ
     return result;
 }
 
-export interface IRequestCallbacks<TResult = any> {
+export type IRequestCallbacks<TResult = any> = {
     // onBeforeExecuteRequest
     onBeforeSendRequest?: (event: {
         request: IRequestParams;
@@ -142,10 +181,10 @@ export interface IRequestCallbacks<TResult = any> {
         result?: TResult;
     }) => Promise<void>;
     onResponseRead?: (event: { response: Response; result: TResult }) => Promise<void>;
-}
+};
 
 // IRequestOptions
-export interface IRequestParams<TResult = any> extends RequestInit {
+export type IRequestParams<TResult = any> = RequestInit & {
     id?: string;
     tag?: string;
     url: string;
@@ -159,4 +198,4 @@ export interface IRequestParams<TResult = any> extends RequestInit {
     httpOnly?: boolean;
     // transportType: ...;
     callbacks?: IRequestCallbacks<TResult>;
-}
+};

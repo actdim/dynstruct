@@ -11,19 +11,30 @@ import { BaseAppContext } from "@/componentModel/contracts";
 export function extractApiName(name: string, suffixes: string[]): string | null {
     if (!name) {
         return name;
-        // return null; // ?
     }
-    const escaped = suffixes.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    const escaped = suffixes.map((s) => {
+        return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    });
     const group = escaped.join("|");
     const pattern = new RegExp(`(_?(${group}))+?$`, "i");
 
     let result = name.replace(pattern, "");
 
-    result = result.trim();
-    return result.length > 0 ? result : name;
+    result = result.trim().toLowerCase();
+    return result.length > 0 ? result : name.toLowerCase();
 }
 
-const API_SUFFIXES = ["api", "controller", "client", "fetcher"];
+const API_SUFFIXES = [
+    'CLIENT',
+    'API',
+    'SERVICE',
+    'FETCHER',
+    'CONTROLLER',
+    'LOADER',
+    'REPOSITORY',
+    'PROVIDER'
+];
+
 export class HttpClient {
 
     public baseUrl: string;
@@ -73,12 +84,6 @@ export class HttpClient {
         this.abortController.abort();
     }
 
-    protected async init() {
-        if (!this.baseUrl) {
-            await this.update();
-        }
-    }
-
     protected async updateConfig(config?: BaseApiConfig) {
         this.apiConfig = config;
         if (config?.url) {
@@ -93,16 +98,30 @@ export class HttpClient {
             });
             config = msg.payload;
         }
-        this.baseUrl = config?.baseUrl;
+        if (!config) {
+            const clientName = this.name || "HttpClient";
+            throw new Error(`"${clientName}" configuration failed: the config is missing or invalid.`);
+        }
+        this.baseUrl = config.baseApiUrl || config.baseUrl;
         let apiId = this.apiId;
         if (!apiId) {
-            this.apiId = apiId = extractApiName(this.name, this.apiSuffixes);
+            apiId = extractApiName(this.name, this.apiSuffixes);
+            this.apiId = apiId;
         }
-        const apiEntry = Object.entries(config?.apis || {}).find((entry) => entry[0].toLowerCase() === apiId?.toLowerCase());
-        if (!apiEntry) {
-            console.warn(`API "${apiId}" is not defined in the current configuration. Using default configuration.`);
+        if (apiId) {
+            const apiEntry = Object.entries(config.apis || {}).find((entry) => entry[0].toLowerCase() === apiId.toLowerCase());
+            if (!apiEntry) {
+                this.msgBus.send({
+                    channel: "APP.NOTICE",
+                    payload: {
+                        text: `API "${apiId}" is not defined in the current configuration. Using default configuration.`,
+                        source: this.name || "HttpClient",
+                        severity: "warning"
+                    }
+                });
+            }
+            this.updateConfig(apiEntry?.[1]);
         }
-        this.updateConfig(apiEntry?.[1]);
     }
 
     protected async applyAuth(request: IRequestParams) {
@@ -234,7 +253,11 @@ export class HttpClient {
 
     // T extends IApiResponse
     async fetch<T>(requestParams: IRequestParams): Promise<T> {
-        await this.init;
+
+        if (!requestParams.url) {
+            const clientName = this.name || "HttpClient";
+            throw new Error(`"${clientName}" request failed: 'requestParams.url' is missing or invalid.`);
+        }
 
         const defaultParams: Partial<IRequestParams> = {
             contentType: "application/json",

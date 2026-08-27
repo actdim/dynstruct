@@ -1,7 +1,8 @@
 import { $C_ERROR, ErrorPayload, MsgStruct } from "@actdim/msgmesh/contracts";
-import { KeysOf } from "@actdim/utico/typeCore";
+import { KeysOf, RemoveSuffix, ToLower } from "@actdim/utico/typeCore";
 import { StoreItem } from "@actdim/utico/store/storeContracts";
 import { TypeRegistry } from "@/di/diContracts";
+import { BaseServiceSuffix } from "@actdim/msgmesh/adapters";
 
 export const $NAV_GOTO = "APP.NAV.GOTO";
 export const $NAV_CONTEXT_GET = "APP.NAV.CONTEXT.GET";
@@ -375,7 +376,7 @@ export type ActionStatus =
 
 export type ActionRisk =
     // read-only, navigation
-    | "safe"    
+    | "safe"
     // low: trivial mutation (toggle UI setting)
     // medium: data change (edit/save)
     // high: sensitive mutation (permissions, billing)
@@ -520,9 +521,14 @@ export type BaseSecurityDomainConfig = {
     };
 };
 
+// ToApiKey
+export type ToApiName<TServiceName extends string, Suffix extends string = BaseServiceSuffix> =
+    ToLower<RemoveSuffix<Uppercase<TServiceName>, Suffix>>;
+
 // BaseApp(Domain)Options
 export type BaseAppDomainConfig<
-    TApiConfig extends BaseApiConfig = BaseApiConfig,
+    // TApiKeys
+    TApiNames extends keyof any = keyof any,
     TSecurityConfig extends BaseSecurityDomainConfig = BaseSecurityDomainConfig
 > = {
     id: string;
@@ -530,8 +536,10 @@ export type BaseAppDomainConfig<
     baseUrl?: string;
     security: TSecurityConfig;
     defaultApi?: string;
-    apis?: Record<string, TApiConfig>;
-    // HATEOAS? (React Admin)
+    baseApiUrl?: string;
+    apis?: Record<TApiNames, BaseApiConfig>;
+    // HATEOAS?
 };
 
 export type CommonAppMsgChannels<TChannel extends keyof CommonAppMsgStruct | Array<keyof CommonAppMsgStruct>> = KeysOf<CommonAppMsgStruct, TChannel>;
+
