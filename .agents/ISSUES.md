@@ -7,6 +7,8 @@
 
 ## Backlog
 
+- [ ] (feat) [livestore-reactive-dashboard-widgets](file://.agents/ISSUES/feat--livestore-reactive-dashboard-widgets.md)
+- [ ] (feat) [business-telemetry-declarations](file://.agents/ISSUES/feat--business-telemetry-declarations.md)
 - [ ] (debt) [async-to-generator-flow](file://.agents/ISSUES/debt--async-to-generator-flow.md)
 - [ ] (feat) [granular-access-control](file://.agents/ISSUES/feat--granular-access-control.md)
 - [ ] (feat) [control-persistence-providers](file://.agents/ISSUES/feat--control-persistence-providers.md)
