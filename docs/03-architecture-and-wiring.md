@@ -44,12 +44,24 @@ events: {
 
 ## Message Bus Communication
 
-Components communicate over typed channels provided by `@actdim/msgmesh`.
+Components communicate over typed channels provided by `@actdim/msgmesh`. `@actdim/dynstruct` provides deep architectural integration with the message bus.
+
+### Core Integration Principles
+
+1. **Implicit Context Injection**: `msgBus` is initialized once at the application root (`<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`). All child components receive `msgBus` automatically through context. **Never manually instantiate a local `createMsgBus()` inside components and never pass `msgBus` via props**.
+2. **Declarative Contracts (`msgScope` & `msgBroker`)**: Declare communication channels on `ComponentStruct.msgScope` and register handlers in `ComponentDef.msgBroker`. Handlers are automatically bound on initialization and cleaned up on component unmount.
+3. **Smart Component Proxy (`c.msgBus`)**: When sending messages or making requests imperatively inside actions, use `c.msgBus`. It wraps the raw bus with essential framework guarantees:
+   - **MobX Observable Unwrapping (`normalizePayload`)**: Payloads are automatically converted to plain structural copies before being placed on the bus, preventing reactive MobX proxies from leaking into message bus events.
+   - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Subscriptions (`on`, `once`, `stream`) and pending `request()` / `provide()` calls are automatically linked to `component.abortSignal` and cleanly disposed of when the component unmounts.
+   - **Provenance & Source Tracing**: Automatically populates `headers.sourceId = component.id`.
+   - **Error Boundary & Pending State**: `c.msgBus.request(...)` runs within `component.run()`, tracking `component.model.$.pendingRequestCount` and routing unhandled rejections to `onCatch`.
+   - **Hierarchical Scoping**: Handlers can use `componentFilter: ComponentMsgFilter.FromAncestors` or `ComponentMsgFilter.FromDescendants` to restrict message reception to the component subtree.
 
 ### Declaring `msgScope` and `msgBroker`
 
 ```typescript
 type UserCardStruct = ComponentStruct<AppMsgStruct, {
+    props: { userId: string };
     msgScope: {
         subscribe: AppMsgChannels<'USER.UPDATED'>;
         publish: AppMsgChannels<'USER.SELECTED'>;
@@ -58,28 +70,48 @@ type UserCardStruct = ComponentStruct<AppMsgStruct, {
 }>;
 
 const def: ComponentDef<UserCardStruct> = {
+    props: { userId: params.userId },
     msgBroker: {
         subscribe: {
             'USER.UPDATED': {
                 in: {
                     callback: (msg, component) => {
                         console.log('Received updated user:', msg.payload);
-                    }
-                }
-            }
+                    },
+                },
+            },
         },
         provide: {
             'GET.USER.DATA': {
                 in: {
-                    callback: (msgIn, headers, component) => {
-                        return { id: '123', name: 'Alice' };
-                    }
-                }
-            }
-        }
-    }
+                    callback: (msgIn, msgOut, component) => {
+                        return { id: m.userId, name: 'Alice' };
+                    },
+                },
+            },
+        },
+    },
+    actions: {
+        selectUser: () => {
+            // Imperative dispatch through component proxy
+            c.msgBus.send({
+                channel: 'USER.SELECTED',
+                payload: { id: m.userId },
+            });
+        },
+    },
 };
 ```
+
+### Anti-Patterns to Avoid
+
+| Anti-Pattern | Recommended Dynstruct Practice |
+|---|---|
+| Creating a local `createMsgBus()` inside a component | Rely on implicit context injection from root `<AppContextProvider>` |
+| Passing `msgBus` down manually via component props | Access the smart proxy `c.msgBus` inside the component |
+| Calling `c.msgBus.on(...)` manually in `onReady` / `useEffect` | Declare subscriptions in `def.msgBroker.subscribe` |
+| Calling raw `msgBus` without unwrapping MobX observables | Use `c.msgBus` which automatically calls `normalizePayload` |
+| Manually unsubscribing in `onDestroy` | `c.msgBus` automatically cancels subscriptions on unmount via `component.abortSignal` |
 
 ---
 

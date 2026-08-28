@@ -1,0 +1,33 @@
+# @actdim/dynstruct - LLM Knowledge Base & Architecture Guidelines
+
+Component model and architectural framework for TypeScript and React applications. Built on MobX reactivity internally and integrates natively with `@actdim/msgmesh`.
+
+## Core Rules for AI Agents
+
+1. **Messaging & MsgMesh Integration**:
+   - **NEVER** create a local `createMsgBus()` inside a component or pass `msgBus` manually through component props.
+   - The bus is provided once at app root (`<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`) and flows down implicitly through `ReactComponentContext`.
+   - **NEVER** imperatively register handlers with `c.msgBus.on(...)` inside `onReady` or `useEffect`. Use declarative `def.msgBroker.subscribe` / `def.msgBroker.provide`.
+   - Always use the smart proxy `c.msgBus` for imperative messaging inside actions. It automatically:
+     - Deep-unwraps MobX observables (`normalizePayload`) so MobX proxies never leak into the bus.
+     - Binds all operations to `component.abortSignal` for automatic cleanup on unmount (zero memory leaks, no manual `unsubscribe()`).
+     - Tags messages with `headers.sourceId = component.id`.
+     - Wraps requests in `component.run()`, routing rejections to `onCatch` and tracking `component.model.$.pendingRequestCount`.
+
+2. **Component Authoring Standard**:
+   - Use hook-constructors: `const useMyComponent = (params: ComponentParams<MyStruct>) => { ... }`.
+   - Define `ComponentStruct<AppMsgStruct, { props: ..., actions: ..., children: ..., effects: ..., msgScope: ... }>`.
+   - Use `let c = useComponent(def, params); let m = c.model;`.
+   - Actions are blended into `m` -> call `m.myAction()` (never `c.actions.myAction()`).
+   - Export `toReact(useMyComponent)` when React interop is needed.
+
+3. **Reactivity & State Rules**:
+   - Mutate `m.prop = val` directly. UI updates automatically.
+   - Never import or use MobX directly (`observable`, `makeAutoObservable`, `autorun`, `action`).
+   - Use getters in `def.props` for computed properties (mark as `readonly` in struct type).
+   - Use `bind(() => m.prop)` or `bindProp(() => m, 'prop')` for two-way child bindings.
+
+4. **Service Adapters (API Integration)**:
+   - Extend `HttpClient` for typed API clients or adapt NSwag / OpenAPI / Kubb / Orval clients.
+   - Use `@actdim/msgmesh/adapters` (`ToMsgChannelPrefix<'ClientName', 'API'>`, `ToMsgStruct`, `registerAdapters`).
+   - Pass string literals to `ToMsgChannelPrefix` (never `typeof Class.name` without `as const`).

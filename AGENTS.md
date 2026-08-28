@@ -339,23 +339,79 @@ Avoid:
 - **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) — the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
 - passing reactive model values to external APIs without stripping proxies — use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
 
-## Messaging Rules
+## Messaging & MsgMesh Integration Rules
 
-- Define channels in message struct first.
-- Narrow component responsibilities with `msgScope`:
-  - `subscribe`
-  - `publish`
-  - `provide`
-- `msgScope` channels are validated at the TypeScript type-alias level: using a non-existent channel name produces a compile-time error immediately in the `type Struct = ComponentStruct<...>` declaration.
-- Register handlers in `msgBroker` and use `componentFilter` when source scoping is required.
-- Standard channel constants are exported from `appDomain/commonContracts` (navigation, storage, config, fetch) and `appDomain/securityContracts` (auth). Use the constants — not raw strings — in channel references.
-- Use:
-  - `c.msgBus.send(...)` for fire-and-forget
-  - `c.msgBus.request(...)` for request-response
+`@actdim/dynstruct` provides deep native integration with `@actdim/msgmesh`.
+
+### Strict Rules for Component Messaging:
+
+1. **NEVER manually instantiate a local `createMsgBus()` inside components**:
+   - `msgBus` is created once at the application root and provided via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`.
+   - All components receive `msgBus` automatically through `ReactComponentContext`.
+   - **Do NOT pass `msgBus` as explicit component props**.
+
+2. **NEVER imperatively call raw `msgBus.on()` inside `onReady` or `useEffect`**:
+   - Use declarative component channel bindings in `def.msgBroker.subscribe` or `def.msgBroker.provide`.
+   - Declarative definitions make component communication contracts visible on the component struct at a glance.
+
+3. **Always use the Component Proxy `c.msgBus`**:
+   When imperative messaging is needed inside actions or callbacks, use `c.msgBus` (NOT a raw external bus instance). `c.msgBus` is a smart proxy (`getComponentMsgBus`) that provides essential framework guarantees:
+   - **Automatic MobX Observable Unwrapping (`normalizePayload`)**: All payloads sent or requested through `c.msgBus` are automatically deep-unwrapped via structural clone / `toPlain()`. This ensures MobX reactive proxies NEVER leak into the message bus.
+   - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Every subscription (`on`, `once`, `stream`) and in-flight `request()` / `provide()` operation is automatically bound to `component.abortSignal`. When the component unmounts, all subscriptions and pending requests are automatically cancelled without manual `unsubscribe()` logic.
+   - **Automatic Source Tracing (`sourceId: component.id`)**: Automatically sets `headers.sourceId` to the component's unique instance ID for message provenance tracking.
+   - **Error Boundary & Pending Tracking**: `c.msgBus.request(...)` runs inside `component.run()`, automatically routing rejections to `onCatch` and incrementing/decrementing `component.model.$.pendingRequestCount` for loading state indicators.
+   - **Hierarchical Scoping (`ComponentMsgFilter`)**: Handlers registered in `def.msgBroker` can use `componentFilter: ComponentMsgFilter.FromAncestors` or `ComponentMsgFilter.FromDescendants` to restrict message reception strictly to the component's sub-tree.
+
+### Canonical Declarative Messaging Example:
+
+```typescript
+type UserCardStruct = ComponentStruct<AppMsgStruct, {
+    props: { userId: string };
+    msgScope: {
+        subscribe: AppMsgChannels<'USER.UPDATED'>;
+        publish: AppMsgChannels<'USER.SELECTED'>;
+        provide: AppMsgChannels<'GET.USER.DATA'>;
+    };
+}>;
+
+const def: ComponentDef<UserCardStruct> = {
+    props: { userId: params.userId },
+    // Declarative bus handlers - automatically wired & cleaned up on unmount
+    msgBroker: {
+        subscribe: {
+            'USER.UPDATED': {
+                in: {
+                    callback: (msg, component) => {
+                        console.log('Received user update:', msg.payload);
+                    },
+                },
+            },
+        },
+        provide: {
+            'GET.USER.DATA': {
+                in: {
+                    callback: (msgIn, msgOut, component) => {
+                        return { id: m.userId };
+                    },
+                },
+            },
+        },
+    },
+    actions: {
+        selectUser: () => {
+            // Imperative send via proxy - automatically unwraps MobX observables
+            c.msgBus.send({
+                channel: 'USER.SELECTED',
+                payload: { id: m.userId },
+            });
+        },
+    },
+};
+```
 
 For service APIs:
-- use `@actdim/msgmesh/adapters` to transform service class methods into typed channels
-- provide adapters through `ServiceProvider` wrappers
+- Use `@actdim/msgmesh/adapters` (`ToMsgChannelPrefix`, `ToMsgStruct`, `getMsgChannelSelector`, `registerAdapters`) to transform service methods into typed channels.
+- Provide adapters through `ServiceProvider` wrappers.
 
 ## Composition and Performance Rules
 
