@@ -6,48 +6,77 @@
 
 ## Core Types Reference
 
-### `ComponentStruct<TMsgStruct, TStruct>`
-Base generic interface defining component type contracts.
+### `ComponentStruct<TMsgStruct, TStructDef>`
+Base generic type defining component structural contracts (pure type declaration, no implementation):
 
 ```typescript
-type ComponentStruct<TMsgStruct, TStructDef> = {
+type ComponentStruct<
+    TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct,
+    TStructDef extends ComponentStructBase<TMsgStruct> = ComponentStructBase<TMsgStruct>,
+> = TStructDef & {
     msg: TMsgStruct;
-    props: TStructDef['props'];
-    actions: TStructDef['actions'];
-    children: TStructDef['children'];
-    msgScope: TStructDef['msgScope'];
-    effects: TStructDef['effects'];
+};
+
+// Shape of TStructDef:
+type ComponentStructBase<TMsgStruct> = {
+    props?: Record<string, any>;
+    actions?: Record<string, Function>;
+    effects?: string[] | string;
+    children?: Record<string, ComponentStruct<any> | Function>;
+    msgScope?: {
+        subscribe?: keyof TMsgStruct;
+        publish?: keyof TMsgStruct;
+        provide?: keyof TMsgStruct;
+    };
 };
 ```
 
-### `ComponentDef<TStruct>`
+### `ComponentDef<TStruct, TMsgHeaders>`
 Implementation definition passed to `useComponent`:
 
 ```typescript
-type ComponentDef<TStruct> = {
+type ComponentDef<
+    TStruct extends ComponentStruct<any>,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = {
     regType?: string;
-    props?: TStruct['props'];
+    props?: ComponentProps<TStruct['props']>;
     actions?: TStruct['actions'];
-    effects?: Record<string, (c: Component<TStruct>) => void | (() => void)>;
-    children?: Record<string, Component<any>>;
-    events?: ComponentEvents<TStruct>;
-    msgBroker?: ComponentMsgBroker<TStruct>;
-    msgBus?: MsgBusInstance;
-    view: () => JSX.Element;
-    fallbackView?: (props: any, c: Component<TStruct>) => JSX.Element;
+    effects?: Record<TStruct['effects'][number], (c: Component<TStruct, TMsgHeaders>) => void | (() => void)>;
+    children?: ComponentDefChildren<TStruct['children']>;
+    events?: ComponentEvents<TStruct, TMsgHeaders>;
+    msgBroker?: ComponentMsgBroker<TStruct, TMsgHeaders>;
+    msgBus?: MsgBus<TStruct['msg'], TMsgHeaders>;
+    view?: (props: ComponentViewProps, c?: Component<TStruct, TMsgHeaders>) => unknown;
+    fallbackView?: (props: ComponentViewProps, c?: Component<TStruct, TMsgHeaders>) => unknown;
+    useErrorBoundary?: boolean;
 };
 ```
 
-### `Component<TStruct>`
+### `Component<TStruct, TMsgHeaders>`
 Instance interface returned by `useComponent`:
 
-- `c.id`: Runtime unique identifier.
-- `c.model`: Reactive model instance (access props as `c.model.propName`).
-- `c.children`: Child component view slots.
-- `c.msgBus`: Lifecycle-scoped message bus.
-- `c.validate(propPath?)`: Run property validators.
-- `c.mapToEdit(propPath)`: Generate input binding props.
-- `c.getParent()`, `c.getChainUp()`, `c.getChainDown()`: Hierarchy access methods.
+- **Identity & Tree**:
+  - `c.id`: Runtime unique identifier.
+  - `c.key`: Component key.
+  - `c.regType`: Registered type name.
+  - `c.parentId`: Parent component ID.
+  - `c.getParent()`, `c.getChildren()`, `c.getChainUp()`, `c.getChainDown()`, `c.getNodeMap()`, `c.getHierarchyId()`: Tree navigation methods.
+- **Model & State**:
+  - `c.model`: Reactive model instance (access props and actions directly, e.g. `c.model.counter`).
+  - `c.model.$`: Component runtime state (`isDisabled`, `isReadOnly`, `isVisible`, `isValid`, `pendingRequestCount`, `errors`, `propState`).
+- **Communication & Lifecycle**:
+  - `c.msgBus`: Lifecycle-scoped message bus wrapper (auto-unwraps MobX observables, manages `abortSignal`, sets `headers.sourceId`).
+  - `c.msgBroker`: Message broker configuration.
+  - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount.
+  - `c.effects`: Effect controllers with `.pause()`, `.resume()`, and `.stop()`.
+- **Rendering & Forms**:
+  - `c.View`: React component view slot (`<c.View />`).
+  - `c.children`: Child component view slots.
+  - `c.validate(propPath?)`: Run property validators.
+  - `c.mapToEdit(propPath?, exclude?)`: Generate two-way form input bindings (`value`, `onChange`, `onBlur`).
+  - `c.run(handler, silent)`: Executes async handlers within component error and pending request tracking.
+  - `c[Symbol.dispose]()`: Manual disposal cleanup.
 
 ---
 
