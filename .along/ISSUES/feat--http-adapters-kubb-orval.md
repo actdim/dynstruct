@@ -4,16 +4,13 @@ slug: http-adapters-kubb-orval
 type: feat
 status: open
 priority: medium
-created: '2026-08-28'
-updated: '2026-08-28'
+created: 2026-08-28
+updated: 2026-08-28
 agent: antigravity
-tags:
-  - dynstruct
-  - http-client
-  - kubb
-  - orval
-  - api
-  - adapters
+tags: [dynstruct, http-client, kubb, orval, api, adapters]
+milestone: v2.0.0-along-transition
+blocked_by: []
+related: []
 ---
 
 # Adapt dynstruct HttpClient for Kubb and Orval Generators

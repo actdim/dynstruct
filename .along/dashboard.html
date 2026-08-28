@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Along Dashboard - dynstruct</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#f0f9ff', 500: '#0284c7', 600: '#0369a1', 900: '#0c4a6e' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    #cy { width: 100%; height: 550px; background-color: #0f172a; border-radius: 0.75rem; }
+    .tab-btn.active { border-bottom: 2px solid #38bdf8; color: #38bdf8; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center font-bold text-white shadow-lg shadow-sky-600/30">A</div>
+      <div>
+        <h1 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+          Along Dashboard
+          <span class="text-xs px-2 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800 font-mono">dynstruct</span>
+        </h1>
+        <p class="text-xs text-slate-400">Protocol v2.0.2 | Last scanned: <span id="scan-time">2026-08-28 11:28:21</span></p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-3">
+      
+      <span class="text-xs px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-md flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 0.0% Complete
+      </span>
+    </div>
+  </header>
+
+  <nav class="border-b border-slate-800 bg-slate-900/40 px-6 flex space-x-6 text-sm overflow-x-auto">
+    <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active py-3 flex items-center gap-2 text-slate-400 hover:text-slate-200">
+      <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+    </button>
+    <button onclick="switchTab('issues')" id="tab-issues" class="tab-btn py-3 flex items-center gap-2 text-slate-400 hover:text-slate-200">
+      <i data-lucide="check-square" class="w-4 h-4"></i> Issues (24)
+    </button>
+    <button onclick="switchTab('graph')" id="tab-graph" class="tab-btn py-3 flex items-center gap-2 text-slate-400 hover:text-slate-200">
+      <i data-lucide="git-fork" class="w-4 h-4"></i> Dependency Graph (DAG)
+    </button>
+    <button onclick="switchTab('milestones')" id="tab-milestones" class="tab-btn py-3 flex items-center gap-2 text-slate-400 hover:text-slate-200">
+      <i data-lucide="flag" class="w-4 h-4"></i> Milestones (1)
+    </button>
+    <button onclick="switchTab('risks')" id="tab-risks" class="tab-btn py-3 flex items-center gap-2 text-slate-400 hover:text-slate-200">
+      <i data-lucide="alert-triangle" class="w-4 h-4"></i> Risks & Blockers (0)
+    </button>
+    <button onclick="switchTab('kb')" id="tab-kb" class="tab-btn py-3 flex items-center gap-2 text-slate-400 hover:text-slate-200">
+      <i data-lucide="book-open" class="w-4 h-4"></i> Knowledge Base (6)
+    </button>
+    <button onclick="switchTab('sessions')" id="tab-sessions" class="tab-btn py-3 flex items-center gap-2 text-slate-400 hover:text-slate-200">
+      <i data-lucide="history" class="w-4 h-4"></i> Sessions (0)
+    </button>
+  </nav>
+
+  <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+
+    <!-- TAB: OVERVIEW -->
+    <section id="content-overview" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Completion</span>
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-100 mt-2">0.0%</div>
+          <div class="text-xs text-slate-400 mt-1">0 done / 24 total issues</div>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div class="bg-emerald-500 h-full rounded-full" style="width: 0.0%"></div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Backlog</span>
+            <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-100 mt-2">24</div>
+          <div class="text-xs text-slate-400 mt-1">0 in-progress, 24 open</div>
+          <div class="text-xs text-rose-400 mt-2 flex items-center gap-1">
+            <i data-lucide="shield-alert" class="w-3 h-3"></i> 0 blocked issues
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Risks</span>
+            <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-400"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-100 mt-2">0</div>
+          <div class="text-xs text-slate-400 mt-1">0 critical/high severity</div>
+          <div class="text-xs text-slate-400 mt-2 flex items-center gap-1">
+            <i data-lucide="shield-check" class="w-3 h-3 text-emerald-400"></i> Mitigations logged
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Repository Health</span>
+            <i data-lucide="cpu" class="w-4 h-4 text-sky-400"></i>
+          </div>
+          <div class="text-2xl font-bold text-slate-100 mt-2">6 KB / 1 ADRs</div>
+          <div class="text-xs text-slate-400 mt-1">Context: 5 lines</div>
+          <div class="text-xs text-sky-400 mt-2 flex items-center gap-1">
+            <i data-lucide="activity" class="w-3 h-3"></i> Zero-friction metadata v2.0.2
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i> Active & In-Progress Issues
+          </h2>
+          <div class="space-y-2.5">
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('debt--async-to-generator-flow')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Move asyncToGeneratorFlow helper to utico</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">debt</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('debt--safe-user-code-execution')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Ensure user code execution is properly handled across all boundaries</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">debt</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--automatic-children-validation')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Add automatic validation for component children declarations</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--business-telemetry-declarations')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Declarative telemetry & analytics annotations in component structures</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--component-type-metadata')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support component classification types (resource-boundary, layout, UI)</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--control-persistence-providers')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support component state persistence via configurable providers</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--granular-access-control')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support granular access control for component models and channels</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--graphql-integration')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Implement GraphQL transport integration for dynstruct</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--http-adapters-kubb-orval')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Adapt dynstruct HttpClient for Kubb and Orval Generators</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--http-request-cancellation')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support request cancellation in HttpClient</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--livestore-reactive-dashboard-widgets')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">LiveStore reactive query integration and real-time dashboard components</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--nav-service-dependencies')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support reactive navigation context dependencies in NavService</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--problem-details-http-errors')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support RFC 7807 problem+json format in HttpClientError</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--request-accepts-and-cors')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Add accepts headers and crossDomain support in IRequestParams</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--server-sent-events-support')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support Server-Sent Events (SSE) transport in dynstruct</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--signalr-integration')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Implement SignalR transport integration for dynstruct</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--single-getter-prop-binding')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support one-way prop binding with a single getter function</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--skeleton-not-ready-state')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support skeleton and not-ready component states</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--store-has-and-clear-channels')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Add APP.STORE.HAS and APP.STORE.CLEAR common channels</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--tanstack-query-integration')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Implement React (TanStack) Query integration for dynstruct</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--trpc-integration')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Implement tRPC transport integration for dynstruct</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--visibility-interaction-states')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support visibility and interaction modes with security integration and fallback view</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--websocket-transport-support')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support WebSocket transport in request interface</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('feat--www-authenticate-header-support')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="px-2 py-0.5 text-xs rounded font-mono font-bold
+                  bg-slate-800 text-slate-300">
+                  open
+                </span>
+                <span class="text-sm font-medium text-slate-200 truncate">Support WWW-Authenticate response header in SecurityService</span>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">feat</span>
+            </div>
+            
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i> Milestones Overview
+          </h2>
+          <div class="space-y-2.5">
+            
+            <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-lg flex items-center justify-between hover:border-slate-700 cursor-pointer transition" onclick="openEntity('milestone--v2.0.0-along-transition')">
+              <div class="flex items-center space-x-3 truncate">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-sm text-slate-300 truncate">v2.0.0: Transition to Along Ecosystem & .along/ Directory</span>
+              </div>
+              <span class="text-xs text-sky-400 font-mono">50%</span>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: ISSUES -->
+    <section id="content-issues" class="space-y-4 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3 flex-1 min-w-[280px]">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+          <input type="text" id="issue-search" oninput="filterIssues()" placeholder="Search issues by title, slug, tag, or priority..." class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-sm w-full text-slate-200 focus:outline-none focus:border-sky-500">
+        </div>
+        <div class="flex items-center space-x-2 text-xs">
+          <select id="filter-status" onchange="filterIssues()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-300">
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="in-progress">In Progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="done">Done</option>
+          </select>
+          <select id="filter-type" onchange="filterIssues()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-300">
+            <option value="all">All Types</option>
+            <option value="feat">feat</option>
+            <option value="bug">bug</option>
+            <option value="debt">debt</option>
+            <option value="task">task</option>
+            <option value="docs">docs</option>
+          </select>
+          <select id="filter-prio" onchange="filterIssues()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-300">
+            <option value="all">All Priorities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="issues-container" class="space-y-2">
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="debt--async-to-generator-flow"
+             data-title="move asynctogeneratorflow helper to utico"
+             data-slug="async-to-generator-flow"
+             data-status="open"
+             data-type="debt"
+             data-priority="low"
+             onclick="openEntity('debt--async-to-generator-flow')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Move asyncToGeneratorFlow helper to utico</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>debt--async-to-generator-flow</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">debt</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-slate-800 text-slate-400">
+              low
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="debt--safe-user-code-execution"
+             data-title="ensure user code execution is properly handled across all boundaries"
+             data-slug="safe-user-code-execution"
+             data-status="open"
+             data-type="debt"
+             data-priority="high"
+             onclick="openEntity('debt--safe-user-code-execution')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Ensure user code execution is properly handled across all boundaries</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>debt--safe-user-code-execution</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">debt</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-orange-950 text-orange-300 border border-orange-800
+              ">
+              high
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--automatic-children-validation"
+             data-title="add automatic validation for component children declarations"
+             data-slug="automatic-children-validation"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--automatic-children-validation')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Add automatic validation for component children declarations</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--automatic-children-validation</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--business-telemetry-declarations"
+             data-title="declarative telemetry & analytics annotations in component structures"
+             data-slug="business-telemetry-declarations"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--business-telemetry-declarations')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Declarative telemetry & analytics annotations in component structures</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--business-telemetry-declarations</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--component-type-metadata"
+             data-title="support component classification types (resource-boundary, layout, ui)"
+             data-slug="component-type-metadata"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--component-type-metadata')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support component classification types (resource-boundary, layout, UI)</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--component-type-metadata</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--control-persistence-providers"
+             data-title="support component state persistence via configurable providers"
+             data-slug="control-persistence-providers"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--control-persistence-providers')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support component state persistence via configurable providers</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--control-persistence-providers</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--granular-access-control"
+             data-title="support granular access control for component models and channels"
+             data-slug="granular-access-control"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--granular-access-control')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support granular access control for component models and channels</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--granular-access-control</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--graphql-integration"
+             data-title="implement graphql transport integration for dynstruct"
+             data-slug="graphql-integration"
+             data-status="open"
+             data-type="feat"
+             data-priority="low"
+             onclick="openEntity('feat--graphql-integration')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Implement GraphQL transport integration for dynstruct</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--graphql-integration</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-slate-800 text-slate-400">
+              low
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--http-adapters-kubb-orval"
+             data-title="adapt dynstruct httpclient for kubb and orval generators"
+             data-slug="http-adapters-kubb-orval"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--http-adapters-kubb-orval')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Adapt dynstruct HttpClient for Kubb and Orval Generators</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--http-adapters-kubb-orval</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--http-request-cancellation"
+             data-title="support request cancellation in httpclient"
+             data-slug="http-request-cancellation"
+             data-status="open"
+             data-type="feat"
+             data-priority="high"
+             onclick="openEntity('feat--http-request-cancellation')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support request cancellation in HttpClient</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--http-request-cancellation</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-orange-950 text-orange-300 border border-orange-800
+              ">
+              high
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--livestore-reactive-dashboard-widgets"
+             data-title="livestore reactive query integration and real-time dashboard components"
+             data-slug="livestore-reactive-dashboard-widgets"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--livestore-reactive-dashboard-widgets')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">LiveStore reactive query integration and real-time dashboard components</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--livestore-reactive-dashboard-widgets</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--nav-service-dependencies"
+             data-title="support reactive navigation context dependencies in navservice"
+             data-slug="nav-service-dependencies"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--nav-service-dependencies')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support reactive navigation context dependencies in NavService</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--nav-service-dependencies</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--problem-details-http-errors"
+             data-title="support rfc 7807 problem+json format in httpclienterror"
+             data-slug="problem-details-http-errors"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--problem-details-http-errors')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support RFC 7807 problem+json format in HttpClientError</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--problem-details-http-errors</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--request-accepts-and-cors"
+             data-title="add accepts headers and crossdomain support in irequestparams"
+             data-slug="request-accepts-and-cors"
+             data-status="open"
+             data-type="feat"
+             data-priority="low"
+             onclick="openEntity('feat--request-accepts-and-cors')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Add accepts headers and crossDomain support in IRequestParams</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--request-accepts-and-cors</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-slate-800 text-slate-400">
+              low
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--server-sent-events-support"
+             data-title="support server-sent events (sse) transport in dynstruct"
+             data-slug="server-sent-events-support"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--server-sent-events-support')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support Server-Sent Events (SSE) transport in dynstruct</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--server-sent-events-support</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--signalr-integration"
+             data-title="implement signalr transport integration for dynstruct"
+             data-slug="signalr-integration"
+             data-status="open"
+             data-type="feat"
+             data-priority="low"
+             onclick="openEntity('feat--signalr-integration')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Implement SignalR transport integration for dynstruct</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--signalr-integration</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-slate-800 text-slate-400">
+              low
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--single-getter-prop-binding"
+             data-title="support one-way prop binding with a single getter function"
+             data-slug="single-getter-prop-binding"
+             data-status="open"
+             data-type="feat"
+             data-priority="low"
+             onclick="openEntity('feat--single-getter-prop-binding')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support one-way prop binding with a single getter function</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--single-getter-prop-binding</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-slate-800 text-slate-400">
+              low
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--skeleton-not-ready-state"
+             data-title="support skeleton and not-ready component states"
+             data-slug="skeleton-not-ready-state"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--skeleton-not-ready-state')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support skeleton and not-ready component states</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--skeleton-not-ready-state</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--store-has-and-clear-channels"
+             data-title="add app.store.has and app.store.clear common channels"
+             data-slug="store-has-and-clear-channels"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--store-has-and-clear-channels')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Add APP.STORE.HAS and APP.STORE.CLEAR common channels</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--store-has-and-clear-channels</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--tanstack-query-integration"
+             data-title="implement react (tanstack) query integration for dynstruct"
+             data-slug="tanstack-query-integration"
+             data-status="open"
+             data-type="feat"
+             data-priority="low"
+             onclick="openEntity('feat--tanstack-query-integration')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Implement React (TanStack) Query integration for dynstruct</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--tanstack-query-integration</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-slate-800 text-slate-400">
+              low
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--trpc-integration"
+             data-title="implement trpc transport integration for dynstruct"
+             data-slug="trpc-integration"
+             data-status="open"
+             data-type="feat"
+             data-priority="low"
+             onclick="openEntity('feat--trpc-integration')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Implement tRPC transport integration for dynstruct</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--trpc-integration</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-slate-800 text-slate-400">
+              low
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--visibility-interaction-states"
+             data-title="support visibility and interaction modes with security integration and fallback view"
+             data-slug="visibility-interaction-states"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--visibility-interaction-states')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support visibility and interaction modes with security integration and fallback view</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--visibility-interaction-states</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--websocket-transport-support"
+             data-title="support websocket transport in request interface"
+             data-slug="websocket-transport-support"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--websocket-transport-support')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support WebSocket transport in request interface</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--websocket-transport-support</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+        <div class="issue-card bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 cursor-pointer transition flex items-center justify-between"
+             data-id="feat--www-authenticate-header-support"
+             data-title="support www-authenticate response header in securityservice"
+             data-slug="www-authenticate-header-support"
+             data-status="open"
+             data-type="feat"
+             data-priority="medium"
+             onclick="openEntity('feat--www-authenticate-header-support')">
+          <div class="flex items-center space-x-4 truncate">
+            <span class="px-2.5 py-1 text-xs rounded-md font-mono font-bold
+              bg-slate-800 text-slate-300 border border-slate-700">
+              open
+            </span>
+            <div>
+              <div class="text-sm font-semibold text-slate-200 hover:text-sky-400 transition">Support WWW-Authenticate response header in SecurityService</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                <span>feat--www-authenticate-header-support</span>
+                <span>- v2.0.0-along-transition</span>
+                
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono">feat</span>
+            <span class="px-2 py-0.5 rounded font-mono
+              bg-yellow-950 text-yellow-300 border border-yellow-800
+              ">
+              medium
+            </span>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+
+    <!-- TAB: DAG GRAPH -->
+    <section id="content-graph" class="space-y-4 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+        <div class="text-sm text-slate-300">
+          <strong>Interactive Dependency DAG</strong>: Nodes represent Issues, Milestones, and Risks. Edges represent <span class="text-rose-400 font-bold">blocks</span>, <span class="text-sky-400">part-of</span>, and <span class="text-slate-400">related</span> relationships.
+        </div>
+        <button onclick="layoutGraph()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 rounded border border-slate-700">
+          Reset Layout
+        </button>
+      </div>
+      <div id="cy" class="border border-slate-800 shadow-inner"></div>
+    </section>
+
+    <!-- TAB: MILESTONES -->
+    <section id="content-milestones" class="space-y-4 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 cursor-pointer hover:border-slate-700 transition" onclick="openEntity('milestone--v2.0.0-along-transition')">
+          <div class="flex items-center justify-between">
+            <span class="text-xs px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800 font-mono">in-progress</span>
+            <span class="text-xs text-slate-400">Due: 2026-09-05</span>
+          </div>
+          <h3 class="text-base font-bold text-slate-100 mt-2">v2.0.0: Transition to Along Ecosystem & .along/ Directory</h3>
+          <div class="text-xs text-slate-400 mt-1">Slug: v2.0.0-along-transition</div>
+          <div class="w-full bg-slate-800 h-2 rounded-full mt-4 overflow-hidden">
+            <div class="bg-sky-500 h-full rounded-full" style="width: 50%"></div>
+          </div>
+          <div class="flex justify-between text-xs text-slate-400 mt-1.5">
+            <span>Progress</span>
+            <span class="font-bold text-slate-200">50%</span>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+
+    <!-- TAB: RISKS -->
+    <section id="content-risks" class="space-y-4 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div class="col-span-2 text-sm text-slate-500 italic p-6 text-center bg-slate-900 border border-slate-800 rounded-xl">No active risks logged.</div>
+        
+      </div>
+    </section>
+
+    <!-- TAB: KB -->
+    <section id="content-kb" class="space-y-4 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 cursor-pointer hover:border-slate-700 transition" onclick="openEntity('kb--01-architecture')">
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">topic</span>
+          <h3 class="text-base font-bold text-slate-100 mt-2">01 Architecture</h3>
+          <div class="text-xs text-slate-400 font-mono mt-1">01-architecture.md</div>
+          <div class="flex flex-wrap gap-1 mt-3">
+            
+          </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 cursor-pointer hover:border-slate-700 transition" onclick="openEntity('kb--02-domain-model')">
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">topic</span>
+          <h3 class="text-base font-bold text-slate-100 mt-2">02 Domain Model</h3>
+          <div class="text-xs text-slate-400 font-mono mt-1">02-domain-model.md</div>
+          <div class="flex flex-wrap gap-1 mt-3">
+            
+          </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 cursor-pointer hover:border-slate-700 transition" onclick="openEntity('kb--03-setup-and-workflow')">
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">topic</span>
+          <h3 class="text-base font-bold text-slate-100 mt-2">03 Setup And Workflow</h3>
+          <div class="text-xs text-slate-400 font-mono mt-1">03-setup-and-workflow.md</div>
+          <div class="flex flex-wrap gap-1 mt-3">
+            
+          </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 cursor-pointer hover:border-slate-700 transition" onclick="openEntity('kb--04-api-reference')">
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">topic</span>
+          <h3 class="text-base font-bold text-slate-100 mt-2">04 Api Reference</h3>
+          <div class="text-xs text-slate-400 font-mono mt-1">04-api-reference.md</div>
+          <div class="flex flex-wrap gap-1 mt-3">
+            
+          </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 cursor-pointer hover:border-slate-700 transition" onclick="openEntity('kb--05-patterns-and-recipes')">
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">topic</span>
+          <h3 class="text-base font-bold text-slate-100 mt-2">05 Patterns And Recipes</h3>
+          <div class="text-xs text-slate-400 font-mono mt-1">05-patterns-and-recipes.md</div>
+          <div class="flex flex-wrap gap-1 mt-3">
+            
+          </div>
+        </div>
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 cursor-pointer hover:border-slate-700 transition" onclick="openEntity('kb--INDEX')">
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">topic</span>
+          <h3 class="text-base font-bold text-slate-100 mt-2">Index</h3>
+          <div class="text-xs text-slate-400 font-mono mt-1">INDEX.md</div>
+          <div class="flex flex-wrap gap-1 mt-3">
+            
+          </div>
+        </div>
+        
+      </div>
+    </section>
+
+    <!-- TAB: SESSIONS -->
+    <section id="content-sessions" class="space-y-4 hidden">
+      <div class="space-y-3">
+        
+        <div class="text-sm text-slate-500 italic p-6 text-center bg-slate-900 border border-slate-800 rounded-xl">No session logs found.</div>
+        
+      </div>
+    </section>
+
+  </main>
+
+  <div id="drawer-backdrop" onclick="closeDrawer()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity"></div>
+  <aside id="entity-drawer" class="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-slate-900 border-l border-slate-800 shadow-2xl z-50 p-6 overflow-y-auto transform translate-x-full transition-transform duration-300 ease-in-out">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div>
+        <span id="drawer-tag" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">Entity</span>
+        <h2 id="drawer-title" class="text-lg font-bold text-slate-100 mt-1">Entity Details</h2>
+      </div>
+      <button onclick="closeDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div id="drawer-metadata" class="py-4 border-b border-slate-800 text-xs grid grid-cols-2 gap-2 text-slate-400 font-mono"></div>
+    <div id="drawer-body" class="prose prose-invert prose-sm max-w-none py-4 text-slate-300"></div>
+  </aside>
+
+  <script>
+    const RAW_DATA = {"metrics": {"total_issues": 24, "done_issues": 0, "open_issues": 24, "inprogress_issues": 0, "blocked_issues": 0, "completion_pct": 0.0, "type_distribution": {"debt": 2, "feat": 22}, "priority_distribution": {"critical": 0, "high": 2, "medium": 15, "low": 7}, "total_milestones": 1, "active_risks_count": 0, "critical_risks_count": 0, "total_spikes": 0, "total_sessions": 0, "total_kb_articles": 6, "total_decisions": 1, "context_lines": 5, "issues_board_lines": 33, "scan_timestamp": "2026-08-28 11:28:21"}, "issues": [{"id": "debt--async-to-generator-flow", "slug": "async-to-generator-flow", "type": "debt", "title": "Move asyncToGeneratorFlow helper to utico", "status": "open", "priority": "low", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/debt--async-to-generator-flow.md", "is_done": false, "body": "# Move asyncToGeneratorFlow helper to utico\n\nMove the commented-out `asyncToGeneratorFlow` helper from `src/componentModel/core.tsx` to the `utico` shared utility library.\n\n- Source: [`src/componentModel/core.tsx:L940`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L940)"}, {"id": "debt--safe-user-code-execution", "slug": "safe-user-code-execution", "type": "debt", "title": "Ensure user code execution is properly handled across all boundaries", "status": "open", "priority": "high", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/debt--safe-user-code-execution.md", "is_done": false, "body": "# Ensure user code execution is properly handled across all boundaries\n\nEnsure all user code calls across framework boundaries (lifecycle hooks, event listeners, binding getters/setters, actions, effects) are safely wrapped with `runSafe` / `onCatch` error boundary handling.\n\n- Source: [`src/componentModel/core.tsx:L948`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L948)"}, {"id": "feat--automatic-children-validation", "slug": "automatic-children-validation", "type": "feat", "title": "Add automatic validation for component children declarations", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--automatic-children-validation.md", "is_done": false, "body": "# Add automatic validation for component children declarations\n\nImplement automatic dev-time or runtime validation of declared child components in `ComponentDef.children` against actual passed parameters or bound models.\n\n- Sources:\n  - [`src/componentModel/core.tsx:L954`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L954)\n  - [`src/_stories/componentModel/componentState/StateExample.tsx:L173`](file:///d:/Src/my/actdim/public/dynstruct/src/_stories/componentModel/componentState/StateExample.tsx#L173)"}, {"id": "feat--business-telemetry-declarations", "slug": "business-telemetry-declarations", "type": "feat", "title": "Declarative telemetry & analytics annotations in component structures", "status": "open", "priority": "medium", "created": "2026-08-27", "updated": "2026-08-27", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--business-telemetry-declarations.md", "is_done": false, "body": "# Declarative telemetry & analytics annotations in component structures\n\n- Related: `@actdim/msgmesh/.agents/ISSUES/feat--middleware-and-metrics.md`, `@actdim/msgmesh/.agents/ISSUES/feat--analytics-and-telemetry-product.md`\n\n## Context\n\nTo make product analytics completely declarative, Dynstruct can allow components to optionally declare telemetry annotations on their actions, events, and message broker channels (e.g. `telemetry: { eventName: 'ItemFavorited', trackDuration: true }`).\n\n## Requirements\n\n- Add optional `telemetry` schema metadata in `ComponentStruct` / `ComponentDef` action definitions.\n- Automatically enrich outgoing message bus envelopes with component metadata (component ID, component type `regType`, action name).\n- Enable seamless forwarding to telemetry sinks (Mixpanel, PostHog, OTel) without manual tracking code in view/handlers."}, {"id": "feat--component-type-metadata", "slug": "component-type-metadata", "type": "feat", "title": "Support component classification types (resource-boundary, layout, UI)", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--component-type-metadata.md", "is_done": false, "body": "# Support component classification types (resource-boundary, layout, UI)\n\nAdd support for explicit component classification metadata (e.g. `resource-boundary`, `layout`, `UI`) in dynstruct component definitions to enable semantic lifecycle handling and devtools inspection.\n\n- Source: [`src/componentModel/core.tsx:L951`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L951)"}, {"id": "feat--control-persistence-providers", "slug": "control-persistence-providers", "type": "feat", "title": "Support component state persistence via configurable providers", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--control-persistence-providers.md", "is_done": false, "body": "# Support component state persistence via configurable providers\n\nImplement state persistence capabilities for dynstruct component models, allowing component state to be serialized and restored using pluggable storage providers.\n\n- Source: [`src/componentModel/core.tsx:L950`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L950)"}, {"id": "feat--granular-access-control", "slug": "granular-access-control", "type": "feat", "title": "Support granular access control for component models and channels", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--granular-access-control.md", "is_done": false, "body": "# Support granular access control for component models and channels\n\nIntroduce granular access control capabilities into the dynstruct component model and message bus, allowing authorization checks per channel, property, or component action.\n\n- Source: [`src/componentModel/core.tsx:L949`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L949)"}, {"id": "feat--graphql-integration", "slug": "graphql-integration", "type": "feat", "title": "Implement GraphQL transport integration for dynstruct", "status": "open", "priority": "low", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--graphql-integration.md", "is_done": false, "body": "# Implement GraphQL transport integration for dynstruct\n\nProvide a GraphQL client transport adapter allowing queries, mutations, and subscriptions to be mapped to dynstruct message bus channels.\n\n- Source: [`src/componentModel/core.tsx:L958`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L958)"}, {"id": "feat--http-adapters-kubb-orval", "slug": "http-adapters-kubb-orval", "type": "feat", "title": "Adapt dynstruct HttpClient for Kubb and Orval Generators", "status": "open", "priority": "medium", "created": "2026-08-28", "updated": "2026-08-28", "completed": null, "agent": "antigravity", "tags": ["dynstruct", "http-client", "kubb", "orval", "api", "adapters"], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--http-adapters-kubb-orval.md", "is_done": false, "body": "# Adapt dynstruct HttpClient for Kubb and Orval Generators\n\n## Overview\n\n`@actdim/dynstruct` provides `HttpClient` (`src/net/httpClient.ts`) that manages:\n- Integration with `MsgBus` for authentication tokens (`$AUTH_APPLY`), configuration reloads (`$CONFIG_CHANGED`, `$CONFIG_GET`), and error routing.\n- Standardized request lifecycle and normalized error processing (`HttpClientError`).\n- Integration contracts specifically aligned with NSwag-generated TypeScript API client classes.\n\nHowever, modern generators like **Kubb** and **Orval** generate functional API clients and expect custom fetcher / custom instance adapter functions rather than NSwag-style class wrappers.\n\n## Goal\n\nCreate adapter interfaces and wrappers around `dynstruct`'s `HttpClient` that allow Kubb- and Orval-generated clients to execute HTTP requests through `HttpClient` to gain:\n1. Automatic `MsgBus` auth token injection and refresh.\n2. Centralized request error handling, status mapping, and event bus propagation.\n3. Dynamic base URL and configuration management via `MsgBus`.\n\n## Scope & Requirements\n\n1. **Research & Signatures Definition**:\n   - Inspect custom instance contract for Orval (e.g. `customInstance<T>(config: RequestConfig): Promise<T>`).\n   - Inspect custom client contract for Kubb (e.g. `client<TData, TError, TVariables>(options: ClientOptions): Promise<Response<TData>>`).\n2. **Adapter Implementation in `@actdim/dynstruct/net`**:\n   - Provide factory functions (e.g. `createOrvalHttpAdapter(httpClient)`, `createKubbHttpAdapter(httpClient)`) that wrap `HttpClient.request` into the expected functional signatures.\n   - Forward cancellation (`AbortSignal`), headers, query parameters, body serialization, and error transformations.\n3. **Tests & Documentation**:\n   - Add unit tests verifying functional client execution through the adapter with mocked responses and error scenarios.\n   - Document usage in `@actdim/dynstruct` README / docs for both Kubb and Orval code generation workflows."}, {"id": "feat--http-request-cancellation", "slug": "http-request-cancellation", "type": "feat", "title": "Support request cancellation in HttpClient", "status": "open", "priority": "high", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--http-request-cancellation.md", "is_done": false, "body": "# Support request cancellation in HttpClient\n\nImplement HTTP request cancellation in `HttpClient` via `AbortController` signal integration.\n\n- Source: [`src/net/httpClient.ts:L282`](file:///d:/Src/my/actdim/public/dynstruct/src/net/httpClient.ts#L282)"}, {"id": "feat--livestore-reactive-dashboard-widgets", "slug": "livestore-reactive-dashboard-widgets", "type": "feat", "title": "LiveStore reactive query integration and real-time dashboard components", "status": "open", "priority": "medium", "created": "2026-08-27", "updated": "2026-08-27", "completed": null, "agent": "antigravity", "tags": ["dashboard"], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--livestore-reactive-dashboard-widgets.md", "is_done": false, "body": "# LiveStore reactive query integration and real-time dashboard components\n\n- Related: `@actdim/msgmesh/.agents/ISSUES/feat--livestore-event-sourcing-adapter.md`, `@actdim/msgmesh/.agents/ISSUES/feat--analytics-and-telemetry-product.md`\n\n## Context\n\nWith MsgMesh events feeding into LiveStore (reactive SQLite/event log), Dynstruct can provide first-class component models and hooks (`useLiveQuery`, `useEventMetrics`) that bind reactive store queries directly to component props.\n\n## Requirements\n\n- Provide hook/component primitives to subscribe Dynstruct components to LiveStore reactive queries.\n- Build ready-to-use real-time dashboard widgets (MetricCards, LatencySparkline, EventLogViewer, FunnelProgress).\n- Ensure seamless reactivity with MobX/React without manual `useEffect` polling or forced re-renders.\n- Provide cross-link and sample storybook demo for real-time live metrics."}, {"id": "feat--nav-service-dependencies", "slug": "nav-service-dependencies", "type": "feat", "title": "Support reactive navigation context dependencies in NavService", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--nav-service-dependencies.md", "is_done": false, "body": "# Support reactive navigation context dependencies in NavService\n\nAdd support for tracking reactive dependencies (`location`, `navType`, `params`, `searchParams`) in `NavService` to optimize component reactions to navigation updates.\n\n- Source: [`src/services/react/NavService.tsx:L126`](file:///d:/Src/my/actdim/public/dynstruct/src/services/react/NavService.tsx#L126)"}, {"id": "feat--problem-details-http-errors", "slug": "problem-details-http-errors", "type": "feat", "title": "Support RFC 7807 problem+json format in HttpClientError", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--problem-details-http-errors.md", "is_done": false, "body": "# Support RFC 7807 problem+json format in HttpClientError\n\nParse RFC 7807 `application/problem+json` error responses and expose structured problem details on `HttpClientError`.\n\n- Source: [`src/net/httpClientError.ts:L9`](file:///d:/Src/my/actdim/public/dynstruct/src/net/httpClientError.ts#L9)"}, {"id": "feat--request-accepts-and-cors", "slug": "request-accepts-and-cors", "type": "feat", "title": "Add accepts headers and crossDomain support in IRequestParams", "status": "open", "priority": "low", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--request-accepts-and-cors.md", "is_done": false, "body": "# Add accepts headers and crossDomain support in IRequestParams\n\nSupport explicit `accepts: string[]` MIME type filtering and `crossDomain?: boolean` CORS configurations in `IRequestParams`.\n\n- Source: [`src/net/request.ts:L156-L158`](file:///d:/Src/my/actdim/public/dynstruct/src/net/request.ts#L158)"}, {"id": "feat--server-sent-events-support", "slug": "server-sent-events-support", "type": "feat", "title": "Support Server-Sent Events (SSE) transport in dynstruct", "status": "open", "priority": "medium", "created": "2026-08-28", "updated": "2026-08-28", "completed": null, "agent": "antigravity", "tags": ["net", "sse", "transport", "streaming"], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": ["feat--websocket-transport-support", "feat--signalr-integration"], "file_path": ".along/ISSUES/feat--server-sent-events-support.md", "is_done": false, "body": "# Support Server-Sent Events (SSE) transport in dynstruct\n\nProvide native Server-Sent Events (EventSource) streaming transport adapter and connection management in `HttpClient` and component model message bus.\n\n## Requirements\n- Support `text/event-stream` response handling with reconnection and heartbeat tracking.\n- Expose event subscription interface mapping SSE channels and event types to dynstruct component message streams.\n- Support configurable request headers, authentication tokens, and query parameters for EventSource connections.\n\n## Key References\n- [`src/net/request.ts`](file:///d:/Src/my/actdim/infomnia/src/packages/dynstruct/src/net/request.ts)\n- [`src/net/httpClient.ts`](file:///d:/Src/my/actdim/infomnia/src/packages/dynstruct/src/net/httpClient.ts)"}, {"id": "feat--signalr-integration", "slug": "signalr-integration", "type": "feat", "title": "Implement SignalR transport integration for dynstruct", "status": "open", "priority": "low", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--signalr-integration.md", "is_done": false, "body": "# Implement SignalR transport integration for dynstruct\n\nProvide a SignalR real-time transport adapter mapping SignalR hub connections and events to dynstruct message bus channels.\n\n- Source: [`src/componentModel/core.tsx:L957`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L957)"}, {"id": "feat--single-getter-prop-binding", "slug": "single-getter-prop-binding", "type": "feat", "title": "Support one-way prop binding with a single getter function", "status": "open", "priority": "low", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--single-getter-prop-binding.md", "is_done": false, "body": "# Support one-way prop binding with a single getter function\n\nAdd a binding helper function that creates a read-only / one-way binding given only a single getter function.\n\n- Source: [`src/componentModel/core.tsx:L955`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L955)"}, {"id": "feat--skeleton-not-ready-state", "slug": "skeleton-not-ready-state", "type": "feat", "title": "Support skeleton and not-ready component states", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--skeleton-not-ready-state.md", "is_done": false, "body": "# Support skeleton and not-ready component states\n\nAdd built-in support for skeleton and \"not-ready\" state handling during component asynchronous initialization, data loading, or resource resolution.\n\n- Source: [`src/componentModel/core.tsx:L952`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L952)"}, {"id": "feat--store-has-and-clear-channels", "slug": "store-has-and-clear-channels", "type": "feat", "title": "Add APP.STORE.HAS and APP.STORE.CLEAR common channels", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--store-has-and-clear-channels.md", "is_done": false, "body": "# Add APP.STORE.HAS and APP.STORE.CLEAR common channels\n\nAdd `$STORE_HAS` (`APP.STORE.HAS`) and `$STORE_CLEAR` (`APP.STORE.CLEAR`) message bus channels to `CommonAppMsgStruct` and storage services.\n\n- Source: [`src/appDomain/commonContracts.ts:L27`](file:///d:/Src/my/actdim/public/dynstruct/src/appDomain/commonContracts.ts#L27)"}, {"id": "feat--tanstack-query-integration", "slug": "tanstack-query-integration", "type": "feat", "title": "Implement React (TanStack) Query integration for dynstruct", "status": "open", "priority": "low", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--tanstack-query-integration.md", "is_done": false, "body": "# Implement React (TanStack) Query integration for dynstruct\n\nIntegrate TanStack / React Query caching and async state management into dynstruct component models and services.\n\n- Source: [`src/componentModel/core.tsx:L959`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L959)"}, {"id": "feat--trpc-integration", "slug": "trpc-integration", "type": "feat", "title": "Implement tRPC transport integration for dynstruct", "status": "open", "priority": "low", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--trpc-integration.md", "is_done": false, "body": "# Implement tRPC transport integration for dynstruct\n\nProvide a tRPC transport adapter enabling dynstruct message bus integration with tRPC routers and procedures.\n\n- Source: [`src/componentModel/core.tsx:L956`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L956)"}, {"id": "feat--visibility-interaction-states", "slug": "visibility-interaction-states", "type": "feat", "title": "Support visibility and interaction modes with security integration and fallback view", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--visibility-interaction-states.md", "is_done": false, "body": "# Support visibility and interaction modes with security integration and fallback view\n\nProvide standardized visibility (`visible`, `none`, `hidden`) and interaction mode (`disabled`, `readOnly`) props/metadata integrated with security context and fallback view rendering.\n\n- Source: [`src/componentModel/core.tsx:L953`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L953)"}, {"id": "feat--websocket-transport-support", "slug": "websocket-transport-support", "type": "feat", "title": "Support WebSocket transport in request interface", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--websocket-transport-support.md", "is_done": false, "body": "# Support WebSocket transport in request interface\n\nAdd support for WebSocket transport configuration and connection management in `IRequestParams` and `HttpClient`.\n\n- Source: [`src/net/request.ts:L149`](file:///d:/Src/my/actdim/public/dynstruct/src/net/request.ts#L149)"}, {"id": "feat--www-authenticate-header-support", "slug": "www-authenticate-header-support", "type": "feat", "title": "Support WWW-Authenticate response header in SecurityService", "status": "open", "priority": "medium", "created": "2026-08-13", "updated": "2026-08-13", "completed": null, "agent": "antigravity", "tags": [], "milestone": "v2.0.0-along-transition", "parent": null, "blocked_by": [], "related": [], "file_path": ".along/ISSUES/feat--www-authenticate-header-support.md", "is_done": false, "body": "# Support WWW-Authenticate response header in SecurityService\n\nAdd parsing and handling of server `WWW-Authenticate` headers (e.g. `Bearer`, `Digest`, `Basic`) in `SecurityService.applyAuth` to handle challenge-response authentication.\n\n- Source: [`src/services/react/SecurityService.tsx:L510`](file:///d:/Src/my/actdim/public/dynstruct/src/services/react/SecurityService.tsx#L510)"}], "milestones": [{"id": "milestone--v2.0.0-along-transition", "slug": "v2.0.0-along-transition", "title": "v2.0.0: Transition to Along Ecosystem & .along/ Directory", "status": "in-progress", "due_date": "2026-09-05", "created": "2026-08-27", "target_issues": ["debt--async-to-generator-flow", "debt--safe-user-code-execution", "feat--automatic-children-validation", "feat--business-telemetry-declarations", "feat--component-type-metadata", "feat--control-persistence-providers", "feat--granular-access-control", "feat--graphql-integration", "feat--http-request-cancellation", "feat--livestore-reactive-dashboard-widgets", "feat--nav-service-dependencies", "feat--problem-details-http-errors", "feat--request-accepts-and-cors", "feat--signalr-integration", "feat--single-getter-prop-binding", "feat--skeleton-not-ready-state", "feat--store-has-and-clear-channels", "feat--tanstack-query-integration", "feat--trpc-integration", "feat--visibility-interaction-states", "feat--websocket-transport-support", "feat--www-authenticate-header-support"], "progress_pct": "50", "file_path": ".along/MILESTONES/v2.0.0-along-transition.md", "body": "# Milestone: v2.0.0 Along Transition\n\nDelivers isolated `.along/` directory, protocol: along metadata validation, /along-dash visual analytics, and full namespaced along-* command suite."}], "risks": [], "spikes": [], "checklists": [{"id": "checklist--pre-commit", "slug": "pre-commit", "title": "Pre-Commit Quality Gate", "category": "pre-commit", "items": [], "file_path": ".along/CHECKLISTS/pre-commit.md", "body": "# Pre-Commit Verification Checklist\n\n1. [ ] Code compiles and unit tests pass.\n2. [ ] Mandatory git diff inspected for zero unintended deletions.\n3. [ ] No API keys, secrets, or sensitive credentials committed.\n4. [ ] Filenames are Windows-safe (no colons, YYYY-MM-DD dates)."}, {"id": "checklist--stage-completion", "slug": "stage-completion", "title": "Mandatory Stage Completion & Wrap-Up", "category": "stage-completion", "items": [], "file_path": ".along/CHECKLISTS/stage-completion.md", "body": "# Mandatory Stage Completion Checklist\n\n1. [ ] Automated tests, linting, and builds run with quiet flags.\n2. [ ] All completed issues moved to `ISSUES/done/` with `status: done` and `completed: YYYY-MM-DD`.\n3. [ ] Related milestone progress percentage updated.\n4. [ ] Active session log written to `SESSIONS/`.\n5. [ ] CONTEXT snapshot rewritten (< 20 lines).\n6. [ ] ISSUES board updated and lean.\n7. [ ] Prompt user to compact session (`/compact`)."}], "sessions": [], "kb_articles": [{"id": "kb--01-architecture", "slug": "01-architecture", "title": "01 Architecture", "type": "topic", "created": "2026-08-27", "updated": "2026-08-27", "tags": [], "file_path": ".along/KB/01-architecture.md", "body": "# @actdim/dynstruct Architecture\n\n## 1. System Overview\n\n`@actdim/dynstruct` is a structure-first component architecture and application framework for building scalable, modular TypeScript applications. It decouples UI layout, state management, inter-component communication, and external services through explicit type-level wiring and a reactive message bus.\n\n```\n+---------------------------------------------------------------------------------------------------+\n|                                        @actdim/dynstruct                                          |\n+---------------------------------------------------------------------------------------------------+\n|  Structure-First Type Layer (Zero Runtime Cost)                                                   |\n|  - ComponentStruct<TMsg, { props, actions, children, msgScope, effects }>: Pure Type Contract    |\n|  - ComponentStructExt: Extended internal state definition                                         |\n+---------------------------------------------------------------------------------------------------+\n|  Hook-Constructor & Model Layer                                                                   |\n|  - use<Component>(params: ComponentParams<Struct>): Component<Struct>                            |\n|  - ComponentDef<Struct>: Runtime definition (props, actions, events, children, effects, view)     |\n|  - ComponentModel<Struct>: Reactive MobX proxy with $state, $, validate(), mapToEdit()            |\n|  - Two-way Data Binding: bind(get, set, converter), bindProp(target, path)                         |\n+---------------------------------------------------------------------------------------------------+\n|  Component Hierarchy & Message Routing                                                            |\n|  - ComponentRegistryContext: Tree registration, getParent(), getChildren(), getHierarchyPath()    |\n|  - Scoped MsgBroker: Narrowed bus channels (subscribe, publish, provide)                          |\n|  - Directional Msg Filtering: ComponentMsgFilter.FromAncestors, ComponentMsgFilter.FromDescendants|\n+---------------------------------------------------------------------------------------------------+\n|  Framework Adapters & Service Integrations                                                        |\n|  - toReact(useComponent): Standard React FC adapter with memoization                             |\n|  - DynamicContent: Slot-based dynamic layout renderer                                             |\n|  - Service Providers: ServiceProvider, StorageService, NavService, SecurityService (JWT / Auth)   |\n|  - UI Integrations: @actdim/dynstruct-mui (MUI adapters: Button, Dialog, TextField, etc.)         |\n+---------------------------------------------------------------------------------------------------+\n```\n\n## 2. Core Architectural Principles\n\n### 2.1. Structure-First Composition\nIn traditional component models, parent components reference child implementations directly in markup (`<ChildButton />`). In `dynstruct`:\n1. **Component Structures are pure types**: `CounterPanelStruct` declares child types (`children: { btn: ButtonStruct }`) without requiring any runtime JavaScript code.\n2. **Explicit Dependency Tree**: The complete component dependency graph is verifiable at the TypeScript compiler level before executing runtime code.\n3. **Hook-Constructors**: Each component is instantiated via a hook function (`useCounterPanel`), wiring props, actions, and child hook-constructors.\n\n### 2.2. Reactive Component Model (`ComponentModel`)\nAll declared `props` automatically become reactive (powered by MobX observable proxies).\n- **Actions**: Wrap state mutations in batched transactions (`runInAction`).\n- **Events**: Type-safe event hooks generated with full IntelliSense (`onChange<PropName>`, `onInit`, `onReady`, `onDestroy`, `onError`).\n- **Internal State Helper (`$`)**: Exposes component ID, lifecycle state, validation status (`$.propState`), and error tracking.\n\n### 2.3. Decoupled Message Bus (`msgScope`)\nInstead of prop-drilling or global singletons, components declare a `msgScope` over the application message bus (`@actdim/msgmesh`):\n- `subscribe`: Channels the component listens to.\n- `publish`: Channels the component dispatches events to.\n- `provide`: Channels for which the component provides request/response handlers.\n- **Hierarchical Routing**: Subscriptions can restrict message acceptance using `ComponentMsgFilter.FromAncestors` or `FromDescendants`.\n\n### 2.4. React Adapter Layer (`toReact`)\n`toReact` converts any dynstruct hook-constructor into an idiomatic, memoized React functional component (`React.memo`), enabling seamless integration into existing React codebases.\n\n## 3. Cross-Links\n- [[INDEX.md]] - Knowledge Base Root\n- [[02-domain-model.md]] - Domain Contracts and Component Structs\n- [[03-setup-and-workflow.md]] - Setup, Build, Tests & Storybook Workflow\n- [[04-api-reference.md]] - Exhaustive API Reference\n- [[05-patterns-and-recipes.md]] - Storybook Examples, Recipes and Architecture Patterns"}, {"id": "kb--02-domain-model", "slug": "02-domain-model", "title": "02 Domain Model", "type": "topic", "created": "2026-08-27", "updated": "2026-08-27", "tags": [], "file_path": ".along/KB/02-domain-model.md", "body": "# @actdim/dynstruct Domain Model & Type Contracts\n\n## 1. Domain Types Overview\n\nThe domain model of `@actdim/dynstruct` defines the structural scaffolding, runtime definitions, models, bindings, and message routing contracts.\n\n## 2. Core Entities & Type Contracts\n\n### 2.1. Structural Scaffolding (`ComponentStruct`)\n```typescript\nimport { BaseAppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';\nimport { ComponentStruct, ComponentRefStruct } from '@actdim/dynstruct/componentModel/contracts';\n\nexport type UserProfileStruct = ComponentStruct<\n    BaseAppMsgStruct,\n    {\n        props: {\n            username: string;\n            email: string;\n            isEditing: boolean;\n        };\n        actions: {\n            save: () => Promise<void>;\n            cancel: () => void;\n        };\n        children: {\n            avatar: AvatarStruct;\n            saveBtn: ButtonStruct;\n            cancelBtn: ButtonStruct;\n        };\n        msgScope: {\n            subscribe: 'USER.DATA_UPDATED';\n            publish: 'UI.NOTIFY';\n            provide: 'USER.GET_EDIT_DATA';\n        };\n        effects: ['syncRemoteState', 'trackEdits'];\n    }\n>;\n```\n\n### 2.2. Runtime Definition (`ComponentDef<TStruct>`)\nThe implementation object passed to `useComponent`:\n- `regType: string`: Component identifier used for tree registration and DOM ID generation.\n- `props: TStruct['props']`: Initial reactive state.\n- `actions?: TStruct['actions']`: Action method implementations.\n- `events?: ComponentEvents<TStruct>`:\n  - `onChange<PropName>?: (oldVal, newVal) => void`\n  - `onInit?: () => void`\n  - `onReady?: () => void`\n  - `onDestroy?: () => void`\n  - `onError?: (err: Error) => void`\n- `children?: { [K in keyof TStruct['children']]: Component<TStruct['children'][K]> }`: Instantiated child hook-constructors.\n- `msgScope?: { subscribe?, publish?, provide? }`: Message bus handlers.\n- `effects?: EffectDef[]`: Reactive effect observers.\n- `view: () => ReactNode`: Render function returning JSX.\n\n### 2.3. Two-Way Data Binding (`Binding`)\n- **`bind<T, TFrom>(get: () => T, set?: (v: T) => void, converter?: ValueConverter<T, TFrom>): Binding`**: Creates two-way getter/setter binding.\n- **`bindProp<T extends object, P extends KeyPath<T>>(target: () => T, path: P): Binding`**: Creates deep dot-notation property binding.\n\n### 2.4. Component State Helper (`$`)\nAccessible on `c.model.$`:\n- `$.id: string`: Unique component instance ID.\n- `$.regType: string`: Component type name.\n- `$.parent?: Component<any>`: Parent component reference.\n- `$.propState: Record<string, ComponentPropState>`: Validation state, error messages, and dirty flags.\n- `$.isReady: boolean`: Lifecycle readiness status.\n\n### 2.5. Directional Message Filtering (`ComponentMsgFilter`)\n- `ComponentMsgFilter.None = 0`\n- `ComponentMsgFilter.FromAncestors = 1 << 0`: Accepts messages only dispatched from parent/ancestor components in the tree.\n- `ComponentMsgFilter.FromDescendants = 1 << 1`: Accepts messages only dispatched from child/descendant components in the tree.\n\n### 2.6. Service Provider Contracts (`ServiceProvider`)\n- **`StorageService`**: Dexie/IndexedDB storage adapter.\n- **`NavService`**: React Router navigation adapter (`navigate`, `location`, route parameters).\n- **`SecurityService`**: Authentication domain (`AuthInfo`, `login`, `logout`, `refreshToken`, JWT token claims).\n\n## 3. Cross-Links\n- [[INDEX.md]] - Knowledge Base Root\n- [[01-architecture.md]] - System Architecture\n- [[03-setup-and-workflow.md]] - Setup, Build & Storybook Workflow\n- [[04-api-reference.md]] - API Reference\n- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples"}, {"id": "kb--03-setup-and-workflow", "slug": "03-setup-and-workflow", "title": "03 Setup And Workflow", "type": "topic", "created": "2026-08-27", "updated": "2026-08-27", "tags": [], "file_path": ".along/KB/03-setup-and-workflow.md", "body": "# @actdim/dynstruct Setup, Build & Storybook Workflow\n\n## 1. Prerequisites & Installation\n\n- **Node.js**: >= 20.0.0\n- **Package Manager**: `pnpm` (version ~10.21.0)\n- **TypeScript**: >= 5.9.3\n\nInstall dependencies:\n```bash\npnpm install\n```\n\n### Peer Dependencies\n```bash\npnpm add @actdim/msgmesh @actdim/utico react react-dom mobx mobx-react-lite mobx-utils react-router react-router-dom rxjs uuid path-to-regexp jwt-decode\n```\n\n## 2. Scripts & Workflows\n\n| Command | Action | Description |\n|---|---|---|\n| `pnpm run build` | `tsc -b tsconfig.json && vite build` | Typechecks and compiles ESM packages with `.d.ts` declaration maps |\n| `pnpm run test` | `npx vitest --config=vitest.node.config.ts --no-cache` | Runs unit test suite under Node.js |\n| `pnpm run test:w` | `npx vitest --config=vitest.node.config.ts --watch` | Runs test watcher in interactive mode |\n| `pnpm run storybook` | `storybook dev -p 6006` | Launches interactive Storybook environment at `http://localhost:6006` |\n| `pnpm run build-storybook` | `storybook build` | Builds static Storybook documentation bundle |\n| `pnpm run typecheck` | `tsc -b tsconfig.json` | Validates TypeScript compiler checks across all source files and stories |\n| `pnpm run lint` | `eslint \"./**/*.{ts,tsx}\"` | Runs ESLint |\n| `pnpm run format` | `prettier --write .` | Formats all files with Prettier |\n\n## 3. Storybook Story Catalog (`src/_stories/componentModel/`)\n\nThe Storybook suite provides live interactive demonstrations of all architectural capabilities:\n- **`BasicCommunicationExample`**: Decoupled message bus communication between Producer and Consumer components.\n- **`StateExample`**: Reactive model state, nested object tracking, and avatar view synchronization.\n- **`CustomMsgStructExample`**: Complex multi-component message bus with `TodoList` and `TodoEdit`.\n- **`ParentChildConnectionExample`**: Hierarchical component tree, two-way bindings, and directional message filtering (`FromAncestors`).\n- **`EffectDemo`**: Reactive autorun effect handlers and automatic property re-computation.\n- **`ErrorBoundaryDemo`**: Dynamic error isolation and fallback overlays.\n- **`ServiceCallExample` & `SecurityServiceExample`**: Backend API invocation, authentication tokens, and login dialog flows.\n\n## 4. Cross-Links\n- [[INDEX.md]] - Knowledge Base Root\n- [[01-architecture.md]] - Architecture\n- [[02-domain-model.md]] - Domain Model\n- [[04-api-reference.md]] - API Reference\n- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples"}, {"id": "kb--04-api-reference", "slug": "04-api-reference", "title": "04 Api Reference", "type": "topic", "created": "2026-08-27", "updated": "2026-08-27", "tags": [], "file_path": ".along/KB/04-api-reference.md", "body": ""}, {"id": "kb--05-patterns-and-recipes", "slug": "05-patterns-and-recipes", "title": "05 Patterns And Recipes", "type": "topic", "created": "2026-08-27", "updated": "2026-08-27", "tags": [], "file_path": ".along/KB/05-patterns-and-recipes.md", "body": ""}, {"id": "kb--INDEX", "slug": "INDEX", "title": "Index", "type": "topic", "created": "2026-08-27", "updated": "2026-08-27", "tags": [], "file_path": ".along/KB/INDEX.md", "body": "# @actdim/dynstruct Knowledge Base Index\n\nWelcome to the **@actdim/dynstruct** Knowledge Base. This knowledge base provides comprehensive architectural documentation, domain models, API references, workflows, and practical patterns for the structure-first TypeScript component framework.\n\n## Knowledge Base Articles\n\n- [[01-architecture.md]] - **Architecture & Design Principles**: Structure-first type scaffolding (`ComponentStruct`), hook-constructors (`useComponent`), reactive model (`ComponentModel`), decoupled message bus (`msgScope`), and React adapters (`toReact`).\n- [[02-domain-model.md]] - **Domain Model & Type Contracts**: `ComponentStruct`, `ComponentDef`, two-way bindings (`bind`, `bindProp`), component state helper (`$`), and directional message filtering (`ComponentMsgFilter`).\n- [[03-setup-and-workflow.md]] - **Setup, Build & Storybook Workflow**: Build scripts, Vitest test suites, Storybook catalog (`src/_stories/componentModel/`), and developer workflows.\n- [[04-api-reference.md]] - **Exhaustive API Reference**: Complete API reference for `useComponent`, `toReact`, `bind`, `bindProp`, `prop`, `validate`, `mapToEdit`, `<DynamicContent />`, and `@actdim/dynstruct-mui` components.\n- [[05-patterns-and-recipes.md]] - **Patterns, Recipes & Storybook Guide**: Production recipes for parent-child wiring with two-way bindings, decoupled message bus producers/consumers, directional routing, and reactive effects.\n\n## Core Concepts & Pipeline\n\n| Concept | Role |\n|---|---|\n| **`ComponentStruct`** | Pure TypeScript type declaration defining props, actions, child structures, effects, and message scope. |\n| **`use<Component>`** | Hook-constructor creating component instance via `useComponent(def, params)`. |\n| **`ComponentModel`** | Reactive MobX observable state proxy with automatic `onChange<Prop>` event notifications. |\n| **`bind` / `bindProp`** | Two-way data binding connecting parent model state to child component props. |\n| **`msgScope`** | Scoped access to `@actdim/msgmesh` message bus (`subscribe`, `publish`, `provide`) with tree filtering. |\n| **`toReact`** | Memoized React functional component adapter for integration into standard React apps. |"}], "decisions": [{"id": "adr--2", "title": "#001 - <title>", "content": "## #001 - <title>\n- Date: YYYY-MM-DD\n- Status: accepted            (or: superseded by #NNN)\n- Context: <why this came up>\n- Decision: <what was decided>\n- Consequences: <trade-offs / follow-ups>\n-->"}], "context_text": "# Context\n\n_Current-state snapshot. Keep SHORT; history goes to SESSIONS/._\n\n- Status: agent context initialized; 20 issues extracted from codebase TODO comments into `.agents/ISSUES/` board.\n", "issues_board_text": "# Issues   (glyphs: [ ] open  [~] in-progress  [!] blocked  [x] done)\n\n## Active\n\n- [ ] (debt) [safe-user-code-execution](file://.agents/ISSUES/debt--safe-user-code-execution.md)\n- [ ] (feat) [http-request-cancellation](file://.agents/ISSUES/feat--http-request-cancellation.md)\n\n## Backlog\n\n- [ ] (feat) [http-adapters-kubb-orval](file://.along/ISSUES/feat--http-adapters-kubb-orval.md)\n- [ ] (feat) [livestore-reactive-dashboard-widgets](file://.agents/ISSUES/feat--livestore-reactive-dashboard-widgets.md)\n- [ ] (feat) [business-telemetry-declarations](file://.agents/ISSUES/feat--business-telemetry-declarations.md)\n- [ ] (debt) [async-to-generator-flow](file://.agents/ISSUES/debt--async-to-generator-flow.md)\n- [ ] (feat) [granular-access-control](file://.agents/ISSUES/feat--granular-access-control.md)\n- [ ] (feat) [control-persistence-providers](file://.agents/ISSUES/feat--control-persistence-providers.md)\n- [ ] (feat) [component-type-metadata](file://.agents/ISSUES/feat--component-type-metadata.md)\n- [ ] (feat) [skeleton-not-ready-state](file://.agents/ISSUES/feat--skeleton-not-ready-state.md)\n- [ ] (feat) [visibility-interaction-states](file://.agents/ISSUES/feat--visibility-interaction-states.md)\n- [ ] (feat) [automatic-children-validation](file://.agents/ISSUES/feat--automatic-children-validation.md)\n- [ ] (feat) [single-getter-prop-binding](file://.agents/ISSUES/feat--single-getter-prop-binding.md)\n- [ ] (feat) [trpc-integration](file://.agents/ISSUES/feat--trpc-integration.md)\n- [ ] (feat) [signalr-integration](file://.agents/ISSUES/feat--signalr-integration.md)\n- [ ] (feat) [graphql-integration](file://.agents/ISSUES/feat--graphql-integration.md)\n- [ ] (feat) [tanstack-query-integration](file://.agents/ISSUES/feat--tanstack-query-integration.md)\n- [ ] (feat) [www-authenticate-header-support](file://.agents/ISSUES/feat--www-authenticate-header-support.md)\n- [ ] (feat) [nav-service-dependencies](file://.agents/ISSUES/feat--nav-service-dependencies.md)\n- [ ] (feat) [websocket-transport-support](file://.along/ISSUES/feat--websocket-transport-support.md)\n- [ ] (feat) [server-sent-events-support](file://.along/ISSUES/feat--server-sent-events-support.md)\n- [ ] (feat) [request-accepts-and-cors](file://.agents/ISSUES/feat--request-accepts-and-cors.md)\n- [ ] (feat) [problem-details-http-errors](file://.agents/ISSUES/feat--problem-details-http-errors.md)\n- [ ] (feat) [store-has-and-clear-channels](file://.agents/ISSUES/feat--store-has-and-clear-channels.md)\n\n## Done (recent)\n", "history_text": "# History\n\n_Index of sessions (newest last). One line per session:_\n_`<YYYY-MM-DD> - <slug> - <agent> - <summary> - <relative link>`_\n", "graph": {"nodes": [{"id": "debt--async-to-generator-flow", "label": "Move asyncToGeneratorFlow helper to utico", "type": "issue", "status": "open", "priority": "low", "issue_type": "debt"}, {"id": "debt--safe-user-code-execution", "label": "Ensure user code execution is properly handled across all boundaries", "type": "issue", "status": "open", "priority": "high", "issue_type": "debt"}, {"id": "feat--automatic-children-validation", "label": "Add automatic validation for component children declarations", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--business-telemetry-declarations", "label": "Declarative telemetry & analytics annotations in component structures", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--component-type-metadata", "label": "Support component classification types (resource-boundary, layout, UI)", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--control-persistence-providers", "label": "Support component state persistence via configurable providers", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--granular-access-control", "label": "Support granular access control for component models and channels", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--graphql-integration", "label": "Implement GraphQL transport integration for dynstruct", "type": "issue", "status": "open", "priority": "low", "issue_type": "feat"}, {"id": "feat--http-adapters-kubb-orval", "label": "Adapt dynstruct HttpClient for Kubb and Orval Generators", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--http-request-cancellation", "label": "Support request cancellation in HttpClient", "type": "issue", "status": "open", "priority": "high", "issue_type": "feat"}, {"id": "feat--livestore-reactive-dashboard-widgets", "label": "LiveStore reactive query integration and real-time dashboard components", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--nav-service-dependencies", "label": "Support reactive navigation context dependencies in NavService", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--problem-details-http-errors", "label": "Support RFC 7807 problem+json format in HttpClientError", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--request-accepts-and-cors", "label": "Add accepts headers and crossDomain support in IRequestParams", "type": "issue", "status": "open", "priority": "low", "issue_type": "feat"}, {"id": "feat--server-sent-events-support", "label": "Support Server-Sent Events (SSE) transport in dynstruct", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--signalr-integration", "label": "Implement SignalR transport integration for dynstruct", "type": "issue", "status": "open", "priority": "low", "issue_type": "feat"}, {"id": "feat--single-getter-prop-binding", "label": "Support one-way prop binding with a single getter function", "type": "issue", "status": "open", "priority": "low", "issue_type": "feat"}, {"id": "feat--skeleton-not-ready-state", "label": "Support skeleton and not-ready component states", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--store-has-and-clear-channels", "label": "Add APP.STORE.HAS and APP.STORE.CLEAR common channels", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--tanstack-query-integration", "label": "Implement React (TanStack) Query integration for dynstruct", "type": "issue", "status": "open", "priority": "low", "issue_type": "feat"}, {"id": "feat--trpc-integration", "label": "Implement tRPC transport integration for dynstruct", "type": "issue", "status": "open", "priority": "low", "issue_type": "feat"}, {"id": "feat--visibility-interaction-states", "label": "Support visibility and interaction modes with security integration and fallback view", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--websocket-transport-support", "label": "Support WebSocket transport in request interface", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "feat--www-authenticate-header-support", "label": "Support WWW-Authenticate response header in SecurityService", "type": "issue", "status": "open", "priority": "medium", "issue_type": "feat"}, {"id": "milestone--v2.0.0-along-transition", "label": "v2.0.0: Transition to Along Ecosystem & .along/ Directory", "type": "milestone", "status": "in-progress", "progress_pct": "50"}], "edges": [{"source": "debt--async-to-generator-flow", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "debt--safe-user-code-execution", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--automatic-children-validation", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--business-telemetry-declarations", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--component-type-metadata", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--control-persistence-providers", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--granular-access-control", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--graphql-integration", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--http-adapters-kubb-orval", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--http-request-cancellation", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--livestore-reactive-dashboard-widgets", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--nav-service-dependencies", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--problem-details-http-errors", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--request-accepts-and-cors", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--server-sent-events-support", "target": "feat--websocket-transport-support", "type": "related", "label": "related"}, {"source": "feat--server-sent-events-support", "target": "feat--signalr-integration", "type": "related", "label": "related"}, {"source": "feat--server-sent-events-support", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--signalr-integration", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--single-getter-prop-binding", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--skeleton-not-ready-state", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--store-has-and-clear-channels", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--tanstack-query-integration", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--trpc-integration", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--visibility-interaction-states", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--websocket-transport-support", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}, {"source": "feat--www-authenticate-header-support", "target": "milestone--v2.0.0-along-transition", "type": "belongs_to", "label": "part of"}]}, "repo_name": "dynstruct", "repo_path": "D:\\Src\\my\\actdim\\infomnia\\src\\packages\\dynstruct"};
+    let cyInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initCytoscape();
+    });
+
+    function switchTab(tabName) {
+      document.querySelectorAll('nav .tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+
+      const tabs = ['overview', 'issues', 'graph', 'milestones', 'risks', 'kb', 'sessions'];
+      tabs.forEach(t => {
+        const el = document.getElementById(`content-${t}`);
+        if (t === tabName) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+
+      if (tabName === 'graph') {
+        setTimeout(() => {
+          if (cyInstance) {
+            cyInstance.resize();
+            cyInstance.layout({ name: 'cose', animate: false }).run();
+          }
+        }, 100);
+      }
+      lucide.createIcons();
+    }
+
+    function filterIssues() {
+      const q = document.getElementById('issue-search').value.toLowerCase();
+      const statusFilter = document.getElementById('filter-status').value;
+      const typeFilter = document.getElementById('filter-type').value;
+      const prioFilter = document.getElementById('filter-prio').value;
+
+      document.querySelectorAll('.issue-card').forEach(card => {
+        const title = card.getAttribute('data-title');
+        const slug = card.getAttribute('data-slug');
+        const status = card.getAttribute('data-status');
+        const type = card.getAttribute('data-type');
+        const prio = card.getAttribute('data-priority');
+
+        const matchQuery = !q || title.includes(q) || slug.includes(q);
+        const matchStatus = statusFilter === 'all' || status === statusFilter;
+        const matchType = typeFilter === 'all' || type === typeFilter;
+        const matchPrio = prioFilter === 'all' || prio === prioFilter;
+
+        if (matchQuery && matchStatus && matchType && matchPrio) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function initCytoscape() {
+      const elements = [];
+      const nodes = RAW_DATA.graph.nodes || [];
+      const edges = RAW_DATA.graph.edges || [];
+
+      nodes.forEach(n => {
+        let color = '#38bdf8';
+        let shape = 'roundrectangle';
+        if (n.type === 'issue') {
+          color = n.status === 'done' ? '#10b981' : (n.status === 'in-progress' ? '#f59e0b' : (n.status === 'blocked' ? '#ef4444' : '#64748b'));
+        } else if (n.type === 'milestone') {
+          color = '#818cf8';
+          shape = 'hexagon';
+        } else if (n.type === 'risk') {
+          color = '#f43f5e';
+          shape = 'diamond';
+        }
+        elements.push({ data: { id: n.id, label: n.label, color: color, shape: shape } });
+      });
+
+      edges.forEach(e => {
+        let edgeColor = '#475569';
+        if (e.type === 'blocks') edgeColor = '#ef4444';
+        if (e.type === 'belongs_to') edgeColor = '#38bdf8';
+        elements.push({ data: { id: `${e.source}->${e.target}`, source: e.source, target: e.target, label: e.label, color: edgeColor } });
+      });
+
+      cyInstance = cytoscape({
+        container: document.getElementById('cy'),
+        elements: elements,
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': 'data(color)',
+              'label': 'data(label)',
+              'color': '#f8fafc',
+              'font-size': '10px',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'shape': 'data(shape)',
+              'width': 'label',
+              'height': '32px',
+              'padding': '8px'
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 2,
+              'line-color': 'data(color)',
+              'target-arrow-color': 'data(color)',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'label': 'data(label)',
+              'font-size': '8px',
+              'color': '#94a3b8'
+            }
+          }
+        ],
+        layout: { name: 'cose', padding: 30, animate: false }
+      });
+
+      cyInstance.on('tap', 'node', (evt) => {
+        openEntity(evt.target.id());
+      });
+    }
+
+    function layoutGraph() {
+      if (cyInstance) {
+        cyInstance.layout({ name: 'cose', padding: 30, animate: true }).run();
+      }
+    }
+
+    function openEntity(id) {
+      let entity = null;
+      let typeLabel = 'Entity';
+
+      if (id.startsWith('feat--') || id.startsWith('bug--') || id.startsWith('debt--') || id.startsWith('task--') || id.startsWith('docs--')) {
+        entity = RAW_DATA.issues.find(i => i.id === id);
+        typeLabel = `ISSUE (${entity ? entity.type : ''})`;
+      } else if (id.startsWith('milestone--')) {
+        entity = RAW_DATA.milestones.find(m => m.id === id);
+        typeLabel = 'MILESTONE';
+      } else if (id.startsWith('risk--')) {
+        entity = RAW_DATA.risks.find(r => r.id === id);
+        typeLabel = 'RISK';
+      } else if (id.startsWith('kb--')) {
+        entity = RAW_DATA.kb_articles.find(k => k.id === id);
+        typeLabel = 'KNOWLEDGE BASE';
+      } else if (id.startsWith('session--')) {
+        entity = RAW_DATA.sessions.find(s => s.id === id);
+        typeLabel = 'SESSION';
+      }
+
+      if (!entity) return;
+
+      document.getElementById('drawer-tag').innerText = typeLabel;
+      document.getElementById('drawer-title').innerText = entity.title || entity.slug || entity.date || id;
+
+      let metaHtml = '';
+      if (entity.status) metaHtml += `<div>Status: <span class="text-slate-200 font-bold">${entity.status}</span></div>`;
+      if (entity.priority) metaHtml += `<div>Priority: <span class="text-slate-200 font-bold">${entity.priority}</span></div>`;
+      if (entity.created) metaHtml += `<div>Created: <span class="text-slate-200">${entity.created}</span></div>`;
+      if (entity.completed) metaHtml += `<div>Completed: <span class="text-emerald-400">${entity.completed}</span></div>`;
+      if (entity.file_path) metaHtml += `<div class="col-span-2">File: <span class="text-sky-400">${entity.file_path}</span></div>`;
+      document.getElementById('drawer-metadata').innerHTML = metaHtml;
+
+      const bodyHtml = marked.parse(entity.body || '*No markdown description provided.*');
+      document.getElementById('drawer-body').innerHTML = bodyHtml;
+
+      document.getElementById('drawer-backdrop').classList.remove('hidden');
+      document.getElementById('entity-drawer').classList.remove('translate-x-full');
+      lucide.createIcons();
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer-backdrop').classList.add('hidden');
+      document.getElementById('entity-drawer').classList.add('translate-x-full');
+    }
+
+    async function refreshData() {
+      try {
+        const res = await fetch('/api/refresh');
+        if (res.ok) {
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error('Failed refreshing data:', err);
+      }
+    }
+  </script>
+</body>
+</html>
