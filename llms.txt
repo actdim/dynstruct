@@ -4,11 +4,11 @@ Component model and architectural framework for TypeScript and React application
 
 ## Core Rules for AI Agents
 
-1. **Messaging & MsgMesh Integration**:
-   - **NEVER** create a local `createMsgBus()` inside a component or pass `msgBus` manually through component props.
-   - The bus is provided once at app root (`<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`) and flows down implicitly through `ReactComponentContext`.
-   - **NEVER** imperatively register handlers with `c.msgBus.on(...)` inside `onReady` or `useEffect`. Use declarative `def.msgBroker.subscribe` / `def.msgBroker.provide`.
-   - Always use the smart proxy `c.msgBus` for imperative messaging inside actions. It automatically:
+1. **Messaging & MsgMesh Integration Architecture**:
+   - Prefer distributing `msgBus` via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>` at application/feature root. Descendant components receive `msgBus` implicitly through `ReactComponentContext`.
+   - Take advantage of dotted prefixes (`'API.USER.'`, `'APP.NAV.'`) and TypeScript type composition (`ApiStruct & MsgStruct<LocalEvents> & BaseAppMsgStruct`) to distribute channel schemas modularly across multiple files with unified compile-time safety, avoiding unnecessary ad-hoc bus instantiations.
+   - Prefer declarative component contracts (`ComponentStruct.msgScope` and `ComponentDef.msgBroker`) over imperatively wiring subscriptions in `onReady` or `useEffect`.
+   - Use the smart proxy `c.msgBus` for imperative messaging inside actions. It automatically:
      - Deep-unwraps MobX observables (`normalizePayload`) so MobX proxies never leak into the bus.
      - Binds all operations to `component.abortSignal` for automatic cleanup on unmount (zero memory leaks, no manual `unsubscribe()`).
      - Tags messages with `headers.sourceId = component.id`.

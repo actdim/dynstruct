@@ -48,9 +48,18 @@ Components communicate over typed channels provided by `@actdim/msgmesh`. `@actd
 
 ### Core Integration Principles
 
-1. **Implicit Context Injection**: `msgBus` is initialized once at the application root (`<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`). All child components receive `msgBus` automatically through context. **Never manually instantiate a local `createMsgBus()` inside components and never pass `msgBus` via props**.
-2. **Declarative Contracts (`msgScope` & `msgBroker`)**: Declare communication channels on `ComponentStruct.msgScope` and register handlers in `ComponentDef.msgBroker`. Handlers are automatically bound on initialization and cleaned up on component unmount.
-3. **Smart Component Proxy (`c.msgBus`)**: When sending messages or making requests imperatively inside actions, use `c.msgBus`. It wraps the raw bus with essential framework guarantees:
+1. **Context-Driven Bus Distribution**:
+   - In standard Dynstruct applications, `msgBus` is initialized at the application level via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`. All descendant components receive `msgBus` automatically through context.
+   - Multiple context providers can be nested if isolated scopes are required, but in most cases a single unified or modular bus structure is optimal.
+   - Because `@actdim/msgmesh` supports hierarchical dotted channel prefixes (`'API.USER.'`, `'APP.NAV.'`) and TypeScript provides powerful type composition (`ApiStruct & MsgStruct<LocalEvents> & BaseAppMsgStruct`), developers can distribute channel definitions across multiple modular files while maintaining unified compile-time type safety.
+   - Therefore, without a specific architectural need, creating ad-hoc bus instances inside individual components or manually passing `msgBus` through props is unnecessary and adds boilerplate.
+
+2. **Declarative Contracts (`msgScope` & `msgBroker`)**:
+   - Declare communication channels on `ComponentStruct.msgScope` and register handlers in `ComponentDef.msgBroker`. Handlers are automatically bound on initialization and cleaned up on component unmount.
+   - This keeps component inputs and outputs visible on the component struct at a glance rather than scattered in imperative hooks.
+
+3. **Smart Component Proxy (`c.msgBus`)**:
+   When sending messages or making requests imperatively inside actions, use `c.msgBus`. It wraps the underlying bus with essential framework conveniences:
    - **MobX Observable Unwrapping (`normalizePayload`)**: Payloads are automatically converted to plain structural copies before being placed on the bus, preventing reactive MobX proxies from leaking into message bus events.
    - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Subscriptions (`on`, `once`, `stream`) and pending `request()` / `provide()` calls are automatically linked to `component.abortSignal` and cleanly disposed of when the component unmounts.
    - **Provenance & Source Tracing**: Automatically populates `headers.sourceId = component.id`.
@@ -103,15 +112,15 @@ const def: ComponentDef<UserCardStruct> = {
 };
 ```
 
-### Anti-Patterns to Avoid
+### Architectural Comparison & Recommended Patterns
 
-| Anti-Pattern | Recommended Dynstruct Practice |
-|---|---|
-| Creating a local `createMsgBus()` inside a component | Rely on implicit context injection from root `<AppContextProvider>` |
-| Passing `msgBus` down manually via component props | Access the smart proxy `c.msgBus` inside the component |
-| Calling `c.msgBus.on(...)` manually in `onReady` / `useEffect` | Declare subscriptions in `def.msgBroker.subscribe` |
-| Calling raw `msgBus` without unwrapping MobX observables | Use `c.msgBus` which automatically calls `normalizePayload` |
-| Manually unsubscribing in `onDestroy` | `c.msgBus` automatically cancels subscriptions on unmount via `component.abortSignal` |
+| Ad-Hoc / Imperative Pattern | Recommended Dynstruct Pattern | Key Advantage |
+|---|---|---|
+| Creating a local `createMsgBus()` inside a component | Rely on context injection from `<AppContextProvider>` | Unified monitoring, modular type composition, and reduced memory overhead |
+| Passing `msgBus` down manually via component props | Access the smart proxy `c.msgBus` inside the component | Zero prop drilling, implicit availability at any tree depth |
+| Calling `c.msgBus.on(...)` manually in `onReady` / `useEffect` | Declare subscriptions in `def.msgBroker.subscribe` | Clear component contracts, automatic lifecycle binding |
+| Calling raw `msgBus` without unwrapping MobX observables | Use `c.msgBus` (automatically applies `normalizePayload`) | Prevents reactive proxy leaks across event subscribers |
+| Manually unsubscribing in `onDestroy` | `c.msgBus` automatically cancels subscriptions on unmount | Zero leak risk via `component.abortSignal` |
 
 ---
 

@@ -339,28 +339,28 @@ Avoid:
 - **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) — the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
 - passing reactive model values to external APIs without stripping proxies — use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
 
-## Messaging & MsgMesh Integration Rules
+## Messaging & MsgMesh Integration Architecture
 
-`@actdim/dynstruct` provides deep native integration with `@actdim/msgmesh`.
+`@actdim/dynstruct` provides native architectural integration with `@actdim/msgmesh`.
 
-### Strict Rules for Component Messaging:
+### Architectural Principles & Best Practices:
 
-1. **NEVER manually instantiate a local `createMsgBus()` inside components**:
-   - `msgBus` is created once at the application root and provided via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`.
-   - All components receive `msgBus` automatically through `ReactComponentContext`.
-   - **Do NOT pass `msgBus` as explicit component props**.
+1. **Context-Driven Bus Distribution**:
+   - In standard Dynstruct applications, `msgBus` is provided at the application level via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>` and injected implicitly into all descendant components via `ReactComponentContext`.
+   - While nested context providers or isolated buses are supported when architectural isolation is genuinely required, in most scenarios creating ad-hoc bus instances inside individual components or manually passing `msgBus` through props is unnecessary and adds boilerplate.
+   - Thanks to dotted channel prefixes (`'API.USER.'`, `'APP.NAV.'`) and TypeScript type composition (`ApiStruct & MsgStruct<LocalEvents> & BaseAppMsgStruct`), channel schemas can be cleanly distributed across multiple modular files while maintaining unified compile-time validation in a single bus structure.
 
-2. **NEVER imperatively call raw `msgBus.on()` inside `onReady` or `useEffect`**:
-   - Use declarative component channel bindings in `def.msgBroker.subscribe` or `def.msgBroker.provide`.
-   - Declarative definitions make component communication contracts visible on the component struct at a glance.
+2. **Declarative Component Contracts (`msgScope` & `msgBroker`)**:
+   - Prefer declaring communication contracts directly in the component definition: `ComponentStruct.msgScope` for type-level contracts and `ComponentDef.msgBroker` for runtime subscriptions/providers.
+   - This ensures a component's inputs and outputs are immediately visible on its type definition and automatically managed by the framework, rather than hidden inside imperative `onReady` or `useEffect` hooks.
 
-3. **Always use the Component Proxy `c.msgBus`**:
-   When imperative messaging is needed inside actions or callbacks, use `c.msgBus` (NOT a raw external bus instance). `c.msgBus` is a smart proxy (`getComponentMsgBus`) that provides essential framework guarantees:
-   - **Automatic MobX Observable Unwrapping (`normalizePayload`)**: All payloads sent or requested through `c.msgBus` are automatically deep-unwrapped via structural clone / `toPlain()`. This ensures MobX reactive proxies NEVER leak into the message bus.
-   - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Every subscription (`on`, `once`, `stream`) and in-flight `request()` / `provide()` operation is automatically bound to `component.abortSignal`. When the component unmounts, all subscriptions and pending requests are automatically cancelled without manual `unsubscribe()` logic.
+3. **Component Proxy Benefits (`c.msgBus`)**:
+   When imperative messaging is needed inside actions or callbacks, use `c.msgBus` (provided automatically on the component instance). The component proxy (`getComponentMsgBus`) wraps the underlying bus with essential conveniences:
+   - **Automatic MobX Observable Unwrapping (`normalizePayload`)**: All payloads sent or requested through `c.msgBus` are automatically deep-unwrapped via structural copying / `toPlain()`. This ensures MobX reactive proxies do not leak into the message bus.
+   - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Every subscription (`on`, `once`, `stream`) and in-flight `request()` / `provide()` operation is automatically linked to `component.abortSignal`. When the component unmounts, all active subscriptions and pending requests are automatically cancelled without manual `unsubscribe()` or cleanup routines.
    - **Automatic Source Tracing (`sourceId: component.id`)**: Automatically sets `headers.sourceId` to the component's unique instance ID for message provenance tracking.
-   - **Error Boundary & Pending Tracking**: `c.msgBus.request(...)` runs inside `component.run()`, automatically routing rejections to `onCatch` and incrementing/decrementing `component.model.$.pendingRequestCount` for loading state indicators.
-   - **Hierarchical Scoping (`ComponentMsgFilter`)**: Handlers registered in `def.msgBroker` can use `componentFilter: ComponentMsgFilter.FromAncestors` or `ComponentMsgFilter.FromDescendants` to restrict message reception strictly to the component's sub-tree.
+   - **Error Boundary & Loading State**: `c.msgBus.request(...)` runs within `component.run()`, automatically routing unhandled rejections to `onCatch` and incrementing/decrementing `component.model.$.pendingRequestCount`.
+   - **Hierarchical Scoping (`ComponentMsgFilter`)**: Handlers registered in `def.msgBroker` can specify `componentFilter: ComponentMsgFilter.FromAncestors` or `ComponentMsgFilter.FromDescendants` to restrict message reception strictly to the component's sub-tree.
 
 ### Canonical Declarative Messaging Example:
 
