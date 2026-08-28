@@ -7,6 +7,7 @@
 
 ## Backlog
 
+- [ ] (feat) [http-adapters-kubb-orval](file://.along/ISSUES/feat--http-adapters-kubb-orval.md)
 - [ ] (feat) [livestore-reactive-dashboard-widgets](file://.agents/ISSUES/feat--livestore-reactive-dashboard-widgets.md)
 - [ ] (feat) [business-telemetry-declarations](file://.agents/ISSUES/feat--business-telemetry-declarations.md)
 - [ ] (debt) [async-to-generator-flow](file://.agents/ISSUES/debt--async-to-generator-flow.md)
