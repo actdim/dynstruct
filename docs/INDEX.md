@@ -1,56 +1,47 @@
-﻿---
+---
 protocol: along
-protocol_version: "2.2.8"
+protocol_version: "2.2.13"
 slug: INDEX
 title: Knowledge Base Topic Index
 type: index
-created: 2026-08-27
+created: 2026-09-02
 updated: 2026-09-02
 tags: [index, kb, topics, map]
 ---
 
 # Knowledge Base Topic Index
 
-Central entry point and cross-linked topic catalog for @actdim/dynstruct documentation.
+Central entry point and cross-linked topic catalog for project documentation:
 
 ## Knowledge Graph & Topic Map
 
 ```mermaid
 flowchart TD
     INDEX["Knowledge Base (INDEX)"]
-    T_OVERVIEW["Overview & Key Advantages"]
-    INDEX --> T_OVERVIEW
-    T_CORE["Core Concepts"]
-    INDEX --> T_CORE
-    T_ARCH_WIRING["Architecture & Wiring"]
-    INDEX --> T_ARCH_WIRING
-    T_REACT["React Integration & Service Patterns"]
-    INDEX --> T_REACT
-    T_API["API Reference & Development Guide"]
-    INDEX --> T_API
-    T_ARCHITECTURE["Architecture"]
+    T_01_OVERVIEW_AND_ADVANTAGES["Overview & Key Advantages"]
+    INDEX --> T_01_OVERVIEW_AND_ADVANTAGES
+    T_02_CORE_CONCEPTS["Core Concepts"]
+    INDEX --> T_02_CORE_CONCEPTS
+    T_03_ARCHITECTURE_AND_WIRING["Architecture & Wiring"]
+    INDEX --> T_03_ARCHITECTURE_AND_WIRING
+    T_04_REACT_INTEGRATION["React Integration & Service Patterns"]
+    INDEX --> T_04_REACT_INTEGRATION
+    T_05_API_REFERENCE["API Reference & Development Guide"]
+    INDEX --> T_05_API_REFERENCE
+    T_ARCHITECTURE["01 Architecture"]
     INDEX --> T_ARCHITECTURE
-    T_DOMAIN["Domain Model"]
-    INDEX --> T_DOMAIN
-    T_SETUP["Setup & Workflow"]
-    INDEX --> T_SETUP
-    T_OVERVIEW -.->|references| T_CORE
-    T_CORE -.->|references| T_OVERVIEW
-    T_CORE -.->|references| T_ARCH_WIRING
-    T_ARCH_WIRING -.->|references| T_CORE
-    T_ARCH_WIRING -.->|references| T_REACT
-    T_REACT -.->|references| T_ARCH_WIRING
-    T_REACT -.->|references| T_API
-    T_API -.->|references| T_REACT
-    T_ARCHITECTURE -.->|references| T_DOMAIN
-    T_ARCHITECTURE -.->|references| T_SETUP
-    T_ARCHITECTURE -.->|references| T_API
-    T_DOMAIN -.->|references| T_ARCHITECTURE
-    T_DOMAIN -.->|references| T_SETUP
-    T_DOMAIN -.->|references| T_API
-    T_SETUP -.->|references| T_ARCHITECTURE
-    T_SETUP -.->|references| T_DOMAIN
-    T_SETUP -.->|references| T_API
+    T_DOMAIN_MODEL["02 Domain Model"]
+    INDEX --> T_DOMAIN_MODEL
+    T_SETUP_AND_WORKFLOW["03 Setup And Workflow"]
+    INDEX --> T_SETUP_AND_WORKFLOW
+    T_01_OVERVIEW_AND_ADVANTAGES -.->|references| T_02_CORE_CONCEPTS
+    T_02_CORE_CONCEPTS -.->|references| T_01_OVERVIEW_AND_ADVANTAGES
+    T_02_CORE_CONCEPTS -.->|references| T_03_ARCHITECTURE_AND_WIRING
+    T_03_ARCHITECTURE_AND_WIRING -.->|references| T_02_CORE_CONCEPTS
+    T_03_ARCHITECTURE_AND_WIRING -.->|references| T_04_REACT_INTEGRATION
+    T_04_REACT_INTEGRATION -.->|references| T_03_ARCHITECTURE_AND_WIRING
+    T_04_REACT_INTEGRATION -.->|references| T_05_API_REFERENCE
+    T_05_API_REFERENCE -.->|references| T_04_REACT_INTEGRATION
 ```
 
 ---
@@ -62,9 +53,9 @@ flowchart TD
 - **[Architecture & Wiring](./topic--03-architecture-and-wiring.md)** (topic) `03-architecture-and-wiring`
 - **[React Integration & Service Patterns](./topic--04-react-integration.md)** (topic) `04-react-integration`
 - **[API Reference & Development Guide](./topic--05-api-reference.md)** (topic) `05-api-reference`
-- **[Architecture](./topic--architecture.md)** (topic) `architecture`
-- **[Domain Model](./topic--domain-model.md)** (topic) `domain-model`
-- **[Setup & Workflow](./topic--setup-and-workflow.md)** (topic) `setup-and-workflow`
+- **[01 Architecture](./topic--architecture.md)** (topic) `architecture`
+- **[02 Domain Model](./topic--domain-model.md)** (topic) `domain-model`
+- **[03 Setup And Workflow](./topic--setup-and-workflow.md)** (topic) `setup-and-workflow`
 
 ---
 
