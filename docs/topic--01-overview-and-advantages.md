@@ -1,6 +1,17 @@
+---
+protocol: along
+protocol_version: "2.2.5"
+slug: topic--01-overview-and-advantages
+title: Overview & Key Advantages
+type: topic
+created: 2026-08-31
+updated: 2026-08-31
+tags: [01-overview-and-advantages]
+---
+
 # Overview & Key Advantages
 
-[← Back to README](../README.md) | [Next: 02. Core Concepts →](./02-core-concepts.md)
+[← Back to README](../README.md) | [Next: 02. Core Concepts →](./topic--02-core-concepts.md)
 
 ---
 
@@ -77,5 +88,4 @@ expect(sendSpy).toHaveBeenCalledWith({
 
 ---
 
-[← Back to README](../README.md) | [Next: 02. Core Concepts →](./02-core-concepts.md)
-
+[← Back to README](../README.md) | [Next: 02. Core Concepts →](./topic--02-core-concepts.md)
