@@ -1,17 +1,6 @@
----
-protocol: along
-protocol_version: "2.2.5"
-slug: 04-react-integration
-title: React Integration & Service Patterns
-type: topic
-created: 2026-08-31
-updated: 2026-09-02
-tags: [04-react-integration]
----
-
 # React Integration & Service Patterns
 
-[← Back to 03. Architecture & Wiring](./topic--03-architecture-and-wiring.md) | [Next: 05. API Reference →](./topic--05-api-reference.md)
+[← Back to 03. Architecture & Wiring](./03-architecture-and-wiring.md) | [Next: 05. API Reference →](./05-api-reference.md)
 
 ---
 
@@ -159,4 +148,5 @@ Security status and user credentials flow through standardized security channels
 
 ---
 
-[← Back to 03. Architecture & Wiring](./topic--03-architecture-and-wiring.md) | [Next: 05. API Reference →](./topic--05-api-reference.md)
+[← Back to 03. Architecture & Wiring](./03-architecture-and-wiring.md) | [Next: 05. API Reference →](./05-api-reference.md)
+

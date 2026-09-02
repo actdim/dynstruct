@@ -1,17 +1,6 @@
----
-protocol: along
-protocol_version: "2.2.5"
-slug: 05-api-reference
-title: API Reference & Development Guide
-type: topic
-created: 2026-08-31
-updated: 2026-09-02
-tags: [05-api-reference]
----
-
 # API Reference & Development Guide
 
-[← Back to 04. React Integration](./topic--04-react-integration.md) | [Back to Main README](../README.md)
+[← Back to 04. React Integration](./04-react-integration.md) | [Back to Main README](../README.md)
 
 ---
 
@@ -165,4 +154,5 @@ Proprietary / BUSL-1.1 (Business Source License). See `LICENSE` for details.
 
 ---
 
-[← Back to 04. React Integration](./topic--04-react-integration.md) | [Back to Main README](../README.md)
+[← Back to 04. React Integration](./04-react-integration.md) | [Back to Main README](../README.md)
+

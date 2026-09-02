@@ -3,10 +3,7 @@ This folder belongs to a repository that uses the ALONG structure. The full work
 guidance + agent-context protocol live once in the nearest ancestor `AGENTS.md` (`../../../AGENTS.md`) -
 read it there. This folder keeps its OWN `.along/` state; use the nearest one.
 Only this folder's specifics follow.
-<!-- END ALONG-PROTOCOL -->
-
-
-# Agent Development Guide for `@actdim/dynstruct`
+<!-- END ALONG-PROTOCOL --># Agent Development Guide for `@actdim/dynstruct`
 
 This file defines how agents should implement and modify code in this repository.
 

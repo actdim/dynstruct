@@ -1,8 +1,8 @@
 ---
 protocol: along
-protocol_version: "2.2.8"
+protocol_version: "2.2.5"
 slug: architecture
-title: Architecture
+title: 01 Architecture
 type: topic
 created: 2026-08-27
 updated: 2026-09-02
@@ -67,7 +67,8 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 `toReact` converts any dynstruct hook-constructor into an idiomatic, memoized React functional component (`React.memo`), enabling seamless integration into existing React codebases.
 
 ## 3. Cross-Links
-- [Knowledge Base Root](./INDEX.md)
-- [Domain Contracts](./topic--domain-model.md)
-- [Setup, Build & Workflow](./topic--setup-and-workflow.md)
-- [API Reference](./topic--05-api-reference.md)
+- [[INDEX.md]] - Knowledge Base Root
+- [[02-domain-model.md]] - Domain Contracts and Component Structs
+- [[03-setup-and-workflow.md]] - Setup, Build, Tests & Storybook Workflow
+- [[04-api-reference.md]] - Exhaustive API Reference
+- [[05-patterns-and-recipes.md]] - Storybook Examples, Recipes and Architecture Patterns

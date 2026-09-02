@@ -1,17 +1,6 @@
----
-protocol: along
-protocol_version: "2.2.5"
-slug: 03-architecture-and-wiring
-title: Architecture & Wiring
-type: topic
-created: 2026-08-31
-updated: 2026-09-02
-tags: [03-architecture-and-wiring]
----
-
 # Architecture & Wiring
 
-[← Back to 02. Core Concepts](./topic--02-core-concepts.md) | [Next: 04. React Integration →](./topic--04-react-integration.md)
+[← Back to 02. Core Concepts](./02-core-concepts.md) | [Next: 04. React Integration →](./04-react-integration.md)
 
 ---
 
@@ -228,4 +217,5 @@ Built-in domain channel contracts simplify common application communication:
 
 ---
 
-[← Back to 02. Core Concepts](./topic--02-core-concepts.md) | [Next: 04. React Integration →](./topic--04-react-integration.md)
+[← Back to 02. Core Concepts](./02-core-concepts.md) | [Next: 04. React Integration →](./04-react-integration.md)
+

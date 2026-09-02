@@ -76,11 +76,11 @@ Explore the complete guide step-by-step from core concepts to advanced patterns:
 
 | Section | Description |
 |---|---|
-| 📖 [**01. Overview & Key Advantages**](./docs/01-overview-and-advantages.md) | Framework design philosophy, UI companion libraries, and comparison with MobX/React. |
-| 🧩 [**02. Core Concepts**](./docs/02-core-concepts.md) | `ComponentStruct`, `ComponentDef`, reactive properties, form helpers (`mapToEdit`), and events. |
-| 🏗️ [**03. Architecture & Wiring**](./docs/03-architecture-and-wiring.md) | Message channels, parent-child wiring, direct bindings (`bind`), and effects. |
-| ⚛️ [**04. React Integration & Services**](./docs/04-react-integration.md) | `useComponent`, `toReact`, API service adapters, routing, and auth providers. |
-| 🛠️ [**05. API Reference & Development**](./docs/05-api-reference.md) | Complete type reference, Storybook integration, and testing commands. |
+| 📖 [**01. Overview & Key Advantages**](./docs/topic--01-overview-and-advantages.md) | Framework design philosophy, UI companion libraries, and comparison with MobX/React. |
+| 🧩 [**02. Core Concepts**](./docs/topic--02-core-concepts.md) | `ComponentStruct`, `ComponentDef`, reactive properties, form helpers (`mapToEdit`), and events. |
+| 🏗️ [**03. Architecture & Wiring**](./docs/topic--03-architecture-and-wiring.md) | Message channels, parent-child wiring, direct bindings (`bind`), and effects. |
+| ⚛️ [**04. React Integration & Services**](./docs/topic--04-react-integration.md) | `useComponent`, `toReact`, API service adapters, routing, and auth providers. |
+| 🛠️ [**05. API Reference & Development**](./docs/topic--05-api-reference.md) | Complete type reference, Storybook integration, and testing commands. |
 
 ---
 

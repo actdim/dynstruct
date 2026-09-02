@@ -1,8 +1,8 @@
 ---
 protocol: along
-protocol_version: "2.2.8"
+protocol_version: "2.2.5"
 slug: setup-and-workflow
-title: Setup & Workflow
+title: 03 Setup And Workflow
 type: topic
 created: 2026-08-27
 updated: 2026-09-02
@@ -52,7 +52,8 @@ The Storybook suite provides live interactive demonstrations of all architectura
 - **`ServiceCallExample` & `SecurityServiceExample`**: Backend API invocation, authentication tokens, and login dialog flows.
 
 ## 4. Cross-Links
-- [Knowledge Base Root](./INDEX.md)
-- [Architecture](./topic--architecture.md)
-- [Domain Model](./topic--domain-model.md)
-- [API Reference](./topic--05-api-reference.md)
+- [[INDEX.md]] - Knowledge Base Root
+- [[01-architecture.md]] - Architecture
+- [[02-domain-model.md]] - Domain Model
+- [[04-api-reference.md]] - API Reference
+- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples

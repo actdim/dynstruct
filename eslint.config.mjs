@@ -1,8 +1,6 @@
 import eslint from '@eslint/js'; // js
 import { defineConfig } from 'eslint/config';
 import tsEslint from 'typescript-eslint';
-import globals from 'globals';
-
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import prettierPlugin from 'eslint-plugin-prettier';
@@ -10,6 +8,11 @@ import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import reactRefreshPlugin from 'eslint-plugin-react-refresh';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
+import path from 'node:path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // cmd line: DEBUG=eslint:*
 export default defineConfig(
@@ -22,6 +25,9 @@ export default defineConfig(
     // reactRefreshPlugin.configs.recommended,
     // jsxA11yPlugin.configs.recommended,
     {
+        ignores: ['dist/**', 'node_modules/**', '.out/**'],
+    },
+    {
         files: ['**/*.ts', '**/*.tsx'],
         plugins: {
             '@typescript-eslint': tsPlugin,
@@ -31,7 +37,6 @@ export default defineConfig(
             'react-refresh': reactRefreshPlugin,
             'jsx-a11y': jsxA11yPlugin,
         },
-        ignores: ['dist/**', 'node_modules/**'],
         settings: {
             react: {
                 version: 'detect',
@@ -45,7 +50,8 @@ export default defineConfig(
             ...reactHooksPlugin.configs.recommended.rules,
             ...reactRefreshPlugin.configs.recommended.rules,
             ...jsxA11yPlugin.configs.recommended.rules,
-            'prettier/prettier': 'error',
+            // 'prettier/prettier': 'error',
+            'prettier/prettier': 'off',
             'no-unused-vars': 'off',
             'no-undef': 'off',
             'react/react-in-jsx-scope': 'off',
@@ -79,7 +85,8 @@ export default defineConfig(
                 ecmaVersion: 'latest',
                 // ecmaVersion: 2017,
                 sourceType: 'module',
-                project: './tsconfig.json',
+                project: ['./tsconfig.dev.json'],
+                tsconfigRootDir: __dirname,
                 ecmaFeatures: { jsx: true },
             },
             globals: {

@@ -1,17 +1,6 @@
----
-protocol: along
-protocol_version: "2.2.5"
-slug: 02-core-concepts
-title: Core Concepts
-type: topic
-created: 2026-08-31
-updated: 2026-09-02
-tags: [02-core-concepts]
----
-
 # Core Concepts
 
-[← Back to 01. Overview & Advantages](./topic--01-overview-and-advantages.md) | [Next: 03. Architecture & Wiring →](./topic--03-architecture-and-wiring.md)
+[← Back to 01. Overview & Advantages](./01-overview-and-advantages.md) | [Next: 03. Architecture & Wiring →](./03-architecture-and-wiring.md)
 
 ---
 
@@ -310,4 +299,5 @@ const def: ComponentDef<Struct> = {
 
 ---
 
-[← Back to 01. Overview & Advantages](./topic--01-overview-and-advantages.md) | [Next: 03. Architecture & Wiring →](./topic--03-architecture-and-wiring.md)
+[← Back to 01. Overview & Advantages](./01-overview-and-advantages.md) | [Next: 03. Architecture & Wiring →](./03-architecture-and-wiring.md)
+
