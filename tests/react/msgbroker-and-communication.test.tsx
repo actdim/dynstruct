@@ -12,9 +12,10 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
+import { MsgStruct } from '@actdim/msgmesh/contracts';
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 
-type TestMsgStruct = BaseAppMsgStruct<{
+type TestMsgStruct = MsgStruct<{
     'CUSTOM.GREET': {
         in: { name: string };
         out: { reply: string };
@@ -26,7 +27,7 @@ type TestMsgStruct = BaseAppMsgStruct<{
     'CUSTOM.EVENT': {
         in: { info: string };
     };
-}>;
+}> & BaseAppMsgStruct;
 
 const msgBus = createMsgBus<TestMsgStruct, any>();
 
@@ -135,7 +136,6 @@ describe('MsgBroker and MsgMesh Integration', () => {
 
     it('tracks pendingRequestCount during msgBus.request', async () => {
         type SlowProviderStruct = ComponentStruct<TestMsgStruct, {
-            props: {};
             msgScope: {
                 provide: 'CUSTOM.SLOW';
             };
@@ -157,7 +157,6 @@ describe('MsgBroker and MsgMesh Integration', () => {
             let c: Component<SlowProviderStruct>;
             const def: ComponentDef<SlowProviderStruct> = {
                 regType: 'SlowProvider',
-                props: {},
                 msgBroker: {
                     provide: {
                         'CUSTOM.SLOW': {

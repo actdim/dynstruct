@@ -135,7 +135,7 @@ describe('Component Lifecycle and Execution Hooks', () => {
 
 describe('Dynamic Content Component (useDynamicContent)', () => {
     it('renders dynamic content function with supplied data', () => {
-        const DynamicComp = toReact(useDynamicContent);
+        const DynamicComp = toReact(useDynamicContent<any>);
 
         wrap(
             <DynamicComp

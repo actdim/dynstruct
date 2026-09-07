@@ -31,3 +31,4 @@
 
 ## Done (recent)
 <!-- No completed issues -->
+- [x] `(bug)` [fix-build-breakage-tests](ISSUES/done/bug--fix-build-breakage-tests.md)

@@ -71,7 +71,7 @@ describe('Data Bindings (bind, bindProp, ValueConverter)', () => {
         );
 
         let captured: ComponentModel<BoundStruct>;
-        const BoundView = toReact((p) => {
+        const BoundView = toReact<BoundStruct>((p) => {
             const c = useBoundComp(p);
             captured = c.model;
             return c;
@@ -99,7 +99,7 @@ describe('Data Bindings (bind, bindProp, ValueConverter)', () => {
         const propBinding = bindProp(() => externalStore, 'settings.profile.displayName');
 
         let captured: ComponentModel<BoundStruct>;
-        const BoundView = toReact((p) => {
+        const BoundView = toReact<BoundStruct>((p) => {
             const c = useBoundComp(p);
             captured = c.model;
             return c;
@@ -130,7 +130,7 @@ describe('Data Bindings (bind, bindProp, ValueConverter)', () => {
         );
 
         let captured: ComponentModel<BoundStruct>;
-        const BoundView = toReact((p) => {
+        const BoundView = toReact<BoundStruct>((p) => {
             const c = useBoundComp(p);
             captured = c.model;
             return c;

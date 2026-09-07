@@ -43,11 +43,11 @@ describe('Component Hierarchy and Context Tree', () => {
     };
 
     it('establishes parent-child relationships and hierarchy paths', () => {
-        let parentComp: Component<any>;
-        let childComp: Component<any>;
-        let grandChildComp: Component<any>;
+        let parentComp: Component<SimpleStruct>;
+        let childComp: Component<SimpleStruct>;
+        let grandChildComp: Component<SimpleStruct>;
 
-        const GrandChild = toReact((params) => {
+        const GrandChild = toReact<SimpleStruct>((params) => {
             const c = useSimple(params);
             grandChildComp = c;
             return c;
@@ -109,15 +109,15 @@ describe('Component Hierarchy and Context Tree', () => {
     });
 
     it('generates sequential IDs and supports explicit $id and $key', () => {
-        let comp1: Component<any>;
-        let comp2: Component<any>;
-        let compKey: Component<any>;
-        let compExplicitId: Component<any>;
+        let comp1: Component<SimpleStruct>;
+        let comp2: Component<SimpleStruct>;
+        let compKey: Component<SimpleStruct>;
+        let compExplicitId: Component<SimpleStruct>;
 
-        const Comp1 = toReact((p) => (comp1 = useSimple(p)));
-        const Comp2 = toReact((p) => (comp2 = useSimple(p)));
-        const CompKey = toReact((p) => (compKey = useSimple(p)));
-        const CompId = toReact((p) => (compExplicitId = useSimple(p)));
+        const Comp1 = toReact<SimpleStruct>((p) => (comp1 = useSimple(p)));
+        const Comp2 = toReact<SimpleStruct>((p) => (comp2 = useSimple(p)));
+        const CompKey = toReact<SimpleStruct>((p) => (compKey = useSimple(p)));
+        const CompId = toReact<SimpleStruct>((p) => (compExplicitId = useSimple(p)));
 
         wrap(
             <div>
@@ -135,10 +135,17 @@ describe('Component Hierarchy and Context Tree', () => {
     });
 
     it('unregisters component and cleans up tree on unmount', async () => {
-        let parentComp: Component<any>;
-        let childComp: Component<any>;
+        type ParentUnmountStruct = ComponentStruct<TestMsgStruct, {
+            props: { showChild: boolean };
+            actions: {
+                hideChild: () => void;
+            };
+        }>;
 
-        const Child = toReact((params) => {
+        let parentComp: Component<ParentUnmountStruct>;
+        let childComp: Component<SimpleStruct>;
+
+        const Child = toReact<SimpleStruct>((params) => {
             childComp = useSimple(params);
             return childComp;
         });

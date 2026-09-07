@@ -95,7 +95,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
 
     it('validates property via component.validate(path) and updates propState', async () => {
         let comp: Component<FormStruct>;
-        const FormView = toReact((p) => {
+        const FormView = toReact<FormStruct>((p) => {
             comp = useFormComp(p);
             return comp;
         });
@@ -142,7 +142,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
 
     it('executes component-level validate() without crashing when onValidate is undefined', async () => {
         let comp: Component<FormStruct>;
-        const FormView = toReact((p) => {
+        const FormView = toReact<FormStruct>((p) => {
             comp = useFormComp(p);
             return comp;
         });
@@ -162,7 +162,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
         let comp: Component<FormStruct>;
         const customDefEvents = {
             onValidate: async () => ({
-                customField: { isValid: false, message: 'Custom Def Error' },
+                email: { isValid: false, message: 'Custom Def Error' },
             }),
         };
 
@@ -184,7 +184,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
             <FormView
                 $events={{
                     onValidate: () => ({
-                        paramField: { isValid: false, message: 'Custom Param Error' },
+                        age: { isValid: false, message: 'Custom Param Error' },
                     }),
                 }}
             />,
@@ -194,8 +194,8 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
             await comp.validate();
         });
 
-        expect(comp.model.$.propState['customField']?.error).toBe('Custom Def Error');
-        expect(comp.model.$.propState['paramField']?.error).toBe('Custom Param Error');
+        expect(comp.model.$.propState['email']?.error).toBe('Custom Def Error');
+        expect(comp.model.$.propState['age']?.error).toBe('Custom Param Error');
     });
 
     it('automatically runs validator on root property change when validator.onChange is true', async () => {

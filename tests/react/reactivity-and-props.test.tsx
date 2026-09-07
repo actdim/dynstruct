@@ -87,7 +87,7 @@ describe('Deep Object and Array Reactivity', () => {
 
     it('tracks deep nested property mutations and re-renders view', async () => {
         let captured: ComponentModel<DeepStruct>;
-        const DeepView = toReact((p) => {
+        const DeepView = toReact<DeepStruct>((p) => {
             const c = useDeep(p);
             captured = c.model;
             return c;
@@ -109,7 +109,7 @@ describe('Deep Object and Array Reactivity', () => {
 
     it('tracks array push, splice, and in-place item edits', async () => {
         let captured: ComponentModel<DeepStruct>;
-        const DeepView = toReact((p) => {
+        const DeepView = toReact<DeepStruct>((p) => {
             const c = useDeep(p);
             captured = c.model;
             return c;
@@ -180,7 +180,7 @@ describe('Reactivity Controls (prop reactive options)', () => {
             return c;
         };
 
-        const NonReactiveView = toReact((p) => {
+        const NonReactiveView = toReact<NonReactiveStruct>((p) => {
             const c = useNonReactive(p);
             captured = c.model;
             return c;
@@ -251,7 +251,7 @@ describe('Global and Custom Property Hooks (onPropChanging, onPropChange, onGet)
             return c;
         };
 
-        const HooksView = toReact((p) => {
+        const HooksView = toReact<HooksStruct>((p) => {
             const c = useHooksComp(p);
             captured = c.model;
             return c;
