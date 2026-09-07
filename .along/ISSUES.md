@@ -32,3 +32,4 @@
 ## Done (recent)
 <!-- No completed issues -->
 - [x] `(bug)` [fix-build-breakage-tests](ISSUES/done/bug--fix-build-breakage-tests.md)
+- [x] `(debt)` [remove-any-from-react-tests](ISSUES/done/debt--remove-any-from-react-tests.md)

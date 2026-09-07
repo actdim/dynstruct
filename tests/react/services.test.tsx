@@ -9,11 +9,12 @@ import { StorageService } from '@/services/react/StorageService';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { getUrlBuilder } from '@/appDomain/navigation';
 import { createMsgBus } from '@actdim/msgmesh/core';
+import { MsgProviderAdapter } from '@actdim/msgmesh/adapters';
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { $STORE_GET, $STORE_REMOVE, $STORE_SET } from '@/appDomain/commonContracts';
 
-type TestMsgStruct = BaseAppMsgStruct<any>;
-const msgBus = createMsgBus<TestMsgStruct, any>();
+type TestMsgStruct = BaseAppMsgStruct;
+const msgBus = createMsgBus<TestMsgStruct>();
 
 describe('Built-in React Services', () => {
     describe('getUrlBuilder helper', () => {
@@ -34,14 +35,14 @@ describe('Built-in React Services', () => {
                 fetchData: vi.fn(),
             };
 
-            const mockAdapter = {
+            const mockAdapter: MsgProviderAdapter = {
                 service: mockService,
                 channelSelector: vi.fn(() => 'CUSTOM.SERVICE.FETCH'),
             };
 
             const { unmount } = render(
                 <ComponentContextProvider value={{ msgBus }}>
-                    <ServiceProvider adapters={[mockAdapter as any]}>
+                    <ServiceProvider adapters={[mockAdapter]}>
                         <div data-testid="service-child">Child</div>
                     </ServiceProvider>
                 </ComponentContextProvider>,
@@ -96,17 +97,17 @@ describe('Built-in React Services', () => {
     });
 
     describe('StorageService', () => {
-        const memoryMap = new Map<string, any>();
+        const memoryMap = new Map<string, unknown>();
 
         beforeEach(() => {
             memoryMap.clear();
             const mockStoreInstance = {
                 get: vi.fn(async (key: string) => memoryMap.get(key)),
-                set: vi.fn(async (meta: { key: string }, val: any) => memoryMap.set(meta.key, val)),
+                set: vi.fn(async (meta: { key: string }, val: unknown) => memoryMap.set(meta.key, val)),
                 delete: vi.fn(async (key: string) => memoryMap.delete(key)),
                 [Symbol.dispose]: vi.fn(),
             };
-            vi.spyOn(PersistentStore, 'open').mockResolvedValue(mockStoreInstance as any);
+            vi.spyOn(PersistentStore, 'open').mockResolvedValue(mockStoreInstance as unknown as PersistentStore);
         });
 
         it('handles $STORE_SET, $STORE_GET, and $STORE_REMOVE messages', async () => {

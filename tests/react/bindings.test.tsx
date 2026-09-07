@@ -15,8 +15,8 @@ import type {
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 
-type TestMsgStruct = BaseAppMsgStruct<any>;
-const msgBus = createMsgBus<TestMsgStruct, any>();
+type TestMsgStruct = BaseAppMsgStruct;
+const msgBus = createMsgBus<TestMsgStruct>();
 
 function wrap(ui: React.ReactNode) {
     return render(

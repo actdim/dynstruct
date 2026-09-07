@@ -29,7 +29,7 @@ type TestMsgStruct = MsgStruct<{
     };
 }> & BaseAppMsgStruct;
 
-const msgBus = createMsgBus<TestMsgStruct, any>();
+const msgBus = createMsgBus<TestMsgStruct>();
 
 function wrap(ui: React.ReactNode) {
     return render(

@@ -14,8 +14,8 @@ import type {
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 
-type TestMsgStruct = BaseAppMsgStruct<any>;
-const msgBus = createMsgBus<TestMsgStruct, any>();
+type TestMsgStruct = BaseAppMsgStruct;
+const msgBus = createMsgBus<TestMsgStruct>();
 
 function wrap(ui: React.ReactNode) {
     return render(
@@ -216,7 +216,7 @@ describe('Global and Custom Property Hooks (onPropChanging, onPropChange, onGet)
 
     it('intercepts and can cancel changes with onPropChanging', async () => {
         let captured: ComponentModel<HooksStruct>;
-        const changingSpy = vi.fn((propName: PropertyKey, oldVal: any, newVal: any) => {
+        const changingSpy = vi.fn((propName: PropertyKey, oldVal: unknown, newVal: unknown) => {
             if (propName === 'first' && newVal === 'forbidden') {
                 return false;
             }

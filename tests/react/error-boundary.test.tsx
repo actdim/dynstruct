@@ -14,8 +14,8 @@ import type {
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { BaseAppMsgStruct } from '@/appDomain/appContracts';
 
-type TestMsgStruct = BaseAppMsgStruct<any>;
-const msgBus = createMsgBus<TestMsgStruct, any>();
+type TestMsgStruct = BaseAppMsgStruct;
+const msgBus = createMsgBus<TestMsgStruct>();
 
 function wrap(ui: React.ReactNode) {
     return render(
@@ -36,9 +36,9 @@ describe('ErrorBoundary and Fault Isolation', () => {
         wrap(
             <ErrorBoundary
                 onCatch={onCatchSpy}
-                fallback={(err: any) => (
+                fallback={(err: unknown) => (
                     <div data-testid="custom-fallback">
-                        Caught: {err?.message || String(err)}
+                        Caught: {err instanceof Error ? err.message : String(err)}
                     </div>
                 )}
             >
