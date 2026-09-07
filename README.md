@@ -97,6 +97,12 @@ pnpm run storybook
 
 ---
 
+## AI-Assisted Development
+
+Developed with [Along](https://github.com/actdim/along) - a provider-agnostic context and memory system for AI coding agents.
+
+---
+
 ## License
 
 Proprietary / BUSL-1.1. See [LICENSE](LICENSE) for details.

@@ -25,34 +25,34 @@ pie title Issues Status Breakdown
 
 | Status | Type | Priority | Issue | Milestone / Blockers |
 | :--- | :--- | :--- | :--- | :--- |
-| `open` | `debt` | `low` | [Move asyncToGeneratorFlow helper to utico](file:///.along/ISSUES/debt--async-to-generator-flow.md) | v2.0.0-along-transition |
-| `open` | `debt` | `high` | [Ensure user code execution is properly handled across all boundaries](file:///.along/ISSUES/debt--safe-user-code-execution.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Add automatic validation for component children declarations](file:///.along/ISSUES/feat--automatic-children-validation.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Declarative telemetry & analytics annotations in component structures](file:///.along/ISSUES/feat--business-telemetry-declarations.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support component classification types (resource-boundary, layout, UI)](file:///.along/ISSUES/feat--component-type-metadata.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support component state persistence via configurable providers](file:///.along/ISSUES/feat--control-persistence-providers.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support granular access control for component models and channels](file:///.along/ISSUES/feat--granular-access-control.md) | v2.0.0-along-transition |
-| `open` | `feat` | `low` | [Implement GraphQL transport integration for dynstruct](file:///.along/ISSUES/feat--graphql-integration.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Adapt dynstruct HttpClient for Kubb and Orval Generators](file:///.along/ISSUES/feat--http-adapters-kubb-orval.md) | v2.0.0-along-transition |
-| `open` | `feat` | `high` | [Support request cancellation in HttpClient](file:///.along/ISSUES/feat--http-request-cancellation.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [LiveStore reactive query integration and real-time dashboard components](file:///.along/ISSUES/feat--livestore-reactive-dashboard-widgets.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support reactive navigation context dependencies in NavService](file:///.along/ISSUES/feat--nav-service-dependencies.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support RFC 7807 problem+json format in HttpClientError](file:///.along/ISSUES/feat--problem-details-http-errors.md) | v2.0.0-along-transition |
-| `open` | `feat` | `low` | [Add accepts headers and crossDomain support in IRequestParams](file:///.along/ISSUES/feat--request-accepts-and-cors.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support Server-Sent Events (SSE) transport in dynstruct](file:///.along/ISSUES/feat--server-sent-events-support.md) | v2.0.0-along-transition |
-| `open` | `feat` | `low` | [Implement SignalR transport integration for dynstruct](file:///.along/ISSUES/feat--signalr-integration.md) | v2.0.0-along-transition |
-| `open` | `feat` | `low` | [Support one-way prop binding with a single getter function](file:///.along/ISSUES/feat--single-getter-prop-binding.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support skeleton and not-ready component states](file:///.along/ISSUES/feat--skeleton-not-ready-state.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Add APP.STORE.HAS and APP.STORE.CLEAR common channels](file:///.along/ISSUES/feat--store-has-and-clear-channels.md) | v2.0.0-along-transition |
-| `open` | `feat` | `low` | [Implement React (TanStack) Query integration for dynstruct](file:///.along/ISSUES/feat--tanstack-query-integration.md) | v2.0.0-along-transition |
-| `open` | `feat` | `low` | [Implement tRPC transport integration for dynstruct](file:///.along/ISSUES/feat--trpc-integration.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support visibility and interaction modes with security integration and fallback view](file:///.along/ISSUES/feat--visibility-interaction-states.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support WebSocket transport in request interface](file:///.along/ISSUES/feat--websocket-transport-support.md) | v2.0.0-along-transition |
-| `open` | `feat` | `medium` | [Support WWW-Authenticate response header in SecurityService](file:///.along/ISSUES/feat--www-authenticate-header-support.md) | v2.0.0-along-transition |
+| `open` | `debt` | `low` | [Move asyncToGeneratorFlow helper to utico](ISSUES/debt--async-to-generator-flow.md) | v2.0.0-along-transition |
+| `open` | `debt` | `high` | [Ensure user code execution is properly handled across all boundaries](ISSUES/debt--safe-user-code-execution.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Add automatic validation for component children declarations](ISSUES/feat--automatic-children-validation.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Declarative telemetry & analytics annotations in component structures](ISSUES/feat--business-telemetry-declarations.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support component classification types (resource-boundary, layout, UI)](ISSUES/feat--component-type-metadata.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support component state persistence via configurable providers](ISSUES/feat--control-persistence-providers.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support granular access control for component models and channels](ISSUES/feat--granular-access-control.md) | v2.0.0-along-transition |
+| `open` | `feat` | `low` | [Implement GraphQL transport integration for dynstruct](ISSUES/feat--graphql-integration.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Adapt dynstruct HttpClient for Kubb and Orval Generators](ISSUES/feat--http-adapters-kubb-orval.md) | v2.0.0-along-transition |
+| `open` | `feat` | `high` | [Support request cancellation in HttpClient](ISSUES/feat--http-request-cancellation.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [LiveStore reactive query integration and real-time dashboard components](ISSUES/feat--livestore-reactive-dashboard-widgets.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support reactive navigation context dependencies in NavService](ISSUES/feat--nav-service-dependencies.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support RFC 7807 problem+json format in HttpClientError](ISSUES/feat--problem-details-http-errors.md) | v2.0.0-along-transition |
+| `open` | `feat` | `low` | [Add accepts headers and crossDomain support in IRequestParams](ISSUES/feat--request-accepts-and-cors.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support Server-Sent Events (SSE) transport in dynstruct](ISSUES/feat--server-sent-events-support.md) | v2.0.0-along-transition |
+| `open` | `feat` | `low` | [Implement SignalR transport integration for dynstruct](ISSUES/feat--signalr-integration.md) | v2.0.0-along-transition |
+| `open` | `feat` | `low` | [Support one-way prop binding with a single getter function](ISSUES/feat--single-getter-prop-binding.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support skeleton and not-ready component states](ISSUES/feat--skeleton-not-ready-state.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Add APP.STORE.HAS and APP.STORE.CLEAR common channels](ISSUES/feat--store-has-and-clear-channels.md) | v2.0.0-along-transition |
+| `open` | `feat` | `low` | [Implement React (TanStack) Query integration for dynstruct](ISSUES/feat--tanstack-query-integration.md) | v2.0.0-along-transition |
+| `open` | `feat` | `low` | [Implement tRPC transport integration for dynstruct](ISSUES/feat--trpc-integration.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support visibility and interaction modes with security integration and fallback view](ISSUES/feat--visibility-interaction-states.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support WebSocket transport in request interface](ISSUES/feat--websocket-transport-support.md) | v2.0.0-along-transition |
+| `open` | `feat` | `medium` | [Support WWW-Authenticate response header in SecurityService](ISSUES/feat--www-authenticate-header-support.md) | v2.0.0-along-transition |
 
 ## 5. Milestones & Sprints
 
 | Milestone | Status | Due Date | Progress |
 | :--- | :--- | :--- | :--- |
-| [v2.0.0: Transition to Along Ecosystem & .along/ Directory](file:///.along/MILESTONES/v2.0.0-along-transition.md) | `in-progress` | `2026-09-05` | `50%` |
+| [v2.0.0: Transition to Along Ecosystem & .along/ Directory](MILESTONES/v2.0.0-along-transition.md) | `in-progress` | `2026-09-05` | `50%` |
 

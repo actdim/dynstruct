@@ -17,4 +17,4 @@ related: []
 
 Add support for explicit component classification metadata (e.g. `resource-boundary`, `layout`, `UI`) in dynstruct component definitions to enable semantic lifecycle handling and devtools inspection.
 
-- Source: [`src/componentModel/core.tsx:L951`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L951)
+- Source: [`src/componentModel/core.tsx:L951`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L951)

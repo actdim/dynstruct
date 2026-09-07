@@ -17,4 +17,4 @@ related: []
 
 Add support for WebSocket transport configuration and connection management in `IRequestParams` and `HttpClient`.
 
-- Source: [`src/net/request.ts:L149`](file:///d:/Src/my/actdim/public/dynstruct/src/net/request.ts#L149)
+- Source: [`src/net/request.ts:L149`](../../../../../../public/dynstruct/src/net/request.ts#L149)

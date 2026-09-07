@@ -17,4 +17,4 @@ related: []
 
 Add a binding helper function that creates a read-only / one-way binding given only a single getter function.
 
-- Source: [`src/componentModel/core.tsx:L955`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L955)
+- Source: [`src/componentModel/core.tsx:L955`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L955)

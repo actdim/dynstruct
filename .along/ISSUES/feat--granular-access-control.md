@@ -17,4 +17,4 @@ related: []
 
 Introduce granular access control capabilities into the dynstruct component model and message bus, allowing authorization checks per channel, property, or component action.
 
-- Source: [`src/componentModel/core.tsx:L949`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L949)
+- Source: [`src/componentModel/core.tsx:L949`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L949)

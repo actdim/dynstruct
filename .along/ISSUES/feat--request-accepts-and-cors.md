@@ -17,4 +17,4 @@ related: []
 
 Support explicit `accepts: string[]` MIME type filtering and `crossDomain?: boolean` CORS configurations in `IRequestParams`.
 
-- Source: [`src/net/request.ts:L156-L158`](file:///d:/Src/my/actdim/public/dynstruct/src/net/request.ts#L158)
+- Source: [`src/net/request.ts:L156-L158`](../../../../../../public/dynstruct/src/net/request.ts#L158)

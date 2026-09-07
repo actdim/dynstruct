@@ -18,5 +18,5 @@ related: []
 Implement automatic dev-time or runtime validation of declared child components in `ComponentDef.children` against actual passed parameters or bound models.
 
 - Sources:
-  - [`src/componentModel/core.tsx:L954`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L954)
-  - [`src/_stories/componentModel/componentState/StateExample.tsx:L173`](file:///d:/Src/my/actdim/public/dynstruct/src/_stories/componentModel/componentState/StateExample.tsx#L173)
+  - [`src/componentModel/core.tsx:L954`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L954)
+  - [`src/_stories/componentModel/componentState/StateExample.tsx:L173`](../../../../../../public/dynstruct/src/_stories/componentModel/componentState/StateExample.tsx#L173)

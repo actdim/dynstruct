@@ -1,0 +1,1776 @@
+# @actdim/dynstruct - Full Documentation Context
+
+> **Structure-First Component Model & Architecture for Large-Scale TypeScript Apps**
+
+---
+
+## Document: README.md (Overview)
+
+# @actdim/dynstruct
+
+> **Structure-First Component Model & Architecture for Large-Scale TypeScript Apps**
+
+[![npm version](https://img.shields.io/npm/v/@actdim/dynstruct.svg)](https://www.npmjs.com/package/@actdim/dynstruct)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
+[![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-red.svg)](LICENSE)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
+
+---
+
+## What is Dynstruct?
+
+**`@actdim/dynstruct`** is a TypeScript-first component system and architectural framework. It replaces fragile prop-drilling, scattered MobX observables, and tightly-coupled component trees with **declarative component structures**, **zero-boilerplate MobX reactivity**, and **decoupled message bus channels**.
+
+### The Problem It Solves
+- **Spaghetti React State**: Scared of refactoring because prop-drilling and callback chains bleed through 5 layers of UI?
+- **Implicit Dependencies**: Hard to tell what data or API services a component needs just by reading its signature?
+- **Reactivity Boilerplate**: Tired of manual `makeAutoObservable`, `autorun` cleanup, and useEffect dependencies?
+
+### The Output You Get
+- ⚡ **Explicit Type-Safe Contracts**: Declare props, actions, child structures, and message channels at the TypeScript level before writing UI code.
+- 🎯 **Decoupled Architecture**: Components interact over typed message channels (`@actdim/msgmesh`) rather than hard-coded callbacks.
+- 🔄 **Automatic Fine-Grained Reactivity**: Mutate `model.prop = value` and UI updates automatically. Zero extra hooks or boilerplate.
+- 🎨 **First-Class UI Adapter Support**: Ready-to-use Material UI adapters via [`@actdim/dynstruct-mui`](https://www.npmjs.com/package/@actdim/dynstruct-mui).
+
+---
+
+## 15-Second Code Snippet
+
+```typescript
+import { ComponentStruct, ComponentDef, ComponentParams } from '@actdim/dynstruct/componentModel/contracts';
+import { useComponent, toReact, bind } from '@actdim/dynstruct/componentModel/react';
+
+// 1. Declare pure type structure (Zero runtime code needed)
+type CounterStruct = ComponentStruct<AppMsgStruct, {
+    props: { count: number };
+    actions: { increment: () => void };
+}>;
+
+// 2. Define component logic & view
+const useCounter = (params: ComponentParams<CounterStruct>) => {
+    let c: Component<CounterStruct>;
+    let m: ComponentModel<CounterStruct>;
+
+    const def: ComponentDef<CounterStruct> = {
+        props: { count: 0 },
+        actions: { increment: () => { m.count++; } }, // Mutate directly — reactive UI updates automatically
+        view: () => (
+            <button onClick={m.increment}>Count: {m.count}</button>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
+};
+
+// 3. Export as a native React component
+export const Counter = toReact(useCounter);
+```
+
+---
+
+## Installation
+
+```bash
+pnpm add @actdim/dynstruct @actdim/msgmesh @actdim/utico mobx mobx-react-lite react react-dom
+```
+
+---
+
+## Documentation Index
+
+Explore the complete guide step-by-step from core concepts to advanced patterns:
+
+| Section | Description |
+|---|---|
+| 📖 [**01. Overview & Key Advantages**](./docs/topic--01-overview-and-advantages.md) | Framework design philosophy, UI companion libraries, and comparison with MobX/React. |
+| 🧩 [**02. Core Concepts**](./docs/topic--02-core-concepts.md) | `ComponentStruct`, `ComponentDef`, reactive properties, form helpers (`mapToEdit`), and events. |
+| 🏗️ [**03. Architecture & Wiring**](./docs/topic--03-architecture-and-wiring.md) | Message channels, parent-child wiring, direct bindings (`bind`), and effects. |
+| ⚛️ [**04. React Integration & Services**](./docs/topic--04-react-integration.md) | `useComponent`, `toReact`, API service adapters, routing, and auth providers. |
+| 🛠️ [**05. API Reference & Development**](./docs/topic--05-api-reference.md) | Complete type reference, Storybook integration, and testing commands. |
+
+---
+
+## Quick Interactive Demo
+
+Try `@actdim/dynstruct` in your browser via StackBlitz:
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
+
+```bash
+# Run live Storybook examples locally
+pnpm run storybook
+```
+
+---
+
+## AI-Assisted Development
+
+Developed with [Along](https://github.com/actdim/along) - a provider-agnostic context and memory system for AI coding agents.
+
+---
+
+## License
+
+Proprietary / BUSL-1.1. See [LICENSE](LICENSE) for details.
+
+---
+
+## Document: AGENTS.md (Agent Conventions & Protocol)
+
+<!-- BEGIN ALONG-PROTOCOL ref=../../../AGENTS.md (managed by along-init - do not edit by hand) -->
+This folder belongs to a repository that uses the ALONG structure. The full working
+guidance + agent-context protocol live once in the nearest ancestor `AGENTS.md` (`../../../AGENTS.md`) -
+read it there. This folder keeps its OWN `.along/` state; use the nearest one.
+Only this folder's specifics follow.
+<!-- END ALONG-PROTOCOL --># Agent Development Guide for `@actdim/dynstruct`
+
+This file defines how agents should implement and modify code in this repository.
+
+> `CLAUDE.md` is a symlink to this file — edit `AGENTS.md` only; changes apply to both.
+
+## Goal
+
+Produce framework-consistent `dynstruct` code:
+- structure-first component composition
+- explicit dependencies through `children` and `msgScope`
+- typed message-bus communication through `@actdim/msgmesh`
+- reactive state through component model props (not local React state by default)
+
+## Tech Stack and Runtime
+
+- Language: TypeScript
+- UI: React adapter for dynstruct (`componentModel/react`)
+- Reactivity: MobX (wrapped by dynstruct internals)
+- Messaging: `@actdim/msgmesh`
+- Tests: Vitest
+- Build: Vite + TypeScript
+
+## Canonical Imports
+
+Use public package paths (or equivalent local source paths in this repo):
+
+- `@actdim/dynstruct/componentModel/contracts`
+- `@actdim/dynstruct/componentModel/react`
+- `@actdim/dynstruct/componentModel/core`
+- `@actdim/dynstruct/appDomain/appContracts`
+- `@actdim/dynstruct/appDomain/commonContracts` — common channels: store, nav, config, fetch, DI
+- `@actdim/dynstruct/appDomain/securityContracts` — auth channels and security types
+- `@actdim/dynstruct/services/react/ServiceProvider`
+- `@actdim/dynstruct/services/react/SecurityService`
+- `@actdim/dynstruct/net/httpClient` — `HttpClient` base class for auth-aware API clients
+- `@actdim/msgmesh/contracts`
+- `@actdim/msgmesh/core`
+- `@actdim/msgmesh/adapters`
+
+## SecurityService and HttpClient
+
+### SecurityService
+
+`SecurityService` is a built-in service component — mount it near the app root. It manages `AuthInfo` state and exposes auth channels to all descendants.
+
+- `useConventions: true` (default): handles Bearer token flow (HTTP sign-in, storage, refresh). Configure via `domainConfig.endpoints.*`.
+- `useConventions: false`: delegates to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use for demos, mocks, or custom backends.
+
+Key channels (string constants from `appDomain/securityContracts` — reference by the string value, e.g. `'APP.SECURITY.AUTH.SIGNIN'`, not by the `$AUTH_*` variable name):
+- `APP.SECURITY.AUTH.SIGNIN` — authenticate and register the result; returns `AuthInfo`
+- `APP.SECURITY.AUTH.SIGNOUT` — sign out, clears state
+- `APP.SECURITY.AUTH.REFRESH` — refresh auth data without a full re-login; returns `AuthInfo`
+- `APP.SECURITY.AUTH.ENSURE` — ensure authenticated; navigates to the sign-in page if not; returns `AuthInfo`
+- `APP.SECURITY.AUTH.APPLY` — authorize an outgoing request (provided only when `useConventions: true`)
+- `APP.SECURITY.AUTH.INFO.GET` — get current `AuthInfo`
+- `APP.SECURITY.CONFIG.GET` / `APP.SECURITY.CONFIG.CHANGED` — read / react to `BaseSecurityDomainConfig`
+- `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `…SIGNOUT.REQUEST` / `…REFRESH.REQUEST` — custom-handler hooks used when `useConventions: false`
+
+### HttpClient
+
+`HttpClient` is the base class for typed API service clients. Extend it for each API — each public method becomes a typed bus channel via the service adapter.
+
+- Call `this.fetch({ url, method, useAuth?, body?, contentType? })` inside methods.
+- Set `useAuth: true` on a request to inject the `Authorization` header automatically (reads current `AuthInfo` from SecurityService via the bus).
+- Requests are aborted on `[Symbol.dispose]()` / unmount.
+
+Pattern: extend `HttpClient` → register via `ServiceProvider` alongside `SecurityService` → consume via `c.msgBus.request(...)`.
+
+```ts
+export class MyApiClient extends HttpClient {
+    static readonly name = 'MyApiClient' as const;
+    readonly name = 'MyApiClient' as const;
+
+    getUser(id: string): Promise<User> {
+        return this.fetch({ url: `/api/users/${id}`, method: 'GET', useAuth: true });
+    }
+}
+```
+
+See `src/_stories/componentModel/securityService/SecureApiClient.ts` for a working example.
+
+### Auth schemes, credentials, and `AuthInfo`
+
+SecurityService is scheme-aware. The scheme is a discriminant on both the sign-in request and the auth state:
+
+```ts
+type AuthScheme =
+    | "Basic" | "Bearer" | "Digest" | "NTLM" | "Negotiate" | "VAPID"  // IANA
+    | "Session" | "ApiKey";                                            // de facto
+```
+
+- `SignInCredentials` — discriminated union by `scheme`, passed to `APP.SECURITY.AUTH.SIGNIN` (and `…SIGNIN.REQUEST`). Members: `Basic`/`Bearer`/`Digest`/`Session` (`userName`, `password`), `NTLM`/`Negotiate` (+ `domain?`), `VAPID` (`privateKey`, `subject`), `ApiKey` (`apiKey`).
+- `AuthInfo` — discriminated union by `scheme`, returned by sign-in/refresh/`INFO.GET` and persisted by SecurityService. All members extend `AuthInfoBase` (`isAuthenticated?`, `authority?`, `provider?`, `accessToken?`, `properties?`, `domain?`). Scheme extras: `Bearer` (`refreshToken?`, `tokenExpiresAt?`), `Session` (`sessionId?`, `refreshToken?`, `tokenExpiresAt?`), `Digest` (`realm?`, `nonce?`, `algorithm?`), `NTLM`/`Negotiate` (`negotiationToken?`), `VAPID` (`publicKey?`, `subject?`), `ApiKey` (`apiKey?`, `keyName?`, `keyLocation?`).
+
+Built-in conventions (`useConventions: true`) currently implement `Bearer` for sign-in/refresh and `Bearer` + `Basic` for request authorization (`APPLY`). Other schemes require `useConventions: false` with your own `*.REQUEST` / `APPLY` handlers.
+
+When editing this repo source, mirror existing import style from nearby files.
+
+## Standard Bus Channels
+
+dynstruct declares typed bus channels (`@actdim/msgmesh`) used by its subsystems and reusable by app code. They are members of `CommonAppMsgStruct` (`commonContracts.ts`) and `BaseSecurityMsgStruct` (`securityContracts.ts`). Each exports a string constant (`$NAV_GOTO = 'APP.NAV.GOTO'`); **reference channels by string value, not by the `$…` variable**. Channels with both `in`/`out` are request/response (`msgBus.request`); channels with only `in` are events (`msgBus.send` + subscriber).
+
+### Common channels (`CommonAppMsgStruct`)
+
+| Channel | In | Out |
+|---|---|---|
+| `APP.RELOAD` | `void` | — (event) |
+| `APP.NOTICE` | `{ text; title?; detail?; severity?; presentation?; userAction?; category?; scope?; source?; properties? }` | `void` |
+| `APP.CONFIG.GET` | `void` | `BaseAppDomainConfig` |
+| `APP.CONFIG.SET` | `BaseAppDomainConfig` | `void` |
+| `APP.CONFIG.CHANGED` | `BaseAppDomainConfig` | `void` (event) |
+| `APP.NAV.GOTO` | `{ path: string \| number; params: any }` | `void` |
+| `APP.NAV.CONTEXT.GET` | `void` | `NavContext` |
+| `APP.NAV.CONTEXT.CHANGED` | `NavContext` | `void` (event) |
+| `APP.NAV.HISTORY.READ` | `number` | `NavContext` |
+| `APP.ERROR` | `ErrorPayload & { properties? }` | `boolean` |
+| `APP.FETCH` | `{ url: string; params: RequestInit }` | `Response` |
+| `APP.STORE.GET` | `{ key: string; useEncryption? }` | `StoreItem` |
+| `APP.STORE.SET` | `{ key: string; value: any; useEncryption? }` | `void` |
+| `APP.STORE.REMOVE` | `{ key: string }` | `void` |
+| `APP.CONTAINER.REGISTER` | `{ id; factory }` | `void` |
+| `APP.CONTAINER.RESOLVE` | `id` | `(params) => T` |
+
+(`$NAV_HISTORY_BACK` / `$NAV_HISTORY_FORWARD` / `$MSGBUS_ERROR` are exported constants but not members of `CommonAppMsgStruct`.)
+
+### Auth channels (`BaseSecurityMsgStruct`)
+
+Provided by `SecurityService`. The `*.REQUEST` channels are the custom-handler hooks activated when `useConventions: false`.
+
+| Channel | In | Out |
+|---|---|---|
+| `APP.SECURITY.AUTH.SIGNIN.REQUEST` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` |
+| `APP.SECURITY.AUTH.SIGNIN` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` |
+| `APP.SECURITY.AUTH.SIGNOUT.REQUEST` | `AuthInfo` | — (event) |
+| `APP.SECURITY.AUTH.SIGNOUT` | `AuthInfo` | — (event) |
+| `APP.SECURITY.AUTH.REFRESH.REQUEST` | `AuthInfo` | `AuthInfo` |
+| `APP.SECURITY.AUTH.REFRESH` | `AuthInfo` | `AuthInfo` |
+| `APP.SECURITY.AUTH.ENSURE` | `void` | `AuthInfo` |
+| `APP.SECURITY.AUTH.APPLY` | `Partial<RequestInit> & { url: string; headers: Record<string,string> }` | `{ query?; headers?; credentials? }` |
+| `APP.SECURITY.AUTH.INFO.GET` | `void` | `AuthInfo` |
+| `APP.SECURITY.CONFIG.GET` | `void` | `BaseSecurityDomainConfig` |
+| `APP.SECURITY.CONFIG.CHANGED` | `BaseSecurityDomainConfig` | — (event) |
+
+## Component Authoring Standard
+
+Use hook-constructors as the primary component format:
+
+1. Define `ComponentStruct<MsgStruct, {...}>` with `props/actions/children/effects/msgScope` as needed.
+2. Implement `useXxx(params: ComponentParams<Struct>)`.
+3. Create `ComponentDef<Struct>` with:
+- `props` defaults
+- `actions` for user intent
+- `events` for lifecycle and property change reactions
+- `effects` for auto-tracked reactive logic
+- `children` for explicit composition
+- `view` for rendering — use `<c.children.Name />` (Capitalized) for all child types
+4. Instantiate via `useComponent(def, params)`.
+5. Prefer `let c` and `let m` pattern:
+- `c` is component instance
+- `m` is `c.model` reactive model — **actions are blended into the model**, so call `m.actionName(...)` not `c.actions.actionName(...)`. `Component` has no `.actions` property.
+6. Export `toReact(useXxx)` only when React component interoperability is needed.
+
+## Component Identity (`id`, `regType`, `$key`)
+
+Every component instance gets a unique `id` at runtime. The framework does **not** apply it to any DOM element automatically — the component author must do so explicitly:
+
+```tsx
+view: () => <div id={c.id}>...</div>
+```
+
+**ID formation (priority order):**
+1. `$id` param provided → used as-is
+2. `$key` param provided → `toHtmlId(regType) + '#' + key`
+3. Neither → `toHtmlId(regType) + '#' + N` (sequential per `regType` within the context)
+
+**`regType`** — set in `def.regType` (shared across all instances). If omitted, auto-detected from source file path via stack inspection.
+
+**`$id` / `$key`** — instance-level, passed via `ComponentParams` in JSX, in the hook-constructor call, or via binding:
+
+```tsx
+<MyComponent $id="main-card" />          // explicit, stable id
+<MyComponent $key={userId} />            // → "myComponent#userId"
+useMyComponent({ $key: bind(() => m.id) }) // dynamic via binding
+```
+
+Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predictable ids from domain keys. Omit both when page uniqueness is sufficient.
+
+## State and Reactivity Rules
+
+- Keep mutable UI state in `def.props` / `c.model`.
+- Use `events` for controlled side effects on property changes:
+  - `onChangingX` to validate/sanitize before set
+  - `onChangeX` after set
+  - `onPropChanging`/`onPropChange` for generic handlers
+  - `onCatch` (not `onError`) for error handling — signature: `(error, component?) => void`
+  - Lifecycle handlers may be `async`:
+    - `onInit` — once on creation, before first render; sync setup only, no DOM
+    - `onLayoutReady` / `onLayoutDestroy` — maps to `useLayoutEffect` / its cleanup; sync, DOM is available
+    - `onReady` / `onDestroy` — maps to `useEffect` / its cleanup; async-safe, primary hook for data loading
+  - Effect bodies (`def.effects`) are also wrapped by the framework error router — errors propagate to `onCatch`.
+- Use `effects` for derived/auto-tracked behavior; pause/resume/stop through `c.effects.<name>`.
+- Use a **getter in `def.props`** to declare a computed (auto-tracked) property. The framework detects getter-only descriptors and registers them as computed values automatically — no manual annotation needed. Declare the prop as `readonly` in the struct type. Reference `m` (not `this`) inside the getter body because TypeScript does not type `this` in `PropertyDescriptor` getters:
+
+  ```ts
+  // struct type
+  type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+      firstName: string;
+      lastName: string;
+      readonly fullName: string;  // computed — mark readonly
+    };
+  }>;
+
+  // def
+  const def: ComponentDef<Struct> = {
+    props: {
+      firstName: '',
+      lastName: '',
+      get fullName() {
+        // `this` is untyped in TS getter descriptors — use `m` instead
+        return `${m.firstName} ${m.lastName}`.trim();
+      },
+    },
+  };
+  ```
+
+  This also works for **nested object properties**: define the getter on the nested object literal inside `def.props`. The framework propagates computed annotations through any depth of nesting.
+- Use `prop({ reactive: ... })` to control how a prop is tracked. Default is fully reactive. Options:
+  - `reactive: false` — completely non-reactive; reads and writes are invisible to the reactivity system
+  - `reactive: 'shallow'` — array container is reactive (push/pop tracked), but item properties are not
+
+  Works for top-level and nested paths alike. Can be used without `initialValue` as a pure annotation:
+
+  ```ts
+  props: {
+    config: prop({ initialValue: { debug: false }, reactive: false }),
+    'user.tags': prop({ reactive: 'shallow' }),  // tags is declared elsewhere
+  }
+  ```
+
+- Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child — `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
+- Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
+- Use `ComponentStructExt<Struct, {...}>` **inside** a hook-constructor to declare private reactive props, internal children (often `React.FC` sections), and effects. The extended type is invisible to callers; return `Component<Struct>` from the hook to preserve the public API. See `componentState/StateExample.tsx`.
+- Use `ComponentImpl<Struct, Internals>` when you need non-reactive, per-instance data (e.g., a cache or lock). Pass initial internals as the third argument to `useComponent`; access via `c._`. Return `Component<Struct>` to hide internals from callers. See `services/react/StorageService.tsx`.
+
+### Error handling pattern
+
+`onCatch` is called automatically whenever an error crosses the **dynstruct API boundary**. The framework wraps all user code at component creation time. There are two propagation modes:
+
+**Routes to `onCatch` only — error is swallowed after dispatch:**
+- Lifecycle hooks: `onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`
+- Effect bodies (`def.effects`)
+- Property event handlers: `onGetX`, `onChangingX`, `onChangeX`, `onPropChanging`, `onPropChange`
+- Binding get/set functions (`bind`, `bindProp`)
+
+These have no caller waiting for a return value, so swallowing after `onCatch` is safe.
+
+**Routes to `onCatch` AND re-throws to caller:**
+- Actions (`def.actions`) — caller may `await m.action()` and expect a result or a rejection
+- MsgBus provider/subscriber callbacks — provider must return a response; subscriber may be awaited
+
+Swallowing in these cases would silently return `undefined` to the caller and cause hard-to-diagnose bugs.
+
+Manual `try/catch` is needed only for code that is **outside** this boundary — a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
+
+```ts
+function handleError(err: unknown) {
+    m.status = 'error';
+    m.errorMessage = err instanceof Error ? err.message : String(err);
+}
+
+const def: ComponentDef<Struct> = {
+    useErrorBoundary: false, // async errors; no render-time throwing expected
+    events: {
+        onReady: async () => { await load(); }, // framework routes rejection → onCatch
+        onCatch: (err) => { handleError(err); },
+    },
+    view: () => (
+        // load() calls a plain fetchData() — not a dynstruct call, so catch manually
+        <button onClick={async () => {
+            try { await load(); } catch (err) { handleError(err); }
+        }}>Retry</button>
+    ),
+};
+```
+
+When `view` itself may throw, keep `useErrorBoundary: true` (default) and optionally provide `fallbackView`.
+
+### `c.run` — manual boundary entry
+
+`c.run(handler, silent?)` executes any code inside the framework error boundary — errors are routed to `onCatch` exactly like any framework-managed call:
+
+```ts
+// silent=true: error → onCatch, swallowed (no re-throw)
+onClick={() => c.run(() => load(), true)}
+
+// silent=false (default): error → onCatch + re-throws to caller
+onClick={() => c.run(() => submit())}
+```
+
+**In practice prefer `def.actions`** — they combine error routing with automatic MobX action batching (all reactive prop mutations within the call commit as one transaction):
+
+```ts
+actions: {
+    load: async () => {
+        m.status = 'loading';
+        await fetchData();    // all changes batched, errors → onCatch
+        m.status = 'idle';
+    },
+},
+// called as: m.load()
+```
+
+If an action is an implementation detail not needed in the public contract, declare it privately via `ComponentStructExt` — callers see only the original `Struct`:
+
+```ts
+type ImplStruct = ComponentStructExt<Struct, {
+    actions: { load: () => Promise<void> };
+}>;
+
+// inside hook-constructor:
+c = useComponent(def, params) as Component<ImplStruct>;
+// m.load() works internally; callers receive Component<Struct>
+```
+
+Avoid:
+- introducing local `useState`/`useReducer` for state that belongs to component model
+- ad-hoc cross-component mutation without message bus or bindings
+- hidden dependencies not declared in `children` or `msgScope`
+- **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) — the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
+- passing reactive model values to external APIs without stripping proxies — use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
+
+## Messaging & MsgMesh Integration Architecture
+
+`@actdim/dynstruct` provides native architectural integration with `@actdim/msgmesh`.
+
+### Architectural Principles & Best Practices:
+
+1. **Context-Driven Bus Distribution**:
+   - In standard Dynstruct applications, `msgBus` is provided at the application level via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>` and injected implicitly into all descendant components via `ReactComponentContext`.
+   - While nested context providers or isolated buses are supported when architectural isolation is genuinely required, in most scenarios creating ad-hoc bus instances inside individual components or manually passing `msgBus` through props is unnecessary and adds boilerplate.
+   - Thanks to dotted channel prefixes (`'API.USER.'`, `'APP.NAV.'`) and TypeScript type composition (`ApiStruct & MsgStruct<LocalEvents> & BaseAppMsgStruct`), channel schemas can be cleanly distributed across multiple modular files while maintaining unified compile-time validation in a single bus structure.
+
+2. **Declarative Component Contracts (`msgScope` & `msgBroker`)**:
+   - Prefer declaring communication contracts directly in the component definition: `ComponentStruct.msgScope` for type-level contracts and `ComponentDef.msgBroker` for runtime subscriptions/providers.
+   - This ensures a component's inputs and outputs are immediately visible on its type definition and automatically managed by the framework, rather than hidden inside imperative `onReady` or `useEffect` hooks.
+
+3. **Component Proxy Benefits (`c.msgBus`)**:
+   When imperative messaging is needed inside actions or callbacks, use `c.msgBus` (provided automatically on the component instance). The component proxy (`getComponentMsgBus`) wraps the underlying bus with essential conveniences:
+   - **Automatic MobX Observable Unwrapping (`normalizePayload`)**: All payloads sent or requested through `c.msgBus` are automatically deep-unwrapped via structural copying / `toPlain()`. This ensures MobX reactive proxies do not leak into the message bus.
+   - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Every subscription (`on`, `once`, `stream`) and in-flight `request()` / `provide()` operation is automatically linked to `component.abortSignal`. When the component unmounts, all active subscriptions and pending requests are automatically cancelled without manual `unsubscribe()` or cleanup routines.
+   - **Automatic Source Tracing (`sourceId: component.id`)**: Automatically sets `headers.sourceId` to the component's unique instance ID for message provenance tracking.
+   - **Error Boundary & Loading State**: `c.msgBus.request(...)` runs within `component.run()`, automatically routing unhandled rejections to `onCatch` and incrementing/decrementing `component.model.$.pendingRequestCount`.
+   - **Hierarchical Scoping (`ComponentMsgFilter`)**: Handlers registered in `def.msgBroker` can specify `componentFilter: ComponentMsgFilter.FromAncestors` or `ComponentMsgFilter.FromDescendants` to restrict message reception strictly to the component's sub-tree.
+
+### Canonical Declarative Messaging Example:
+
+```typescript
+type UserCardStruct = ComponentStruct<AppMsgStruct, {
+    props: { userId: string };
+    msgScope: {
+        subscribe: AppMsgChannels<'USER.UPDATED'>;
+        publish: AppMsgChannels<'USER.SELECTED'>;
+        provide: AppMsgChannels<'GET.USER.DATA'>;
+    };
+}>;
+
+const def: ComponentDef<UserCardStruct> = {
+    props: { userId: params.userId },
+    // Declarative bus handlers - automatically wired & cleaned up on unmount
+    msgBroker: {
+        subscribe: {
+            'USER.UPDATED': {
+                in: {
+                    callback: (msg, component) => {
+                        console.log('Received user update:', msg.payload);
+                    },
+                },
+            },
+        },
+        provide: {
+            'GET.USER.DATA': {
+                in: {
+                    callback: (msgIn, msgOut, component) => {
+                        return { id: m.userId };
+                    },
+                },
+            },
+        },
+    },
+    actions: {
+        selectUser: () => {
+            // Imperative send via proxy - automatically unwraps MobX observables
+            c.msgBus.send({
+                channel: 'USER.SELECTED',
+                payload: { id: m.userId },
+            });
+        },
+    },
+};
+```
+
+For service APIs:
+- Use `@actdim/msgmesh/adapters` (`ToMsgChannelPrefix`, `ToMsgStruct`, `getMsgChannelSelector`, `registerAdapters`) to transform service methods into typed channels.
+- Provide adapters through `ServiceProvider` wrappers.
+
+## Composition and Performance Rules
+
+- Prefer parent-child composition via `children` over passing unstable inline objects/functions deep into tree.
+- Keep JSX mostly structural; put behavior in `actions/events/effects`.
+- Reuse existing component structures rather than creating parallel incompatible patterns.
+- In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This is a JSX shortcut — instead of `<c.children.avatarView.View />` you write `<c.children.AvatarView />`. For full dynstruct component children (`ComponentStruct` types) the camelCase name additionally exposes the full component instance (`c.children.avatarView.model`, `c.children.avatarView.effects`). For `React.FC` and factory function children only the Capitalized JSX shortcut exists — these are lightweight fragments without their own model.
+
+## File and Story Conventions
+
+- Framework internals: `src/componentModel/*`
+- React-specific internals: `src/componentModel/react/*` (e.g. `componentContext.tsx`)
+- App domain contracts/utilities: `src/appDomain/*`
+- Services: `src/services/*`
+- Examples/stories: `src/_stories/componentModel/*`
+  - `basicCommunication/` — producer/consumer pattern
+  - `serviceCall/` — API adapter integration
+  - `securityService/` — auth flow
+  - `storageService/` — storage service
+  - `componentState/` — `ComponentStructExt`, form validation with validators, `m.$` and `mapToEdit`
+- Shared story styles: `src/_stories/componentModel/styles.ts` (`row`, `labelStyle`, `detailsStyle`)
+
+When adding a feature:
+- update or add Storybook example if behavior is user-visible
+- keep naming aligned with existing stories and component files
+
+## TypeScript Config Layout
+
+Solution-style split — do not collapse it back into one config:
+
+- `tsconfig.base.json` — shared `compilerOptions` only. `moduleResolution: "bundler"` (this is a Vite package; do NOT switch to `"node"`/`node10` (deprecated) or `nodenext` (would force `.js` import extensions)). No `baseUrl` (deprecated in TS 6.0) — `paths` targets are relative: `"@/*": ["./src/*"]`. `extends` inherits only `compilerOptions`, not `include`/`files`/`references`.
+- `tsconfig.json` — pure orchestrator: `{ "files": [], "references": [...] }`. It compiles nothing itself; it only wires the leaf projects.
+- `tsconfig.build.json` — library build; emits `.d.ts` to `dist`. Consumed by `vite-plugin-dts` via its `tsconfigPath` (must stay a config WITHOUT `references`, else the plugin emits zero declarations).
+- `tsconfig.dev.json` — editor/dev + tests; broad `types` (node, vitest/globals, vite/client, …).
+
+Rules:
+- Root Node files (`packageConfig.ts`, `vite.config.ts`, `vitest*.config.ts`) get node types via `types: ["node"]` in the build/dev projects — NOT by editing includes elsewhere or adding `node` to a shared `types` array (that leaks node globals into browser `src`). If the editor shows "Cannot find name 'path'/'__dirname'" on such a file, it means the file isn't routed to a project — check the `references` chain, don't hack the source with `/// <reference>`.
+- Always type-check the solution with `tsc -b` (build mode), never `tsc -p` — `-p` sees `files: []` and checks nothing. Both `typecheck` and `build` scripts already use `tsc -b tsconfig.json`.
+
+## Validation Checklist (before finishing)
+
+Run relevant checks when possible:
+
+```bash
+pnpm run typecheck
+pnpm run test
+pnpm run lint
+pnpm run build
+```
+
+If full run is heavy, run minimum impacted checks and state what was not run.
+
+## Change Quality Bar
+
+- Maintain strict typing; avoid `any` unless unavoidable and justified.
+- Preserve backward compatibility of public contracts when possible.
+- Keep changes minimal and local to task scope.
+- Add concise comments only where logic is non-obvious.
+
+## Quick Template
+
+```ts
+type MyStruct = ComponentStruct<AppMsgStruct, {
+  props: { value: string };
+  actions: { setValue: (v: string) => void };
+  children: {};
+  effects: 'syncSomething';
+}>;
+
+const useMy = (params: ComponentParams<MyStruct>) => {
+  let c: Component<MyStruct>;
+  let m: ComponentModel<MyStruct>;
+
+  const def: ComponentDef<MyStruct> = {
+    props: { value: params.value ?? '' },
+    actions: {
+      setValue: (v) => { m.value = v; },
+    },
+    effects: {
+      syncSomething: () => {
+        // reactive logic
+      },
+    },
+    view: () => <div>{m.value}</div>,
+  };
+
+  c = useComponent(def, params);
+  m = c.model;
+  return c;
+};
+```
+
+## Project specifics
+
+<!-- BEGIN ALONG-RULES -->
+See the following engineering guidelines:
+- `[languages/typescript.md](.along/rules/languages/typescript.md)`
+- `[platforms/web.md](.along/rules/platforms/web.md)`
+<!-- END ALONG-RULES -->
+
+---
+
+## Document: docs/topic--01-overview-and-advantages.md (Overview & Key Advantages)
+
+# Overview & Key Advantages
+
+[← Back to README](../README.md) | [Next: 02. Core Concepts →](./topic--02-core-concepts.md)
+
+---
+
+## What is @actdim/dynstruct?
+
+**`@actdim/dynstruct`** is a TypeScript-based component model and architectural framework for building scalable, modular web applications. It provides a **structure-first, declarative approach** to component design with:
+
+- **Type-safe component model** with explicit dependency wiring visible at compile-time.
+- **Decoupled messaging architecture** using `@actdim/msgmesh` for inter-component and service communication.
+- **Component lifecycle management** with automatic initialization, ready, layout, and cleanup hooks.
+- **Zero-boilerplate reactive state** powered by MobX — properties automatically trigger UI re-renders on mutation.
+- **Type-safe component events** — automatic event handlers for lifecycle and property changes with full IntelliSense.
+- **UI Component Adapters** — seamless integration with design systems like Material UI (`@actdim/dynstruct-mui`).
+
+---
+
+## Framework Support
+
+- ✅ **React** — Fully supported (`useComponent`, `toReact`, `toReactView`, MobX integration).
+- 🚧 **SolidJS** — Planned / In development.
+- 🚧 **Vue.js** — Planned.
+
+The architectural core (`@actdim/dynstruct/componentModel/contracts`) is framework-agnostic. The exact same component structures, message buses, and business contracts work across UI frameworks.
+
+---
+
+## UI Component Adapters & Companion Libraries
+
+- 🎨 **[@actdim/dynstruct-mui](https://github.com/actdim/dynstruct-mui)** — Official Material UI (MUI v5/v6) component adapters for dynstruct. Provides ready-to-use reactive hook-constructors and React components (`Button`, `TextField`, `Dialog`, `Drawer`, `Table`, `Tabs`, `Autocomplete`, etc.).
+
+---
+
+## Key Advantages: Why Dynstruct?
+
+Already familiar with React, MobX, or Redux? Here is why `dynstruct` provides a superior architectural model for large-scale enterprise applications:
+
+### 1. Type Safety Without Magic Strings
+- All message channels and component props are defined in central contracts with full TypeScript typing.
+- Full IDE autocomplete and IntelliSense for all props, actions, and message channels.
+- Compile-time verification prevents typos and invalid props before running any code.
+
+### 2. Clear Component Boundaries
+- `msgScope` explicitly documents a component's external communication (what channels it publishes to or subscribes to).
+- Anyone reading the component structure immediately understands what services or events it consumes or provides.
+- Significantly reduces cognitive load when reading complex codebases.
+
+### 3. Loose Coupling
+- Components communicate over typed message channels without needing direct imports or callback drilling.
+- Easy to add, move, or swap components without breaking parent/child dependencies.
+- Backend services can be swapped or mocked in tests without altering UI component implementation logic.
+
+### 4. Structure-First Visibility
+- **Parent structure** explicitly references child component structures (`children: { resetBtn: ButtonStruct }`).
+- Gives a complete static tree of responsibilities and dependencies at the type level.
+
+### 5. Effortless Testing & Mocking
+- The message bus can be easily mocked using standard `@actdim/msgmesh` helper utilities:
+```typescript
+import { createMsgBus } from '@actdim/msgmesh/core';
+
+// Create mock bus for testing
+const mockMsgBus = createMsgBus<AppMsgStruct, ComponentMsgHeaders>({});
+const sendSpy = jest.spyOn(mockMsgBus, 'send');
+
+// Instantiates component with mock bus
+const component = useComponent(def, { msgBus: mockMsgBus });
+
+// Assert message emission
+expect(sendSpy).toHaveBeenCalledWith({
+    channel: 'USER.CLICKED',
+    payload: expect.any(Object)
+});
+```
+
+---
+
+[← Back to README](../README.md) | [Next: 02. Core Concepts →](./topic--02-core-concepts.md)
+
+---
+
+## Document: docs/topic--02-core-concepts.md (Core Concepts)
+
+# Core Concepts
+
+[← Back to 01. Overview & Advantages](./topic--01-overview-and-advantages.md) | [Next: 03. Architecture & Wiring →](./topic--03-architecture-and-wiring.md)
+
+---
+
+## Component Structure
+
+The first step in the `dynstruct` architectural pattern is defining the **component structure**. The base generic class `ComponentStruct` acts as a structural constructor — a scaffold that provides constraints, hints, and full IntelliSense to the developer when forming the base type contract. All derived component model APIs are built on top of this contract through TypeScript's type system.
+
+**Crucially, component structures are pure type declarations** — they require no implementations (hook-constructors), only type information. This means you can define the entire application's component hierarchy at the type level before writing a single line of runtime code.
+
+```typescript
+type Struct = ComponentStruct<
+    AppMsgStruct,
+    // The message bus structure that will serve as the basis for the
+    // component's msgBroker operation. This type maps to Struct["msg"].
+    {
+        props: {
+            // Names and types of component properties that will be reactive
+            // (including nested values) after the component is created.
+            counter: number;
+            message: string;
+            items: Item[];
+        };
+
+        actions: {
+            // Method signatures that perform operations on properties.
+            // Action calls are optimized for batching reactive property
+            // change application.
+            increment: () => void;
+            updateMessage: (text: string) => void;
+        };
+
+        children: {
+            // Names and types of child components.
+            // Types are base structures of other components. No implementations needed.
+            header: HeaderStruct;
+            footer: FooterStruct;
+            todoList: TodoListStruct;
+        };
+
+        msgScope: {
+            // Message bus channel names this component works with.
+            subscribe: AppMsgChannels<'USER-UPDATED' | 'DATA-LOADED'>;
+            publish: AppMsgChannels<'FORM-SUBMITTED'>;
+            provide: AppMsgChannels<'GET-USER-DATA' | 'VALIDATE-INPUT'>;
+        };
+
+        // List of effect names that will be available in this component.
+        effects: ['computeSummary', 'trackCounter'];
+    }
+>;
+```
+
+| Field | Description |
+|---|---|
+| `props` | Reactive property names and types. All declared properties (including nested values) become reactive after component creation. |
+| `actions` | Method signatures that operate on props. Action calls are optimized for batching reactive property change application. |
+| `children` | Names and types of child components. Uses base structures of other components — **no implementations required, only type data**. |
+| `msgScope` | Message bus channels this component works with. Sections: `subscribe`, `publish`, `provide`. Narrows the global bus scope to this component's responsibility zone. |
+| `effects` | List of effect names available in this component. Implementations are defined in `ComponentDef`. |
+
+---
+
+## Component Definition
+
+The component implementation is created inside a **hook-constructor** function (`use<ComponentName>`) using the `ComponentDef<Struct>` type:
+
+```typescript
+const useMyComponent = (params: ComponentParams<Struct>) => {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
+        regType: 'MyComponent',
+
+        props: {
+            counter: 0,
+            message: 'Hello',
+            items: [],
+        },
+
+        actions: {
+            increment: () => { m.counter++; },
+            updateMessage: (text) => { m.message = text; },
+        },
+
+        effects: {
+            computeSummary: (component) => {
+                m.message = `Total items: ${m.items.length}`;
+                return () => { /* cleanup */ };
+            },
+            trackCounter: (component) => {
+                if (m.counter > 100) m.message = 'Counter is high!';
+            },
+        },
+
+        children: {
+            header: useHeader({ title: bind(() => m.message) }),
+            footer: useFooter({ year: 2025 }),
+            todoList: useTodoList({
+                items: bind(
+                    () => m.items,
+                    v => { m.items = v; }
+                ),
+            }),
+        },
+
+        events: {
+            onInit: (component) => { console.log('Initialized'); },
+            onChangeCounter: (value) => {
+                if (value > 100) m.message = 'Counter is high!';
+            },
+        },
+
+        msgBroker: {
+            provide: {
+                'GET-USER-DATA': {
+                    in: {
+                        callback: (msgIn, headers, component) => {
+                            return { userId: '1', name: 'Alice', email: 'a@b.c' };
+                        },
+                    },
+                },
+            },
+            subscribe: {
+                'USER-UPDATED': {
+                    in: {
+                        callback: (msg, component) => {
+                            console.log('User updated:', msg.payload);
+                        },
+                        componentFilter: ComponentMsgFilter.FromDescendants,
+                    },
+                },
+            },
+        },
+
+        view: () => (
+            <div>
+                <h3>{m.message}</h3>
+                <p>Counter: {m.counter}</p>
+                <c.children.Header />
+                <c.children.TodoList />
+                <c.children.Footer />
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
+};
+```
+
+---
+
+## Implementation Extension (`ComponentStructExt`)
+
+When a component's implementation grows complex, you can extend the component struct **inside the hook-constructor** using `ComponentStructExt`. The extended type is only visible within that function; callers receive `Component<Struct>` and see only the original public API:
+
+```typescript
+export const useComponentStateExample = (params: ComponentParams<Struct>): Component<Struct> => {
+    type ImplStruct = ComponentStructExt<
+        Struct,
+        {
+            props: {
+                data: string[];
+                userInfo: { email: string; avatarUrl: string };
+            };
+            children: {
+                section1: React.FC;
+                section2: React.FC;
+            };
+        }
+    >;
+
+    let c: Component<ImplStruct>;
+    let m: ComponentModel<ImplStruct>;
+
+    const def: ComponentDef<ImplStruct> = {
+        props: {
+            data: [],
+            userInfo: prop({ initialValue: { email: '', avatarUrl: '' } }),
+        },
+        children: {
+            section1: () => <details>...form JSX...</details>,
+            section2: () => <details>...busy-state JSX...</details>,
+        },
+        view: () => (
+            <div>
+                <c.children.Section1 />
+                <c.children.Section2 />
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c; // returned as Component<Struct> — ImplStruct stays private
+};
+```
+
+---
+
+## Instance Internals (`ComponentImpl`)
+
+For non-reactive per-instance data (caches, locks, lazily-initialized resources) that must survive re-renders without triggering UI updates, use `ComponentImpl` and the `c._` slot:
+
+```typescript
+export const useStorageService = (params: ComponentParams<Struct>): Component<Struct> => {
+    type Internals = { store?: PersistentStore; };
+
+    let c: ComponentImpl<Struct, Internals>;
+    let m: ComponentModel<Struct>;
+
+    const def: ComponentDef<Struct> = {
+        events: {
+            onReady: async () => { c._.store = await PersistentStore.open(m.storeName); },
+        },
+    };
+
+    c = useComponent(def, params, {} as Internals);
+    m = c.model;
+    return c;
+};
+```
+
+---
+
+## Component Identity (`id`, `regType`, `$key`)
+
+Every component instance gets a unique runtime `c.id` generated by the framework. Apply it to the root DOM node for element tracking and testing:
+
+```tsx
+view: () => (
+    <details id={c.id} open>
+        ...
+    </details>
+)
+```
+
+| Param | Description |
+|---|---|
+| `regType` | Static component type identifier (e.g. `'UserCard'`). Auto-detected if omitted. |
+| `$id` | Fully explicit ID override passed in `ComponentParams`. |
+| `$key` | Domain key override (e.g. `$key="123"` produces ID `UserCard#123`). |
+
+---
+
+## Reactive Properties & Form Helpers
+
+Properties declared in `def.props` are automatically reactive.
+
+### Computed (Trackable) Properties
+Use getters inside `def.props` to declare computed properties that automatically recalculate when their dependencies change:
+
+```typescript
+const def: ComponentDef<Struct> = {
+    props: {
+        firstName: 'John',
+        lastName: 'Smith',
+        get fullName() {
+            return `${m.firstName} ${m.lastName}`.trim();
+        },
+    },
+    view: () => <div>{m.fullName}</div>,
+};
+```
+
+### Form Helpers: `validate()` and `mapToEdit()`
+`c.mapToEdit('userInfo.email')` binds input elements directly to reactive model properties:
+
+```tsx
+<input type="email" {...c.mapToEdit('userInfo.email')} />
+```
+
+---
+
+## Component Events & Error Handling
+
+Component events handle lifecycle hooks (`onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`), errors (`onCatch`), and property changes (`onChangeX`, `onChangingX`).
+
+```typescript
+const def: ComponentDef<Struct> = {
+    events: {
+        onReady: async (component) => {
+            await loadInitialData();
+        },
+        onChangeEmail: (newValue) => {
+            console.log('Email updated to:', newValue);
+        },
+        onCatch: (error, component) => {
+            console.error('Component error:', error);
+        },
+    }
+};
+```
+
+---
+
+[← Back to 01. Overview & Advantages](./topic--01-overview-and-advantages.md) | [Next: 03. Architecture & Wiring →](./topic--03-architecture-and-wiring.md)
+
+---
+
+## Document: docs/topic--03-architecture-and-wiring.md (Architecture & Wiring)
+
+# Architecture & Wiring
+
+[← Back to 02. Core Concepts](./topic--02-core-concepts.md) | [Next: 04. React Integration →](./topic--04-react-integration.md)
+
+---
+
+## Component Wiring
+
+Wiring connects properties, actions, and child components together. `dynstruct` provides explicit mechanisms for data flow.
+
+### 1. Direct Bindings (`bind` / `bindProp`)
+
+Use `bind()` to pass reactive data from a parent component to a child component:
+
+```typescript
+// One-way reactive binding (parent -> child)
+const child = useInput({
+    value: bind(() => m.parentValue)
+});
+
+// Two-way reactive binding (parent <-> child)
+const child = useInput({
+    value: bind(
+        () => m.parentValue,
+        (newValue) => { m.parentValue = newValue; }
+    )
+});
+```
+
+### 2. Direct Model Mutation and `onChangeX` Handlers
+
+Child components can trigger parent logic directly via property change handlers:
+
+```typescript
+events: {
+    onChangeCounter: (newValue) => {
+        // React to child or property changes
+        console.log('Counter changed:', newValue);
+    }
+}
+```
+
+---
+
+## Message Bus Communication
+
+Components communicate over typed channels provided by `@actdim/msgmesh`. `@actdim/dynstruct` provides deep architectural integration with the message bus.
+
+### Core Integration Principles
+
+1. **Context-Driven Bus Distribution**:
+   - In standard Dynstruct applications, `msgBus` is initialized at the application level via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`. All descendant components receive `msgBus` automatically through context.
+   - Multiple context providers can be nested if isolated scopes are required, but in most cases a single unified or modular bus structure is optimal.
+   - Because `@actdim/msgmesh` supports hierarchical dotted channel prefixes (`'API.USER.'`, `'APP.NAV.'`) and TypeScript provides powerful type composition (`ApiStruct & MsgStruct<LocalEvents> & BaseAppMsgStruct`), developers can distribute channel definitions across multiple modular files while maintaining unified compile-time type safety.
+   - Therefore, without a specific architectural need, creating ad-hoc bus instances inside individual components or manually passing `msgBus` through props is unnecessary and adds boilerplate.
+
+2. **Declarative Contracts (`msgScope` & `msgBroker`)**:
+   - Declare communication channels on `ComponentStruct.msgScope` and register handlers in `ComponentDef.msgBroker`. Handlers are automatically bound on initialization and cleaned up on component unmount.
+   - This keeps component inputs and outputs visible on the component struct at a glance rather than scattered in imperative hooks.
+
+3. **Smart Component Proxy (`c.msgBus`)**:
+   When sending messages or making requests imperatively inside actions, use `c.msgBus`. It wraps the underlying bus with essential framework conveniences:
+   - **MobX Observable Unwrapping (`normalizePayload`)**: Payloads are automatically converted to plain structural copies before being placed on the bus, preventing reactive MobX proxies from leaking into message bus events.
+   - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Subscriptions (`on`, `once`, `stream`) and pending `request()` / `provide()` calls are automatically linked to `component.abortSignal` and cleanly disposed of when the component unmounts.
+   - **Provenance & Source Tracing**: Automatically populates `headers.sourceId = component.id`.
+   - **Error Boundary & Pending State**: `c.msgBus.request(...)` runs within `component.run()`, tracking `component.model.$.pendingRequestCount` and routing unhandled rejections to `onCatch`.
+   - **Hierarchical Scoping**: Handlers can use `componentFilter: ComponentMsgFilter.FromAncestors` or `ComponentMsgFilter.FromDescendants` to restrict message reception to the component subtree.
+
+### Declaring `msgScope` and `msgBroker`
+
+```typescript
+type UserCardStruct = ComponentStruct<AppMsgStruct, {
+    props: { userId: string };
+    msgScope: {
+        subscribe: AppMsgChannels<'USER.UPDATED'>;
+        publish: AppMsgChannels<'USER.SELECTED'>;
+        provide: AppMsgChannels<'GET.USER.DATA'>;
+    };
+}>;
+
+const def: ComponentDef<UserCardStruct> = {
+    props: { userId: params.userId },
+    msgBroker: {
+        subscribe: {
+            'USER.UPDATED': {
+                in: {
+                    callback: (msg, component) => {
+                        console.log('Received updated user:', msg.payload);
+                    },
+                },
+            },
+        },
+        provide: {
+            'GET.USER.DATA': {
+                in: {
+                    callback: (msgIn, msgOut, component) => {
+                        return { id: m.userId, name: 'Alice' };
+                    },
+                },
+            },
+        },
+    },
+    actions: {
+        selectUser: () => {
+            // Imperative dispatch through component proxy
+            c.msgBus.send({
+                channel: 'USER.SELECTED',
+                payload: { id: m.userId },
+            });
+        },
+    },
+};
+```
+
+### Architectural Comparison & Recommended Patterns
+
+| Ad-Hoc / Imperative Pattern | Recommended Dynstruct Pattern | Key Advantage |
+|---|---|---|
+| Creating a local `createMsgBus()` inside a component | Rely on context injection from `<AppContextProvider>` | Unified monitoring, modular type composition, and reduced memory overhead |
+| Passing `msgBus` down manually via component props | Access the smart proxy `c.msgBus` inside the component | Zero prop drilling, implicit availability at any tree depth |
+| Calling `c.msgBus.on(...)` manually in `onReady` / `useEffect` | Declare subscriptions in `def.msgBroker.subscribe` | Clear component contracts, automatic lifecycle binding |
+| Calling raw `msgBus` without unwrapping MobX observables | Use `c.msgBus` (automatically applies `normalizePayload`) | Prevents reactive proxy leaks across event subscribers |
+| Manually unsubscribing in `onDestroy` | `c.msgBus` automatically cancels subscriptions on unmount | Zero leak risk via `component.abortSignal` |
+
+---
+
+## Parent-Child Relationships & Hierarchy Access
+
+Parent components initialize child components in `def.children`:
+
+```typescript
+const useParent = (params: ComponentParams<ParentStruct>) => {
+    let c: Component<ParentStruct>;
+
+    const def: ComponentDef<ParentStruct> = {
+        children: {
+            child1: useChildComponent({ /* params */ }),
+            child2: useChildComponent({ /* params */ }),
+        },
+        view: () => (
+            <div>
+                <c.children.Child1 />
+                <c.children.Child2 />
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    return c;
+};
+
+// Hierarchy inspection methods (available after creation):
+const parentId    = c.getParent();
+const ancestors   = c.getChainUp();
+const descendants = c.getChainDown();
+```
+
+---
+
+## Effects
+
+Effects are auto-tracking reactive functions that re-run automatically whenever any reactive property accessed inside them changes.
+
+```typescript
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: { count: number; title: string };
+    effects: ['updateTitle'];
+}>;
+
+const def: ComponentDef<Struct> = {
+    effects: {
+        updateTitle: (component) => {
+            // Automatically re-runs when m.count changes
+            document.title = `Count: ${m.count}`;
+            
+            // Return optional cleanup function
+            return () => { document.title = 'Original'; };
+        }
+    }
+};
+```
+
+---
+
+## Dynamic Content & Fragments
+
+`dynstruct` embraces JSX natively:
+
+### 1. Named JSX Fragments (`React.FC`)
+
+Decompose large views into readable named JSX fragments:
+
+```typescript
+children: {
+    sidebarFragment: () => <aside>Sidebar content</aside>
+}
+```
+
+### 2. Factory Functions (Parameterized Dynamic Children)
+
+Generate dynamic lists or items:
+
+```typescript
+children: {
+    renderItem: (item: Item) => <li key={item.id}>{item.title}</li>
+}
+```
+
+---
+
+## Message Channels (`CommonAppMsgStruct`, `BaseSecurityMsgStruct`)
+
+Built-in domain channel contracts simplify common application communication:
+
+- **`CommonAppMsgStruct`**: Navigation (`APP.NAV.GOTO`), notifications (`APP.NOTIFY`), theme toggles.
+- **`BaseSecurityMsgStruct`**: Auth tokens, login events, permission updates.
+
+---
+
+[← Back to 02. Core Concepts](./topic--02-core-concepts.md) | [Next: 04. React Integration →](./topic--04-react-integration.md)
+
+---
+
+## Document: docs/topic--04-react-integration.md (React Integration & Service Patterns)
+
+# React Integration & Service Patterns
+
+[← Back to 03. Architecture & Wiring](./topic--03-architecture-and-wiring.md) | [Next: 05. API Reference →](./topic--05-api-reference.md)
+
+---
+
+## React Integration Basics
+
+`dynstruct` provides lightweight adapters to connect hook-constructors to React's component tree.
+
+### 1. `useComponent`
+Instantiates a `dynstruct` component inside a React hook-constructor:
+
+```typescript
+const useCounter = (params: ComponentParams<CounterStruct>) => {
+    let c: Component<CounterStruct>;
+    let m: ComponentModel<CounterStruct>;
+
+    const def: ComponentDef<CounterStruct> = {
+        props: { counter: 0 },
+        view: () => <button onClick={() => m.counter++}>{m.counter}</button>
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
+};
+```
+
+### 2. `toReact`
+Converts a `dynstruct` hook-constructor into a standard React FC component:
+
+```typescript
+import { toReact } from '@actdim/dynstruct/componentModel/react';
+
+export const Counter = toReact(useCounter);
+
+// Now usable anywhere in standard React:
+// <Counter counter={5} />
+```
+
+---
+
+## Service Integration & Adapters
+
+`dynstruct` integrates natively with the **service adapter** system from [`@actdim/msgmesh`](https://github.com/actdim/msgmesh). Adapters automatically register any service class (such as an API client) as a message bus provider — channel names, payload types, and return types are all derived from the service class at compile-time.
+
+### 1. Define an API Client Class
+
+```typescript
+export type DataItem = { id: number; name: string };
+
+export class TestApiClient {
+    static readonly name = 'TestApiClient' as const;
+    readonly name = 'TestApiClient' as const;
+
+    getDataItems(param1: number[], param2: string[]): Promise<DataItem[]> {
+        return fetch('/api/data').then(r => r.json());
+    }
+}
+```
+
+### 2. Set Up Service Provider
+
+```typescript
+import {
+    BaseServiceSuffix, getMsgChannelSelector, MsgProviderAdapter,
+    ToMsgChannelPrefix, ToMsgStruct,
+} from '@actdim/msgmesh/adapters';
+import { ServiceProvider } from '@actdim/dynstruct/services/react/ServiceProvider';
+
+type ApiPrefix = 'API';
+type TestApiChannelPrefix = ToMsgChannelPrefix<
+    typeof TestApiClient.name, ApiPrefix, BaseServiceSuffix
+>;
+type ApiMsgStruct = ToMsgStruct<TestApiClient, TestApiChannelPrefix>;
+
+const services: Record<TestApiChannelPrefix, any> = {
+    'API.TEST.': new TestApiClient(),
+};
+
+const msgProviderAdapters = Object.entries(services).map(
+    ([_, service]) => ({
+        service,
+        channelSelector: getMsgChannelSelector(services),
+    }) as MsgProviderAdapter,
+);
+
+export const ApiServiceProvider = () => ServiceProvider({ adapters: msgProviderAdapters });
+```
+
+### 3. Consume Service in Component
+
+```typescript
+const useApiCallExample = (params: ComponentParams<Struct>) => {
+    let c: Component<Struct>;
+    let m: ComponentModel<Struct>;
+
+    async function loadData() {
+        const msg = await c.msgBus.request({
+            channel: 'API.TEST.GETDATAITEMS',
+            payloadFn: (fn) => fn([1, 2], ['first', 'second']),
+        });
+        m.dataItems = msg.payload;
+    }
+
+    const def: ComponentDef<Struct> = {
+        props: { dataItems: [] },
+        events: {
+            onReady: () => { loadData(); },
+        },
+        view: () => (
+            <div>
+                <button onClick={loadData}>Reload</button>
+                <ul>
+                    {m.dataItems.map((item) => (
+                        <li key={item.id}>{item.name}</li>
+                    ))}
+                </ul>
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
+};
+```
+
+---
+
+## Navigation & Security Contracts
+
+### Built-in Navigation (`AppNavStruct`)
+
+Navigation requests can be issued over the message bus, decoupling page components from router implementations:
+
+```typescript
+c.msgBus.send({
+    channel: 'APP.NAV.GOTO',
+    payload: { path: '/profile/123' }
+});
+```
+
+### Auth & Security Provider (`AuthInfo`)
+
+Security status and user credentials flow through standardized security channels, providing automatic token refresh and permission checks across all connected components.
+
+---
+
+[← Back to 03. Architecture & Wiring](./topic--03-architecture-and-wiring.md) | [Next: 05. API Reference →](./topic--05-api-reference.md)
+
+---
+
+## Document: docs/topic--05-api-reference.md (API Reference & Development Guide)
+
+# API Reference & Development Guide
+
+[← Back to 04. React Integration](./topic--04-react-integration.md) | [Back to Main README](../README.md)
+
+---
+
+## Core Types Reference
+
+### `ComponentStruct<TMsgStruct, TStructDef>`
+Base generic type defining component structural contracts (pure type declaration, no implementation):
+
+```typescript
+type ComponentStruct<
+    TMsgStruct extends BaseAppMsgStruct = BaseAppMsgStruct,
+    TStructDef extends ComponentStructBase<TMsgStruct> = ComponentStructBase<TMsgStruct>,
+> = TStructDef & {
+    msg: TMsgStruct;
+};
+
+// Shape of TStructDef:
+type ComponentStructBase<TMsgStruct> = {
+    props?: Record<string, any>;
+    actions?: Record<string, Function>;
+    effects?: string[] | string;
+    children?: Record<string, ComponentStruct<any> | Function>;
+    msgScope?: {
+        subscribe?: keyof TMsgStruct;
+        publish?: keyof TMsgStruct;
+        provide?: keyof TMsgStruct;
+    };
+};
+```
+
+### `ComponentDef<TStruct, TMsgHeaders>`
+Implementation definition passed to `useComponent`:
+
+```typescript
+type ComponentDef<
+    TStruct extends ComponentStruct<any>,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+> = {
+    regType?: string;
+    props?: ComponentProps<TStruct['props']>;
+    actions?: TStruct['actions'];
+    effects?: Record<TStruct['effects'][number], (c: Component<TStruct, TMsgHeaders>) => void | (() => void)>;
+    children?: ComponentDefChildren<TStruct['children']>;
+    events?: ComponentEvents<TStruct, TMsgHeaders>;
+    msgBroker?: ComponentMsgBroker<TStruct, TMsgHeaders>;
+    msgBus?: MsgBus<TStruct['msg'], TMsgHeaders>;
+    view?: (props: ComponentViewProps, c?: Component<TStruct, TMsgHeaders>) => unknown;
+    fallbackView?: (props: ComponentViewProps, c?: Component<TStruct, TMsgHeaders>) => unknown;
+    useErrorBoundary?: boolean;
+};
+```
+
+### `Component<TStruct, TMsgHeaders>`
+Instance interface returned by `useComponent`:
+
+- **Identity & Tree**:
+  - `c.id`: Runtime unique identifier.
+  - `c.key`: Component key.
+  - `c.regType`: Registered type name.
+  - `c.parentId`: Parent component ID.
+  - `c.getParent()`, `c.getChildren()`, `c.getChainUp()`, `c.getChainDown()`, `c.getNodeMap()`, `c.getHierarchyId()`: Tree navigation methods.
+- **Model & State**:
+  - `c.model`: Reactive model instance (access props and actions directly, e.g. `c.model.counter`).
+  - `c.model.$`: Component runtime state (`isDisabled`, `isReadOnly`, `isVisible`, `isValid`, `pendingRequestCount`, `errors`, `propState`).
+- **Communication & Lifecycle**:
+  - `c.msgBus`: Lifecycle-scoped message bus wrapper (auto-unwraps MobX observables, manages `abortSignal`, sets `headers.sourceId`).
+  - `c.msgBroker`: Message broker configuration.
+  - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount.
+  - `c.effects`: Effect controllers with `.pause()`, `.resume()`, and `.stop()`.
+- **Rendering & Forms**:
+  - `c.View`: React component view slot (`<c.View />`).
+  - `c.children`: Child component view slots.
+  - `c.validate(propPath?)`: Run property validators.
+  - `c.mapToEdit(propPath?, exclude?)`: Generate two-way form input bindings (`value`, `onChange`, `onBlur`).
+  - `c.run(handler, silent)`: Executes async handlers within component error and pending request tracking.
+  - `c[Symbol.dispose]()`: Manual disposal cleanup.
+
+---
+
+## Storybook Integration
+
+`dynstruct` components can be documented and tested visually using Storybook.
+
+Run Storybook locally:
+
+```bash
+pnpm run storybook
+```
+
+Build Storybook static site:
+
+```bash
+pnpm run build-storybook
+```
+
+Example Storybook story:
+
+```typescript
+import { Meta, StoryObj } from '@storybook/react';
+import { Counter } from './Counter';
+
+const meta: Meta<typeof Counter> = {
+    title: 'ComponentModel/Counter',
+    component: Counter,
+};
+export default meta;
+
+export const Default: StoryObj<typeof Counter> = {
+    args: {
+        counter: 10,
+    },
+};
+```
+
+---
+
+## Development & Testing
+
+### Running Unit Tests
+
+Run Vitest unit tests:
+
+```bash
+pnpm run test
+```
+
+Watch mode:
+
+```bash
+pnpm run test:w
+```
+
+React environment tests:
+
+```bash
+pnpm run test:react
+```
+
+### Type Checking & Linting
+
+```bash
+pnpm run typecheck
+pnpm run lint
+```
+
+---
+
+## License
+
+Proprietary / BUSL-1.1 (Business Source License). See `LICENSE` for details.
+
+---
+
+[← Back to 04. React Integration](./topic--04-react-integration.md) | [Back to Main README](../README.md)
+
+---
+
+## Document: docs/topic--architecture.md (01 Architecture)
+
+# @actdim/dynstruct Architecture
+
+## 1. System Overview
+
+`@actdim/dynstruct` is a structure-first component architecture and application framework for building scalable, modular TypeScript applications. It decouples UI layout, state management, inter-component communication, and external services through explicit type-level wiring and a reactive message bus.
+
+```
++---------------------------------------------------------------------------------------------------+
+|                                        @actdim/dynstruct                                          |
++---------------------------------------------------------------------------------------------------+
+|  Structure-First Type Layer (Zero Runtime Cost)                                                   |
+|  - ComponentStruct<TMsg, { props, actions, children, msgScope, effects }>: Pure Type Contract    |
+|  - ComponentStructExt: Extended internal state definition                                         |
++---------------------------------------------------------------------------------------------------+
+|  Hook-Constructor & Model Layer                                                                   |
+|  - use<Component>(params: ComponentParams<Struct>): Component<Struct>                            |
+|  - ComponentDef<Struct>: Runtime definition (props, actions, events, children, effects, view)     |
+|  - ComponentModel<Struct>: Reactive MobX proxy with $state, $, validate(), mapToEdit()            |
+|  - Two-way Data Binding: bind(get, set, converter), bindProp(target, path)                         |
++---------------------------------------------------------------------------------------------------+
+|  Component Hierarchy & Message Routing                                                            |
+|  - ComponentRegistryContext: Tree registration, getParent(), getChildren(), getHierarchyPath()    |
+|  - Scoped MsgBroker: Narrowed bus channels (subscribe, publish, provide)                          |
+|  - Directional Msg Filtering: ComponentMsgFilter.FromAncestors, ComponentMsgFilter.FromDescendants|
++---------------------------------------------------------------------------------------------------+
+|  Framework Adapters & Service Integrations                                                        |
+|  - toReact(useComponent): Standard React FC adapter with memoization                             |
+|  - DynamicContent: Slot-based dynamic layout renderer                                             |
+|  - Service Providers: ServiceProvider, StorageService, NavService, SecurityService (JWT / Auth)   |
+|  - UI Integrations: @actdim/dynstruct-mui (MUI adapters: Button, Dialog, TextField, etc.)         |
++---------------------------------------------------------------------------------------------------+
+```
+
+## 2. Core Architectural Principles
+
+### 2.1. Structure-First Composition
+In traditional component models, parent components reference child implementations directly in markup (`<ChildButton />`). In `dynstruct`:
+1. **Component Structures are pure types**: `CounterPanelStruct` declares child types (`children: { btn: ButtonStruct }`) without requiring any runtime JavaScript code.
+2. **Explicit Dependency Tree**: The complete component dependency graph is verifiable at the TypeScript compiler level before executing runtime code.
+3. **Hook-Constructors**: Each component is instantiated via a hook function (`useCounterPanel`), wiring props, actions, and child hook-constructors.
+
+### 2.2. Reactive Component Model (`ComponentModel`)
+All declared `props` automatically become reactive (powered by MobX observable proxies).
+- **Actions**: Wrap state mutations in batched transactions (`runInAction`).
+- **Events**: Type-safe event hooks generated with full IntelliSense (`onChange<PropName>`, `onInit`, `onReady`, `onDestroy`, `onError`).
+- **Internal State Helper (`$`)**: Exposes component ID, lifecycle state, validation status (`$.propState`), and error tracking.
+
+### 2.3. Decoupled Message Bus (`msgScope`)
+Instead of prop-drilling or global singletons, components declare a `msgScope` over the application message bus (`@actdim/msgmesh`):
+- `subscribe`: Channels the component listens to.
+- `publish`: Channels the component dispatches events to.
+- `provide`: Channels for which the component provides request/response handlers.
+- **Hierarchical Routing**: Subscriptions can restrict message acceptance using `ComponentMsgFilter.FromAncestors` or `FromDescendants`.
+
+### 2.4. React Adapter Layer (`toReact`)
+`toReact` converts any dynstruct hook-constructor into an idiomatic, memoized React functional component (`React.memo`), enabling seamless integration into existing React codebases.
+
+## 3. Cross-Links
+- [[INDEX.md]] - Knowledge Base Root
+- [[02-domain-model.md]] - Domain Contracts and Component Structs
+- [[03-setup-and-workflow.md]] - Setup, Build, Tests & Storybook Workflow
+- [[04-api-reference.md]] - Exhaustive API Reference
+- [[05-patterns-and-recipes.md]] - Storybook Examples, Recipes and Architecture Patterns
+
+---
+
+## Document: docs/topic--domain-model.md (02 Domain Model)
+
+# @actdim/dynstruct Domain Model & Type Contracts
+
+## 1. Domain Types Overview
+
+The domain model of `@actdim/dynstruct` defines the structural scaffolding, runtime definitions, models, bindings, and message routing contracts.
+
+## 2. Core Entities & Type Contracts
+
+### 2.1. Structural Scaffolding (`ComponentStruct`)
+```typescript
+import { BaseAppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
+import { ComponentStruct, ComponentRefStruct } from '@actdim/dynstruct/componentModel/contracts';
+
+export type UserProfileStruct = ComponentStruct<
+    BaseAppMsgStruct,
+    {
+        props: {
+            username: string;
+            email: string;
+            isEditing: boolean;
+        };
+        actions: {
+            save: () => Promise<void>;
+            cancel: () => void;
+        };
+        children: {
+            avatar: AvatarStruct;
+            saveBtn: ButtonStruct;
+            cancelBtn: ButtonStruct;
+        };
+        msgScope: {
+            subscribe: 'USER.DATA_UPDATED';
+            publish: 'UI.NOTIFY';
+            provide: 'USER.GET_EDIT_DATA';
+        };
+        effects: ['syncRemoteState', 'trackEdits'];
+    }
+>;
+```
+
+### 2.2. Runtime Definition (`ComponentDef<TStruct>`)
+The implementation object passed to `useComponent`:
+- `regType: string`: Component identifier used for tree registration and DOM ID generation.
+- `props: TStruct['props']`: Initial reactive state.
+- `actions?: TStruct['actions']`: Action method implementations.
+- `events?: ComponentEvents<TStruct>`:
+  - `onChange<PropName>?: (oldVal, newVal) => void`
+  - `onInit?: () => void`
+  - `onReady?: () => void`
+  - `onDestroy?: () => void`
+  - `onError?: (err: Error) => void`
+- `children?: { [K in keyof TStruct['children']]: Component<TStruct['children'][K]> }`: Instantiated child hook-constructors.
+- `msgScope?: { subscribe?, publish?, provide? }`: Message bus handlers.
+- `effects?: EffectDef[]`: Reactive effect observers.
+- `view: () => ReactNode`: Render function returning JSX.
+
+### 2.3. Two-Way Data Binding (`Binding`)
+- **`bind<T, TFrom>(get: () => T, set?: (v: T) => void, converter?: ValueConverter<T, TFrom>): Binding`**: Creates two-way getter/setter binding.
+- **`bindProp<T extends object, P extends KeyPath<T>>(target: () => T, path: P): Binding`**: Creates deep dot-notation property binding.
+
+### 2.4. Component State Helper (`$`)
+Accessible on `c.model.$`:
+- `$.id: string`: Unique component instance ID.
+- `$.regType: string`: Component type name.
+- `$.parent?: Component<any>`: Parent component reference.
+- `$.propState: Record<string, ComponentPropState>`: Validation state, error messages, and dirty flags.
+- `$.isReady: boolean`: Lifecycle readiness status.
+
+### 2.5. Directional Message Filtering (`ComponentMsgFilter`)
+- `ComponentMsgFilter.None = 0`
+- `ComponentMsgFilter.FromAncestors = 1 << 0`: Accepts messages only dispatched from parent/ancestor components in the tree.
+- `ComponentMsgFilter.FromDescendants = 1 << 1`: Accepts messages only dispatched from child/descendant components in the tree.
+
+### 2.6. Service Provider Contracts (`ServiceProvider`)
+- **`StorageService`**: Dexie/IndexedDB storage adapter.
+- **`NavService`**: React Router navigation adapter (`navigate`, `location`, route parameters).
+- **`SecurityService`**: Authentication domain (`AuthInfo`, `login`, `logout`, `refreshToken`, JWT token claims).
+
+## 3. Cross-Links
+- [[INDEX.md]] - Knowledge Base Root
+- [[01-architecture.md]] - System Architecture
+- [[03-setup-and-workflow.md]] - Setup, Build & Storybook Workflow
+- [[04-api-reference.md]] - API Reference
+- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples
+
+---
+
+## Document: docs/topic--setup-and-workflow.md (03 Setup And Workflow)
+
+# @actdim/dynstruct Setup, Build & Storybook Workflow
+
+## 1. Prerequisites & Installation
+
+- **Node.js**: >= 20.0.0
+- **Package Manager**: `pnpm` (version ~10.21.0)
+- **TypeScript**: >= 5.9.3
+
+Install dependencies:
+```bash
+pnpm install
+```
+
+### Peer Dependencies
+```bash
+pnpm add @actdim/msgmesh @actdim/utico react react-dom mobx mobx-react-lite mobx-utils react-router react-router-dom rxjs uuid path-to-regexp jwt-decode
+```
+
+## 2. Scripts & Workflows
+
+| Command | Action | Description |
+|---|---|---|
+| `pnpm run build` | `tsc -b tsconfig.json && vite build` | Typechecks and compiles ESM packages with `.d.ts` declaration maps |
+| `pnpm run test` | `npx vitest --config=vitest.node.config.ts --no-cache` | Runs unit test suite under Node.js |
+| `pnpm run test:w` | `npx vitest --config=vitest.node.config.ts --watch` | Runs test watcher in interactive mode |
+| `pnpm run storybook` | `storybook dev -p 6006` | Launches interactive Storybook environment at `http://localhost:6006` |
+| `pnpm run build-storybook` | `storybook build` | Builds static Storybook documentation bundle |
+| `pnpm run typecheck` | `tsc -b tsconfig.json` | Validates TypeScript compiler checks across all source files and stories |
+| `pnpm run lint` | `eslint "./**/*.{ts,tsx}"` | Runs ESLint |
+| `pnpm run format` | `prettier --write .` | Formats all files with Prettier |
+
+## 3. Storybook Story Catalog (`src/_stories/componentModel/`)
+
+The Storybook suite provides live interactive demonstrations of all architectural capabilities:
+- **`BasicCommunicationExample`**: Decoupled message bus communication between Producer and Consumer components.
+- **`StateExample`**: Reactive model state, nested object tracking, and avatar view synchronization.
+- **`CustomMsgStructExample`**: Complex multi-component message bus with `TodoList` and `TodoEdit`.
+- **`ParentChildConnectionExample`**: Hierarchical component tree, two-way bindings, and directional message filtering (`FromAncestors`).
+- **`EffectDemo`**: Reactive autorun effect handlers and automatic property re-computation.
+- **`ErrorBoundaryDemo`**: Dynamic error isolation and fallback overlays.
+- **`ServiceCallExample` & `SecurityServiceExample`**: Backend API invocation, authentication tokens, and login dialog flows.
+
+## 4. Cross-Links
+- [[INDEX.md]] - Knowledge Base Root
+- [[01-architecture.md]] - Architecture
+- [[02-domain-model.md]] - Domain Model
+- [[04-api-reference.md]] - API Reference
+- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples

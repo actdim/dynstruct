@@ -17,4 +17,4 @@ related: []
 
 Provide a tRPC transport adapter enabling dynstruct message bus integration with tRPC routers and procedures.
 
-- Source: [`src/componentModel/core.tsx:L956`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L956)
+- Source: [`src/componentModel/core.tsx:L956`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L956)

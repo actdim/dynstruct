@@ -180,13 +180,17 @@ export async function validate<
             }
         }
     } else {
-        let handler = params.$events?.onValidate;
-        let results = (await Promise.resolve(handler(component))) as ValidationResults;
-        mergeResults(results);
+        let handler = params?.$events?.onValidate;
+        if (handler) {
+            let results = (await Promise.resolve(handler(component))) as ValidationResults;
+            mergeResults(results);
+        }
 
         handler = def.events?.onValidate;
-        results = (await Promise.resolve(handler(component))) as ValidationResults;
-        mergeResults(results);
+        if (handler) {
+            let results = (await Promise.resolve(handler(component))) as ValidationResults;
+            mergeResults(results);
+        }
 
         if (def.props) {
             for (const [key, prop] of Object.entries(def.props)) {
@@ -560,7 +564,7 @@ export function createModel<
                         binding.set(outVal);
                     }
                     handlers.onPropChange?.(fullPath, val);
-                    const prop = def.props[fullPath];
+                    const prop = def.props?.[fullPath];
                     if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
                         validate(
                             component,
@@ -636,6 +640,16 @@ export function createModel<
             // after-change hooks
             handlers?.[key]?.onChange?.(val);
             handlers.onPropChange?.(key, val);
+
+            const prop = def.props?.[key as string];
+            if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
+                validate(
+                    component,
+                    def,
+                    params,
+                    key as KeyPath<TStruct['props'], boolean>,
+                );
+            }
 
             return result;
         },

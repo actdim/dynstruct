@@ -17,4 +17,4 @@ related: []
 
 Implement HTTP request cancellation in `HttpClient` via `AbortController` signal integration.
 
-- Source: [`src/net/httpClient.ts:L282`](file:///d:/Src/my/actdim/public/dynstruct/src/net/httpClient.ts#L282)
+- Source: [`src/net/httpClient.ts:L282`](../../../../../../public/dynstruct/src/net/httpClient.ts#L282)

@@ -17,4 +17,4 @@ related: []
 
 Add parsing and handling of server `WWW-Authenticate` headers (e.g. `Bearer`, `Digest`, `Basic`) in `SecurityService.applyAuth` to handle challenge-response authentication.
 
-- Source: [`src/services/react/SecurityService.tsx:L510`](file:///d:/Src/my/actdim/public/dynstruct/src/services/react/SecurityService.tsx#L510)
+- Source: [`src/services/react/SecurityService.tsx:L510`](../../../../../../public/dynstruct/src/services/react/SecurityService.tsx#L510)

@@ -17,4 +17,4 @@ related: []
 
 Move the commented-out `asyncToGeneratorFlow` helper from `src/componentModel/core.tsx` to the `utico` shared utility library.
 
-- Source: [`src/componentModel/core.tsx:L940`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L940)
+- Source: [`src/componentModel/core.tsx:L940`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L940)

@@ -17,4 +17,4 @@ related: []
 
 Add `$STORE_HAS` (`APP.STORE.HAS`) and `$STORE_CLEAR` (`APP.STORE.CLEAR`) message bus channels to `CommonAppMsgStruct` and storage services.
 
-- Source: [`src/appDomain/commonContracts.ts:L27`](file:///d:/Src/my/actdim/public/dynstruct/src/appDomain/commonContracts.ts#L27)
+- Source: [`src/appDomain/commonContracts.ts:L27`](../../../../../../public/dynstruct/src/appDomain/commonContracts.ts#L27)

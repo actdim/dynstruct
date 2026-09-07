@@ -33,12 +33,15 @@ export function getUrlBuilder(pattern: string) {
 
     const keys = parse(pathTemplate)
         .tokens
-        .filter(t => t.type === 'group')
-        .map(t => (t as any).tokens[0].value as string);
+        .filter(t => t.type === 'param' || t.type === 'group')
+        .map(t => ((t as any).name || (t as any).tokens?.[0]?.value) as string);
 
     const toPath = compile(pathTemplate);
 
-    return (params: Record<string, any>) => {
+    return (params?: Record<string, any>) => {
+        if (!params) {
+            params = {};
+        }
         const pathParams: Record<string, any> = {};
         const queryParams: Record<string, any> = {};
 
@@ -54,7 +57,7 @@ export function getUrlBuilder(pattern: string) {
         const query = new URLSearchParams(queryParams).toString();
 
         return query ? `${path}?${query}` : path;
-    }
+    };
 }
 
 export function getUrlMatcher(pattern: string) {

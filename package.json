@@ -1,6 +1,6 @@
 {
     "name": "@actdim/dynstruct",
-    "version": "1.5.13",
+    "version": "1.5.14",
     "description": "A type-safe component system for large-scale apps: explicit dependencies, message bus communication, and structure-first, declarative design",
     "author": "Pavel Borodaev",
     "license": "BUSL-1.1",
@@ -29,12 +29,17 @@
         "README.md",
         "LICENSE",
         "AGENTS.md",
-        "CLAUDE.md"
+        "CLAUDE.md",
+        "llms.txt",
+        "llms-full.txt"
     ],
     "ai": {
         "instructions": "./AGENTS.md",
-        "docs": "./docs"
+        "docs": "./docs",
+        "llms": "./llms.txt",
+        "llms-full": "./llms-full.txt"
     },
+    "llms": "./llms.txt",
     "exports": {
         "./*": {
             "types": "./dist/*.d.ts",

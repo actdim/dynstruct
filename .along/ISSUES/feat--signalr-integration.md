@@ -17,4 +17,4 @@ related: []
 
 Provide a SignalR real-time transport adapter mapping SignalR hub connections and events to dynstruct message bus channels.
 
-- Source: [`src/componentModel/core.tsx:L957`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L957)
+- Source: [`src/componentModel/core.tsx:L957`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L957)

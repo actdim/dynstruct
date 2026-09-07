@@ -17,4 +17,4 @@ related: []
 
 Integrate TanStack / React Query caching and async state management into dynstruct component models and services.
 
-- Source: [`src/componentModel/core.tsx:L959`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L959)
+- Source: [`src/componentModel/core.tsx:L959`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L959)

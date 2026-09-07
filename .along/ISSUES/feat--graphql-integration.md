@@ -17,4 +17,4 @@ related: []
 
 Provide a GraphQL client transport adapter allowing queries, mutations, and subscriptions to be mapped to dynstruct message bus channels.
 
-- Source: [`src/componentModel/core.tsx:L958`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L958)
+- Source: [`src/componentModel/core.tsx:L958`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L958)

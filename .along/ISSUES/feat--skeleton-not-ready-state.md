@@ -17,4 +17,4 @@ related: []
 
 Add built-in support for skeleton and "not-ready" state handling during component asynchronous initialization, data loading, or resource resolution.
 
-- Source: [`src/componentModel/core.tsx:L952`](file:///d:/Src/my/actdim/public/dynstruct/src/componentModel/core.tsx#L952)
+- Source: [`src/componentModel/core.tsx:L952`](../../../../../../public/dynstruct/src/componentModel/core.tsx#L952)
