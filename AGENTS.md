@@ -7,6 +7,8 @@ Only this folder's specifics follow.
 
 This file defines how agents should implement and modify code in this repository.
 
+> `CLAUDE.md` is a symlink to this file — edit `AGENTS.md` only; changes apply to both.
+
 ## Goal
 
 Produce framework-consistent `dynstruct` code:
