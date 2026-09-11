@@ -93,6 +93,19 @@ Explore the complete guide step-by-step from core concepts to advanced patterns:
 
 ---
 
+## AI Coding Assistants (Cursor, Claude Code, Copilot, Antigravity)
+
+To enable AI coding agents in your project to follow Dynstruct component architecture, type-safe contracts, and reactive state conventions, add a reference to the bundled LLM documentation in your project's `AGENTS.md`, `CLAUDE.md`, or `.cursorrules`:
+
+```markdown
+## Dynstruct Component Guidelines
+- Reference: `node_modules/@actdim/dynstruct/llms.txt`
+```
+
+This points agents directly to the compact index and modular topics in `node_modules/@actdim/dynstruct/docs/` matching your installed version, avoiding token bloat and version mismatch.
+
+---
+
 ## Quick Interactive Demo
 
 Try `@actdim/dynstruct` in your browser via StackBlitz:
@@ -1643,11 +1656,15 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 `toReact` converts any dynstruct hook-constructor into an idiomatic, memoized React functional component (`React.memo`), enabling seamless integration into existing React codebases.
 
 ## 3. Cross-Links
-- [[INDEX.md]] - Knowledge Base Root
-- [[02-[domain-model](./topic--domain-model.md).md]] - Domain Contracts and Component Structs
-- [[03-[setup-and-workflow](./topic--setup-and-workflow.md).md]] - Setup, Build, Tests & Storybook Workflow
-- [[04-api-reference.md]] - Exhaustive API Reference
-- [[05-patterns-and-recipes.md]] - Storybook Examples, Recipes and Architecture Patterns
+
+- [Knowledge Base Index](./INDEX.md) - Knowledge Base Root
+- [Core Concepts](./topic--02-core-concepts.md) - Core Concepts and Component Structs
+- [Architecture & Wiring](./topic--03-architecture-and-wiring.md) - Architecture & Wiring
+- [React Integration](./topic--04-react-integration.md) - React Integration & Service Patterns
+- [API Reference](./topic--05-api-reference.md) - Exhaustive API Reference & Guide
+- [Domain Model](./topic--domain-model.md) - Domain Contracts and Component Structs
+- [Setup & Workflow](./topic--setup-and-workflow.md) - Setup, Build, Tests & Storybook Workflow
+- [License](./topic--license.md) - License Information
 
 ---
 
@@ -1732,11 +1749,120 @@ Accessible on `c.model.$`:
 - **`SecurityService`**: Authentication domain (`AuthInfo`, `login`, `logout`, `refreshToken`, JWT token claims).
 
 ## 3. Cross-Links
-- [[INDEX.md]] - Knowledge Base Root
-- [[01-[architecture](./topic--architecture.md).md]] - System Architecture
-- [[03-[setup-and-workflow](./topic--setup-and-workflow.md).md]] - Setup, Build & Storybook Workflow
-- [[04-api-reference.md]] - API Reference
-- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples
+
+- [Knowledge Base Index](./INDEX.md) - Knowledge Base Root
+- [01 Architecture](./topic--architecture.md) - System Architecture
+- [Core Concepts](./topic--02-core-concepts.md) - Core Concepts
+- [Architecture & Wiring](./topic--03-architecture-and-wiring.md) - Architecture & Wiring
+- [React Integration](./topic--04-react-integration.md) - React Integration & Service Patterns
+- [API Reference](./topic--05-api-reference.md) - API Reference & Guide
+- [Setup & Workflow](./topic--setup-and-workflow.md) - Setup, Build & Storybook Workflow
+- [License](./topic--license.md) - License Information
+
+---
+
+## Document: docs/topic--license.md (License)
+
+# License
+
+`@actdim/dynstruct` is distributed under the **Business Source License 1.1 (BUSL-1.1)**, converting to the open-source **MIT License** on the Change Date.
+
+- Repository file: [LICENSE](https://github.com/actdim/dynstruct/blob/main/LICENSE)
+
+## Summary of Terms
+
+- **Non-Commercial & Evaluation Use**: Free to use, test, copy, modify, and integrate for personal, educational, or internal non-production purposes.
+- **Commercial Use**: Requires a commercial license agreement from the Licensor if used in revenue-generating products or hosted services prior to the Change Date.
+- **Change Date**: Effective 2028-04-01, the software automatically transitions to the standard open-source **MIT License**.
+- **Commercial Contact**: `pavel.borodaev@gmail.com`
+
+---
+
+## Full License Text
+
+```text
+Business Source License 1.1
+
+Licensor:             Pavel Borodaev
+Licensed Work:        @actdim/dynstruct
+                      Copyright (c) 2025-2026 Pavel Borodaev
+Change Date:          2028-04-01
+Change License:       MIT
+
+-----------------------------------------------------------------------------
+
+TERMS
+
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work.
+
+The Licensor may make an Additional Use Grant, above, permitting limited
+production use.
+
+Effective on the Change Date, or the fourth anniversary of the first publicly
+available distribution of a specific version of the Licensed Work under this
+License, whichever comes first, the Licensor hereby grants you rights under
+the terms of the Change License, and the rights granted in the paragraph
+above terminate.
+
+-----------------------------------------------------------------------------
+
+USE LIMITATION
+
+You may not use the Licensed Work for commercial purposes without a separate
+written commercial license from the Licensor.
+
+Commercial purposes include, but are not limited to:
+- Using the Licensed Work in a product or service that generates revenue
+- Offering the Licensed Work as a hosted or managed service
+- Selling access to the Licensed Work or derivative works
+
+For commercial licensing, contact: pavel.borodaev@gmail.com
+
+-----------------------------------------------------------------------------
+
+COVENANTS OF LICENSOR
+
+In consideration of the right to use this License's text, and having agreed
+to be bound by its terms, the Licensor covenants to all who receive notice
+of this License that:
+
+1. The Licensor will specify as the Change License the MIT License.
+2. The Licensor will not modify the terms of the MIT License as applied
+   to the Licensed Work after the Change Date.
+
+-----------------------------------------------------------------------------
+
+NOTICE
+
+The Business Source License (this document) is not an Open Source License.
+However, the Licensed Work will eventually be made available under an Open
+Source License (MIT) after the Change Date: 2028-04-01.
+
+-----------------------------------------------------------------------------
+
+MIT License (effective 2028-04-01)
+
+Copyright (c) 2025-2026 Pavel Borodaev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
 
 ---
 
@@ -1785,8 +1911,12 @@ The Storybook suite provides live interactive demonstrations of all architectura
 - **`ServiceCallExample` & `SecurityServiceExample`**: Backend API invocation, authentication tokens, and login dialog flows.
 
 ## 4. Cross-Links
-- [[INDEX.md]] - Knowledge Base Root
-- [[01-[architecture](./topic--architecture.md).md]] - Architecture
-- [[02-[domain-model](./topic--domain-model.md).md]] - Domain Model
-- [[04-api-reference.md]] - API Reference
-- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples
+
+- [Knowledge Base Index](./INDEX.md) - Knowledge Base Root
+- [01 Architecture](./topic--architecture.md) - Architecture
+- [02 Domain Model](./topic--domain-model.md) - Domain Model
+- [Core Concepts](./topic--02-core-concepts.md) - Core Concepts
+- [Architecture & Wiring](./topic--03-architecture-and-wiring.md) - Architecture & Wiring
+- [React Integration](./topic--04-react-integration.md) - React Integration & Service Patterns
+- [API Reference](./topic--05-api-reference.md) - API Reference & Guide
+- [License](./topic--license.md) - License Information

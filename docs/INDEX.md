@@ -4,7 +4,7 @@ slug: INDEX
 title: Knowledge Base Topic Index
 type: index
 created: 2026-09-10
-updated: 2026-09-10
+updated: 2026-09-11
 tags: [index, kb, topics, map]
 ---
 
@@ -31,6 +31,8 @@ flowchart TD
     INDEX --> T_ARCHITECTURE
     T_DOMAIN_MODEL["02 Domain Model"]
     INDEX --> T_DOMAIN_MODEL
+    T_LICENSE["License"]
+    INDEX --> T_LICENSE
     T_SETUP_AND_WORKFLOW["03 Setup And Workflow"]
     INDEX --> T_SETUP_AND_WORKFLOW
     T_01_OVERVIEW_AND_ADVANTAGES -.->|references| T_02_CORE_CONCEPTS
@@ -42,12 +44,27 @@ flowchart TD
     T_04_REACT_INTEGRATION -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
     T_04_REACT_INTEGRATION -.->|references| T_05_API_REFERENCE
     T_05_API_REFERENCE -.->|references| T_04_REACT_INTEGRATION
+    T_ARCHITECTURE -.->|references| T_02_CORE_CONCEPTS
+    T_ARCHITECTURE -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
+    T_ARCHITECTURE -.->|references| T_04_REACT_INTEGRATION
+    T_ARCHITECTURE -.->|references| T_05_API_REFERENCE
     T_ARCHITECTURE -.->|references| T_DOMAIN_MODEL
     T_ARCHITECTURE -.->|references| T_SETUP_AND_WORKFLOW
+    T_ARCHITECTURE -.->|references| T_LICENSE
     T_DOMAIN_MODEL -.->|references| T_ARCHITECTURE
+    T_DOMAIN_MODEL -.->|references| T_02_CORE_CONCEPTS
+    T_DOMAIN_MODEL -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
+    T_DOMAIN_MODEL -.->|references| T_04_REACT_INTEGRATION
+    T_DOMAIN_MODEL -.->|references| T_05_API_REFERENCE
     T_DOMAIN_MODEL -.->|references| T_SETUP_AND_WORKFLOW
+    T_DOMAIN_MODEL -.->|references| T_LICENSE
     T_SETUP_AND_WORKFLOW -.->|references| T_ARCHITECTURE
     T_SETUP_AND_WORKFLOW -.->|references| T_DOMAIN_MODEL
+    T_SETUP_AND_WORKFLOW -.->|references| T_02_CORE_CONCEPTS
+    T_SETUP_AND_WORKFLOW -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
+    T_SETUP_AND_WORKFLOW -.->|references| T_04_REACT_INTEGRATION
+    T_SETUP_AND_WORKFLOW -.->|references| T_05_API_REFERENCE
+    T_SETUP_AND_WORKFLOW -.->|references| T_LICENSE
 ```
 
 ---
@@ -61,8 +78,8 @@ flowchart TD
 - **[API Reference & Development Guide](./topic--05-api-reference.md)** (topic) `05-api-reference`
 - **[01 Architecture](./topic--architecture.md)** (topic) `architecture`
 - **[02 Domain Model](./topic--domain-model.md)** (topic) `domain-model`
+- **[License](./topic--license.md)** (license) `license`, `busl`
 - **[03 Setup And Workflow](./topic--setup-and-workflow.md)** (topic) `setup-and-workflow`
-- **[License](./topic--license.md)** (license) `license`
 
 ---
 
