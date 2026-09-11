@@ -92,8 +92,8 @@
         "docs:preview": "vitepress preview docs"
     },
     "peerDependencies": {
-        "@actdim/msgmesh": ">=1.7.1",
-        "@actdim/utico": ">=1.7.1",
+        "@actdim/msgmesh": ">=1.7.0",
+        "@actdim/utico": ">=1.7.0",
         "http-status": ">=2.1.0",
         "jwt-decode": ">=4.0.0",
         "mobx": ">=6.15.0",
