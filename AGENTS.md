@@ -3,7 +3,9 @@ This folder belongs to a repository that uses the ALONG structure. The full work
 guidance + agent-context protocol live once in the nearest ancestor `AGENTS.md` (`../../../AGENTS.md`) -
 read it there. This folder keeps its OWN `.along/` state; use the nearest one.
 Only this folder's specifics follow.
-<!-- END ALONG-PROTOCOL --># Agent Development Guide for `@actdim/dynstruct`
+<!-- END ALONG-PROTOCOL -->
+
+# Agent Development Guide for `@actdim/dynstruct`
 
 This file defines how agents should implement and modify code in this repository.
 
@@ -32,11 +34,11 @@ Use public package paths (or equivalent local source paths in this repo):
 - `@actdim/dynstruct/componentModel/react`
 - `@actdim/dynstruct/componentModel/core`
 - `@actdim/dynstruct/appDomain/appContracts`
-- `@actdim/dynstruct/appDomain/commonContracts` — common channels: store, nav, config, fetch, DI
-- `@actdim/dynstruct/appDomain/securityContracts` — auth channels and security types
+- `@actdim/dynstruct/appDomain/commonContracts` - common channels: store, nav, config, fetch, DI
+- `@actdim/dynstruct/appDomain/securityContracts` - auth channels and security types
 - `@actdim/dynstruct/services/react/ServiceProvider`
 - `@actdim/dynstruct/services/react/SecurityService`
-- `@actdim/dynstruct/net/httpClient` — `HttpClient` base class for auth-aware API clients
+- `@actdim/dynstruct/net/httpClient` - `HttpClient` base class for auth-aware API clients
 - `@actdim/msgmesh/contracts`
 - `@actdim/msgmesh/core`
 - `@actdim/msgmesh/adapters`
@@ -45,24 +47,24 @@ Use public package paths (or equivalent local source paths in this repo):
 
 ### SecurityService
 
-`SecurityService` is a built-in service component — mount it near the app root. It manages `AuthInfo` state and exposes auth channels to all descendants.
+`SecurityService` is a built-in service component - mount it near the app root. It manages `AuthInfo` state and exposes auth channels to all descendants.
 
 - `useConventions: true` (default): handles Bearer token flow (HTTP sign-in, storage, refresh). Configure via `domainConfig.endpoints.*`.
 - `useConventions: false`: delegates to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use for demos, mocks, or custom backends.
 
-Key channels (string constants from `appDomain/securityContracts` — reference by the string value, e.g. `'APP.SECURITY.AUTH.SIGNIN'`, not by the `$AUTH_*` variable name):
-- `APP.SECURITY.AUTH.SIGNIN` — authenticate and register the result; returns `AuthInfo`
-- `APP.SECURITY.AUTH.SIGNOUT` — sign out, clears state
-- `APP.SECURITY.AUTH.REFRESH` — refresh auth data without a full re-login; returns `AuthInfo`
-- `APP.SECURITY.AUTH.ENSURE` — ensure authenticated; navigates to the sign-in page if not; returns `AuthInfo`
-- `APP.SECURITY.AUTH.APPLY` — authorize an outgoing request (provided only when `useConventions: true`)
-- `APP.SECURITY.AUTH.INFO.GET` — get current `AuthInfo`
-- `APP.SECURITY.CONFIG.GET` / `APP.SECURITY.CONFIG.CHANGED` — read / react to `BaseSecurityDomainConfig`
-- `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `…SIGNOUT.REQUEST` / `…REFRESH.REQUEST` — custom-handler hooks used when `useConventions: false`
+Key channels (string constants from `appDomain/securityContracts` - reference by the string value, e.g. `'APP.SECURITY.AUTH.SIGNIN'`, not by the `$AUTH_*` variable name):
+- `APP.SECURITY.AUTH.SIGNIN` - authenticate and register the result; returns `AuthInfo`
+- `APP.SECURITY.AUTH.SIGNOUT` - sign out, clears state
+- `APP.SECURITY.AUTH.REFRESH` - refresh auth data without a full re-login; returns `AuthInfo`
+- `APP.SECURITY.AUTH.ENSURE` - ensure authenticated; navigates to the sign-in page if not; returns `AuthInfo`
+- `APP.SECURITY.AUTH.APPLY` - authorize an outgoing request (provided only when `useConventions: true`)
+- `APP.SECURITY.AUTH.INFO.GET` - get current `AuthInfo`
+- `APP.SECURITY.CONFIG.GET` / `APP.SECURITY.CONFIG.CHANGED` - read / react to `BaseSecurityDomainConfig`
+- `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `...SIGNOUT.REQUEST` / `...REFRESH.REQUEST` - custom-handler hooks used when `useConventions: false`
 
 ### HttpClient
 
-`HttpClient` is the base class for typed API service clients. Extend it for each API — each public method becomes a typed bus channel via the service adapter.
+`HttpClient` is the base class for typed API service clients. Extend it for each API - each public method becomes a typed bus channel via the service adapter.
 
 - Call `this.fetch({ url, method, useAuth?, body?, contentType? })` inside methods.
 - Set `useAuth: true` on a request to inject the `Authorization` header automatically (reads current `AuthInfo` from SecurityService via the bus).
@@ -93,8 +95,8 @@ type AuthScheme =
     | "Session" | "ApiKey";                                            // de facto
 ```
 
-- `SignInCredentials` — discriminated union by `scheme`, passed to `APP.SECURITY.AUTH.SIGNIN` (and `…SIGNIN.REQUEST`). Members: `Basic`/`Bearer`/`Digest`/`Session` (`userName`, `password`), `NTLM`/`Negotiate` (+ `domain?`), `VAPID` (`privateKey`, `subject`), `ApiKey` (`apiKey`).
-- `AuthInfo` — discriminated union by `scheme`, returned by sign-in/refresh/`INFO.GET` and persisted by SecurityService. All members extend `AuthInfoBase` (`isAuthenticated?`, `authority?`, `provider?`, `accessToken?`, `properties?`, `domain?`). Scheme extras: `Bearer` (`refreshToken?`, `tokenExpiresAt?`), `Session` (`sessionId?`, `refreshToken?`, `tokenExpiresAt?`), `Digest` (`realm?`, `nonce?`, `algorithm?`), `NTLM`/`Negotiate` (`negotiationToken?`), `VAPID` (`publicKey?`, `subject?`), `ApiKey` (`apiKey?`, `keyName?`, `keyLocation?`).
+- `SignInCredentials` - discriminated union by `scheme`, passed to `APP.SECURITY.AUTH.SIGNIN` (and `...SIGNIN.REQUEST`). Members: `Basic`/`Bearer`/`Digest`/`Session` (`userName`, `password`), `NTLM`/`Negotiate` (+ `domain?`), `VAPID` (`privateKey`, `subject`), `ApiKey` (`apiKey`).
+- `AuthInfo` - discriminated union by `scheme`, returned by sign-in/refresh/`INFO.GET` and persisted by SecurityService. All members extend `AuthInfoBase` (`isAuthenticated?`, `authority?`, `provider?`, `accessToken?`, `properties?`, `domain?`). Scheme extras: `Bearer` (`refreshToken?`, `tokenExpiresAt?`), `Session` (`sessionId?`, `refreshToken?`, `tokenExpiresAt?`), `Digest` (`realm?`, `nonce?`, `algorithm?`), `NTLM`/`Negotiate` (`negotiationToken?`), `VAPID` (`publicKey?`, `subject?`), `ApiKey` (`apiKey?`, `keyName?`, `keyLocation?`).
 
 Built-in conventions (`useConventions: true`) currently implement `Bearer` for sign-in/refresh and `Bearer` + `Basic` for request authorization (`APPLY`). Other schemes require `useConventions: false` with your own `*.REQUEST` / `APPLY` handlers.
 
@@ -102,13 +104,13 @@ When editing this repo source, mirror existing import style from nearby files.
 
 ## Standard Bus Channels
 
-dynstruct declares typed bus channels (`@actdim/msgmesh`) used by its subsystems and reusable by app code. They are members of `CommonAppMsgStruct` (`commonContracts.ts`) and `BaseSecurityMsgStruct` (`securityContracts.ts`). Each exports a string constant (`$NAV_GOTO = 'APP.NAV.GOTO'`); **reference channels by string value, not by the `$…` variable**. Channels with both `in`/`out` are request/response (`msgBus.request`); channels with only `in` are events (`msgBus.send` + subscriber).
+dynstruct declares typed bus channels (`@actdim/msgmesh`) used by its subsystems and reusable by app code. They are members of `CommonAppMsgStruct` (`commonContracts.ts`) and `BaseSecurityMsgStruct` (`securityContracts.ts`). Each exports a string constant (`$NAV_GOTO = 'APP.NAV.GOTO'`); **reference channels by string value, not by the `$...` variable**. Channels with both `in`/`out` are request/response (`msgBus.request`); channels with only `in` are events (`msgBus.send` + subscriber).
 
 ### Common channels (`CommonAppMsgStruct`)
 
 | Channel | In | Out |
 |---|---|---|
-| `APP.RELOAD` | `void` | — (event) |
+| `APP.RELOAD` | `void` | - (event) |
 | `APP.NOTICE` | `{ text; title?; detail?; severity?; presentation?; userAction?; category?; scope?; source?; properties? }` | `void` |
 | `APP.CONFIG.GET` | `void` | `BaseAppDomainConfig` |
 | `APP.CONFIG.SET` | `BaseAppDomainConfig` | `void` |
@@ -135,15 +137,15 @@ Provided by `SecurityService`. The `*.REQUEST` channels are the custom-handler h
 |---|---|---|
 | `APP.SECURITY.AUTH.SIGNIN.REQUEST` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` |
 | `APP.SECURITY.AUTH.SIGNIN` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` |
-| `APP.SECURITY.AUTH.SIGNOUT.REQUEST` | `AuthInfo` | — (event) |
-| `APP.SECURITY.AUTH.SIGNOUT` | `AuthInfo` | — (event) |
+| `APP.SECURITY.AUTH.SIGNOUT.REQUEST` | `AuthInfo` | - (event) |
+| `APP.SECURITY.AUTH.SIGNOUT` | `AuthInfo` | - (event) |
 | `APP.SECURITY.AUTH.REFRESH.REQUEST` | `AuthInfo` | `AuthInfo` |
 | `APP.SECURITY.AUTH.REFRESH` | `AuthInfo` | `AuthInfo` |
 | `APP.SECURITY.AUTH.ENSURE` | `void` | `AuthInfo` |
 | `APP.SECURITY.AUTH.APPLY` | `Partial<RequestInit> & { url: string; headers: Record<string,string> }` | `{ query?; headers?; credentials? }` |
 | `APP.SECURITY.AUTH.INFO.GET` | `void` | `AuthInfo` |
 | `APP.SECURITY.CONFIG.GET` | `void` | `BaseSecurityDomainConfig` |
-| `APP.SECURITY.CONFIG.CHANGED` | `BaseSecurityDomainConfig` | — (event) |
+| `APP.SECURITY.CONFIG.CHANGED` | `BaseSecurityDomainConfig` | - (event) |
 
 ## Component Authoring Standard
 
@@ -157,16 +159,16 @@ Use hook-constructors as the primary component format:
 - `events` for lifecycle and property change reactions
 - `effects` for auto-tracked reactive logic
 - `children` for explicit composition
-- `view` for rendering — use `<c.children.Name />` (Capitalized) for all child types
+- `view` for rendering - use `<c.children.Name />` (Capitalized) for all child types
 4. Instantiate via `useComponent(def, params)`.
 5. Prefer `let c` and `let m` pattern:
 - `c` is component instance
-- `m` is `c.model` reactive model — **actions are blended into the model**, so call `m.actionName(...)` not `c.actions.actionName(...)`. `Component` has no `.actions` property.
+- `m` is `c.model` reactive model - **actions are blended into the model**, so call `m.actionName(...)` not `c.actions.actionName(...)`. `Component` has no `.actions` property.
 6. Export `toReact(useXxx)` only when React component interoperability is needed.
 
 ## Component Identity (`id`, `regType`, `$key`)
 
-Every component instance gets a unique `id` at runtime. The framework does **not** apply it to any DOM element automatically — the component author must do so explicitly:
+Every component instance gets a unique `id` at runtime. The framework does **not** apply it to any DOM element automatically - the component author must do so explicitly:
 
 ```tsx
 view: () => <div id={c.id}>...</div>
@@ -177,9 +179,9 @@ view: () => <div id={c.id}>...</div>
 2. `$key` param provided → `toHtmlId(regType) + '#' + key`
 3. Neither → `toHtmlId(regType) + '#' + N` (sequential per `regType` within the context)
 
-**`regType`** — set in `def.regType` (shared across all instances). If omitted, auto-detected from source file path via stack inspection.
+**`regType`** - set in `def.regType` (shared across all instances). If omitted, auto-detected from source file path via stack inspection.
 
-**`$id` / `$key`** — instance-level, passed via `ComponentParams` in JSX, in the hook-constructor call, or via binding:
+**`$id` / `$key`** - instance-level, passed via `ComponentParams` in JSX, in the hook-constructor call, or via binding:
 
 ```tsx
 <MyComponent $id="main-card" />          // explicit, stable id
@@ -196,14 +198,14 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
   - `onChangingX` to validate/sanitize before set
   - `onChangeX` after set
   - `onPropChanging`/`onPropChange` for generic handlers
-  - `onCatch` (not `onError`) for error handling — signature: `(error, component?) => void`
+  - `onCatch` (not `onError`) for error handling - signature: `(error, component?) => void`
   - Lifecycle handlers may be `async`:
-    - `onInit` — once on creation, before first render; sync setup only, no DOM
-    - `onLayoutReady` / `onLayoutDestroy` — maps to `useLayoutEffect` / its cleanup; sync, DOM is available
-    - `onReady` / `onDestroy` — maps to `useEffect` / its cleanup; async-safe, primary hook for data loading
-  - Effect bodies (`def.effects`) are also wrapped by the framework error router — errors propagate to `onCatch`.
+    - `onInit` - once on creation, before first render; sync setup only, no DOM
+    - `onLayoutReady` / `onLayoutDestroy` - maps to `useLayoutEffect` / its cleanup; sync, DOM is available
+    - `onReady` / `onDestroy` - maps to `useEffect` / its cleanup; async-safe, primary hook for data loading
+  - Effect bodies (`def.effects`) are also wrapped by the framework error router - errors propagate to `onCatch`.
 - Use `effects` for derived/auto-tracked behavior; pause/resume/stop through `c.effects.<name>`.
-- Use a **getter in `def.props`** to declare a computed (auto-tracked) property. The framework detects getter-only descriptors and registers them as computed values automatically — no manual annotation needed. Declare the prop as `readonly` in the struct type. Reference `m` (not `this`) inside the getter body because TypeScript does not type `this` in `PropertyDescriptor` getters:
+- Use a **getter in `def.props`** to declare a computed (auto-tracked) property. The framework detects getter-only descriptors and registers them as computed values automatically - no manual annotation needed. Declare the prop as `readonly` in the struct type. Reference `m` (not `this`) inside the getter body because TypeScript does not type `this` in `PropertyDescriptor` getters:
 
   ```ts
   // struct type
@@ -211,7 +213,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
     props: {
       firstName: string;
       lastName: string;
-      readonly fullName: string;  // computed — mark readonly
+      readonly fullName: string;  // computed - mark readonly
     };
   }>;
 
@@ -221,7 +223,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
       firstName: '',
       lastName: '',
       get fullName() {
-        // `this` is untyped in TS getter descriptors — use `m` instead
+        // `this` is untyped in TS getter descriptors - use `m` instead
         return `${m.firstName} ${m.lastName}`.trim();
       },
     },
@@ -230,8 +232,8 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
 
   This also works for **nested object properties**: define the getter on the nested object literal inside `def.props`. The framework propagates computed annotations through any depth of nesting.
 - Use `prop({ reactive: ... })` to control how a prop is tracked. Default is fully reactive. Options:
-  - `reactive: false` — completely non-reactive; reads and writes are invisible to the reactivity system
-  - `reactive: 'shallow'` — array container is reactive (push/pop tracked), but item properties are not
+  - `reactive: false` - completely non-reactive; reads and writes are invisible to the reactivity system
+  - `reactive: 'shallow'` - array container is reactive (push/pop tracked), but item properties are not
 
   Works for top-level and nested paths alike. Can be used without `initialValue` as a pure annotation:
 
@@ -242,7 +244,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
   }
   ```
 
-- Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child — `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
+- Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child - `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
 - Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
 - Use `ComponentStructExt<Struct, {...}>` **inside** a hook-constructor to declare private reactive props, internal children (often `React.FC` sections), and effects. The extended type is invisible to callers; return `Component<Struct>` from the hook to preserve the public API. See `componentState/StateExample.tsx`.
 - Use `ComponentImpl<Struct, Internals>` when you need non-reactive, per-instance data (e.g., a cache or lock). Pass initial internals as the third argument to `useComponent`; access via `c._`. Return `Component<Struct>` to hide internals from callers. See `services/react/StorageService.tsx`.
@@ -251,7 +253,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
 
 `onCatch` is called automatically whenever an error crosses the **dynstruct API boundary**. The framework wraps all user code at component creation time. There are two propagation modes:
 
-**Routes to `onCatch` only — error is swallowed after dispatch:**
+**Routes to `onCatch` only - error is swallowed after dispatch:**
 - Lifecycle hooks: `onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`
 - Effect bodies (`def.effects`)
 - Property event handlers: `onGetX`, `onChangingX`, `onChangeX`, `onPropChanging`, `onPropChange`
@@ -260,12 +262,12 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
 These have no caller waiting for a return value, so swallowing after `onCatch` is safe.
 
 **Routes to `onCatch` AND re-throws to caller:**
-- Actions (`def.actions`) — caller may `await m.action()` and expect a result or a rejection
-- MsgBus provider/subscriber callbacks — provider must return a response; subscriber may be awaited
+- Actions (`def.actions`) - caller may `await m.action()` and expect a result or a rejection
+- MsgBus provider/subscriber callbacks - provider must return a response; subscriber may be awaited
 
 Swallowing in these cases would silently return `undefined` to the caller and cause hard-to-diagnose bugs.
 
-Manual `try/catch` is needed only for code that is **outside** this boundary — a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
+Manual `try/catch` is needed only for code that is **outside** this boundary - a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
 
 ```ts
 function handleError(err: unknown) {
@@ -280,7 +282,7 @@ const def: ComponentDef<Struct> = {
         onCatch: (err) => { handleError(err); },
     },
     view: () => (
-        // load() calls a plain fetchData() — not a dynstruct call, so catch manually
+        // load() calls a plain fetchData() - not a dynstruct call, so catch manually
         <button onClick={async () => {
             try { await load(); } catch (err) { handleError(err); }
         }}>Retry</button>
@@ -290,9 +292,9 @@ const def: ComponentDef<Struct> = {
 
 When `view` itself may throw, keep `useErrorBoundary: true` (default) and optionally provide `fallbackView`.
 
-### `c.run` — manual boundary entry
+### `c.run` - manual boundary entry
 
-`c.run(handler, silent?)` executes any code inside the framework error boundary — errors are routed to `onCatch` exactly like any framework-managed call:
+`c.run(handler, silent?)` executes any code inside the framework error boundary - errors are routed to `onCatch` exactly like any framework-managed call:
 
 ```ts
 // silent=true: error → onCatch, swallowed (no re-throw)
@@ -302,7 +304,7 @@ onClick={() => c.run(() => load(), true)}
 onClick={() => c.run(() => submit())}
 ```
 
-**In practice prefer `def.actions`** — they combine error routing with automatic MobX action batching (all reactive prop mutations within the call commit as one transaction):
+**In practice prefer `def.actions`** - they combine error routing with automatic MobX action batching (all reactive prop mutations within the call commit as one transaction):
 
 ```ts
 actions: {
@@ -315,7 +317,7 @@ actions: {
 // called as: m.load()
 ```
 
-If an action is an implementation detail not needed in the public contract, declare it privately via `ComponentStructExt` — callers see only the original `Struct`:
+If an action is an implementation detail not needed in the public contract, declare it privately via `ComponentStructExt` - callers see only the original `Struct`:
 
 ```ts
 type ImplStruct = ComponentStructExt<Struct, {
@@ -331,8 +333,8 @@ Avoid:
 - introducing local `useState`/`useReducer` for state that belongs to component model
 - ad-hoc cross-component mutation without message bus or bindings
 - hidden dependencies not declared in `children` or `msgScope`
-- **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) — the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
-- passing reactive model values to external APIs without stripping proxies — use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
+- **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) - the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
+- passing reactive model values to external APIs without stripping proxies - use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
 
 ## Messaging & MsgMesh Integration Architecture
 
@@ -413,7 +415,7 @@ For service APIs:
 - Prefer parent-child composition via `children` over passing unstable inline objects/functions deep into tree.
 - Keep JSX mostly structural; put behavior in `actions/events/effects`.
 - Reuse existing component structures rather than creating parallel incompatible patterns.
-- In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This is a JSX shortcut — instead of `<c.children.avatarView.View />` you write `<c.children.AvatarView />`. For full dynstruct component children (`ComponentStruct` types) the camelCase name additionally exposes the full component instance (`c.children.avatarView.model`, `c.children.avatarView.effects`). For `React.FC` and factory function children only the Capitalized JSX shortcut exists — these are lightweight fragments without their own model.
+- In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This is a JSX shortcut - instead of `<c.children.avatarView.View />` you write `<c.children.AvatarView />`. For full dynstruct component children (`ComponentStruct` types) the camelCase name additionally exposes the full component instance (`c.children.avatarView.model`, `c.children.avatarView.effects`). For `React.FC` and factory function children only the Capitalized JSX shortcut exists - these are lightweight fragments without their own model.
 
 ## File and Story Conventions
 
@@ -422,11 +424,11 @@ For service APIs:
 - App domain contracts/utilities: `src/appDomain/*`
 - Services: `src/services/*`
 - Examples/stories: `src/_stories/componentModel/*`
-  - `basicCommunication/` — producer/consumer pattern
-  - `serviceCall/` — API adapter integration
-  - `securityService/` — auth flow
-  - `storageService/` — storage service
-  - `componentState/` — `ComponentStructExt`, form validation with validators, `m.$` and `mapToEdit`
+  - `basicCommunication/` - producer/consumer pattern
+  - `serviceCall/` - API adapter integration
+  - `securityService/` - auth flow
+  - `storageService/` - storage service
+  - `componentState/` - `ComponentStructExt`, form validation with validators, `m.$` and `mapToEdit`
 - Shared story styles: `src/_stories/componentModel/styles.ts` (`row`, `labelStyle`, `detailsStyle`)
 
 When adding a feature:
@@ -435,16 +437,16 @@ When adding a feature:
 
 ## TypeScript Config Layout
 
-Solution-style split — do not collapse it back into one config:
+Solution-style split - do not collapse it back into one config:
 
-- `tsconfig.base.json` — shared `compilerOptions` only. `moduleResolution: "bundler"` (this is a Vite package; do NOT switch to `"node"`/`node10` (deprecated) or `nodenext` (would force `.js` import extensions)). No `baseUrl` (deprecated in TS 6.0) — `paths` targets are relative: `"@/*": ["./src/*"]`. `extends` inherits only `compilerOptions`, not `include`/`files`/`references`.
-- `tsconfig.json` — pure orchestrator: `{ "files": [], "references": [...] }`. It compiles nothing itself; it only wires the leaf projects.
-- `tsconfig.build.json` — library build; emits `.d.ts` to `dist`. Consumed by `vite-plugin-dts` via its `tsconfigPath` (must stay a config WITHOUT `references`, else the plugin emits zero declarations).
-- `tsconfig.dev.json` — editor/dev + tests; broad `types` (node, vitest/globals, vite/client, …).
+- `tsconfig.base.json` - shared `compilerOptions` only. `moduleResolution: "bundler"` (this is a Vite package; do NOT switch to `"node"`/`node10` (deprecated) or `nodenext` (would force `.js` import extensions)). No `baseUrl` (deprecated in TS 6.0) - `paths` targets are relative: `"@/*": ["./src/*"]`. `extends` inherits only `compilerOptions`, not `include`/`files`/`references`.
+- `tsconfig.json` - pure orchestrator: `{ "files": [], "references": [...] }`. It compiles nothing itself; it only wires the leaf projects.
+- `tsconfig.build.json` - library build; emits `.d.ts` to `dist`. Consumed by `vite-plugin-dts` via its `tsconfigPath` (must stay a config WITHOUT `references`, else the plugin emits zero declarations).
+- `tsconfig.dev.json` - editor/dev + tests; broad `types` (node, vitest/globals, vite/client, ...).
 
 Rules:
-- Root Node files (`packageConfig.ts`, `vite.config.ts`, `vitest*.config.ts`) get node types via `types: ["node"]` in the build/dev projects — NOT by editing includes elsewhere or adding `node` to a shared `types` array (that leaks node globals into browser `src`). If the editor shows "Cannot find name 'path'/'__dirname'" on such a file, it means the file isn't routed to a project — check the `references` chain, don't hack the source with `/// <reference>`.
-- Always type-check the solution with `tsc -b` (build mode), never `tsc -p` — `-p` sees `files: []` and checks nothing. Both `typecheck` and `build` scripts already use `tsc -b tsconfig.json`.
+- Root Node files (`packageConfig.ts`, `vite.config.ts`, `vitest*.config.ts`) get node types via `types: ["node"]` in the build/dev projects - NOT by editing includes elsewhere or adding `node` to a shared `types` array (that leaks node globals into browser `src`). If the editor shows "Cannot find name 'path'/'__dirname'" on such a file, it means the file isn't routed to a project - check the `references` chain, don't hack the source with `/// <reference>`.
+- Always type-check the solution with `tsc -b` (build mode), never `tsc -p` - `-p` sees `files: []` and checks nothing. Both `typecheck` and `build` scripts already use `tsc -b tsconfig.json`.
 
 ## Validation Checklist (before finishing)
 

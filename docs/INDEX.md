@@ -1,11 +1,10 @@
 ---
 protocol: along
-protocol_version: "2.2.25"
 slug: INDEX
 title: Knowledge Base Topic Index
 type: index
-created: 2026-09-07
-updated: 2026-09-07
+created: 2026-09-10
+updated: 2026-09-10
 tags: [index, kb, topics, map]
 ---
 
@@ -22,8 +21,8 @@ flowchart TD
     INDEX --> T_01_OVERVIEW_AND_ADVANTAGES
     T_02_CORE_CONCEPTS["Core Concepts"]
     INDEX --> T_02_CORE_CONCEPTS
-    T_03_ARCHITECTURE_AND_WIRING["Architecture & Wiring"]
-    INDEX --> T_03_ARCHITECTURE_AND_WIRING
+    T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING["Architecture & Wiring"]
+    INDEX --> T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
     T_04_REACT_INTEGRATION["React Integration & Service Patterns"]
     INDEX --> T_04_REACT_INTEGRATION
     T_05_API_REFERENCE["API Reference & Development Guide"]
@@ -35,13 +34,20 @@ flowchart TD
     T_SETUP_AND_WORKFLOW["03 Setup And Workflow"]
     INDEX --> T_SETUP_AND_WORKFLOW
     T_01_OVERVIEW_AND_ADVANTAGES -.->|references| T_02_CORE_CONCEPTS
+    T_01_OVERVIEW_AND_ADVANTAGES -.->|references| T_ARCHITECTURE
     T_02_CORE_CONCEPTS -.->|references| T_01_OVERVIEW_AND_ADVANTAGES
-    T_02_CORE_CONCEPTS -.->|references| T_03_ARCHITECTURE_AND_WIRING
-    T_03_ARCHITECTURE_AND_WIRING -.->|references| T_02_CORE_CONCEPTS
-    T_03_ARCHITECTURE_AND_WIRING -.->|references| T_04_REACT_INTEGRATION
-    T_04_REACT_INTEGRATION -.->|references| T_03_ARCHITECTURE_AND_WIRING
+    T_02_CORE_CONCEPTS -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
+    T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING -.->|references| T_02_CORE_CONCEPTS
+    T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING -.->|references| T_04_REACT_INTEGRATION
+    T_04_REACT_INTEGRATION -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
     T_04_REACT_INTEGRATION -.->|references| T_05_API_REFERENCE
     T_05_API_REFERENCE -.->|references| T_04_REACT_INTEGRATION
+    T_ARCHITECTURE -.->|references| T_DOMAIN_MODEL
+    T_ARCHITECTURE -.->|references| T_SETUP_AND_WORKFLOW
+    T_DOMAIN_MODEL -.->|references| T_ARCHITECTURE
+    T_DOMAIN_MODEL -.->|references| T_SETUP_AND_WORKFLOW
+    T_SETUP_AND_WORKFLOW -.->|references| T_ARCHITECTURE
+    T_SETUP_AND_WORKFLOW -.->|references| T_DOMAIN_MODEL
 ```
 
 ---

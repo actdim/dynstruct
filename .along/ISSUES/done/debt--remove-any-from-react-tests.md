@@ -10,6 +10,9 @@ updated: 2026-09-07
 completed: 2026-09-07
 agent: antigravity
 tags: [react, tests, typescript, msgbus, any-elimination]
+milestone: v1.3.0-knowledge-base-and-graph
+blocked_by: []
+related: []
 ---
 
 # Remove any usage from React tests and message bus definitions

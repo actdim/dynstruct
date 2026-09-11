@@ -1,11 +1,10 @@
 ---
 protocol: along
-protocol_version: "2.2.5"
 slug: 04-react-integration
 title: React Integration & Service Patterns
 type: topic
 created: 2026-08-31
-updated: 2026-09-02
+updated: 2026-09-10
 tags: [04-react-integration]
 ---
 
@@ -54,7 +53,7 @@ export const Counter = toReact(useCounter);
 
 ## Service Integration & Adapters
 
-`dynstruct` integrates natively with the **service adapter** system from [`@actdim/msgmesh`](https://github.com/actdim/msgmesh). Adapters automatically register any service class (such as an API client) as a message bus provider — channel names, payload types, and return types are all derived from the service class at compile-time.
+`dynstruct` integrates natively with the **service adapter** system from [`@actdim/msgmesh`](https://github.com/actdim/msgmesh). Adapters automatically register any service class (such as an API client) as a message bus provider - channel names, payload types, and return types are all derived from the service class at compile-time.
 
 ### 1. Define an API Client Class
 

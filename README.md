@@ -5,6 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/@actdim/dynstruct.svg)](https://www.npmjs.com/package/@actdim/dynstruct)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-red.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
 
 ---
@@ -45,7 +46,7 @@ const useCounter = (params: ComponentParams<CounterStruct>) => {
 
     const def: ComponentDef<CounterStruct> = {
         props: { count: 0 },
-        actions: { increment: () => { m.count++; } }, // Mutate directly — reactive UI updates automatically
+        actions: { increment: () => { m.count++; } }, // Mutate directly - reactive UI updates automatically
         view: () => (
             <button onClick={m.increment}>Count: {m.count}</button>
         ),
@@ -84,6 +85,19 @@ Explore the complete guide step-by-step from core concepts to advanced patterns:
 
 ---
 
+## AI Coding Assistants (Cursor, Claude Code, Copilot, Antigravity)
+
+To enable AI coding agents in your project to follow Dynstruct component architecture, type-safe contracts, and reactive state conventions, add a reference to the bundled LLM documentation in your project's `AGENTS.md`, `CLAUDE.md`, or `.cursorrules`:
+
+```markdown
+## Dynstruct Component Guidelines
+- Reference: `node_modules/@actdim/dynstruct/llms.txt`
+```
+
+This points agents directly to the compact index and modular topics in `node_modules/@actdim/dynstruct/docs/` matching your installed version, avoiding token bloat and version mismatch.
+
+---
+
 ## Quick Interactive Demo
 
 Try `@actdim/dynstruct` in your browser via StackBlitz:
@@ -106,3 +120,4 @@ Developed with [Along](https://github.com/actdim/along) - a provider-agnostic co
 ## License
 
 Proprietary / BUSL-1.1. See [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.

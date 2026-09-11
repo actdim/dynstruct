@@ -1,11 +1,10 @@
 ---
 protocol: along
-protocol_version: "2.2.5"
-slug: 03-architecture-and-wiring
+slug: 03-[architecture](./topic--architecture.md)-and-wiring
 title: Architecture & Wiring
 type: topic
 created: 2026-08-31
-updated: 2026-09-02
+updated: 2026-09-10
 tags: [03-architecture-and-wiring]
 ---
 

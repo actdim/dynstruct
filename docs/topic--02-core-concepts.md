@@ -1,11 +1,10 @@
 ---
 protocol: along
-protocol_version: "2.2.5"
 slug: 02-core-concepts
 title: Core Concepts
 type: topic
 created: 2026-08-31
-updated: 2026-09-02
+updated: 2026-09-10
 tags: [02-core-concepts]
 ---
 
@@ -17,9 +16,9 @@ tags: [02-core-concepts]
 
 ## Component Structure
 
-The first step in the `dynstruct` architectural pattern is defining the **component structure**. The base generic class `ComponentStruct` acts as a structural constructor — a scaffold that provides constraints, hints, and full IntelliSense to the developer when forming the base type contract. All derived component model APIs are built on top of this contract through TypeScript's type system.
+The first step in the `dynstruct` architectural pattern is defining the **component structure**. The base generic class `ComponentStruct` acts as a structural constructor - a scaffold that provides constraints, hints, and full IntelliSense to the developer when forming the base type contract. All derived component model APIs are built on top of this contract through TypeScript's type system.
 
-**Crucially, component structures are pure type declarations** — they require no implementations (hook-constructors), only type information. This means you can define the entire application's component hierarchy at the type level before writing a single line of runtime code.
+**Crucially, component structures are pure type declarations** - they require no implementations (hook-constructors), only type information. This means you can define the entire application's component hierarchy at the type level before writing a single line of runtime code.
 
 ```typescript
 type Struct = ComponentStruct<
@@ -68,7 +67,7 @@ type Struct = ComponentStruct<
 |---|---|
 | `props` | Reactive property names and types. All declared properties (including nested values) become reactive after component creation. |
 | `actions` | Method signatures that operate on props. Action calls are optimized for batching reactive property change application. |
-| `children` | Names and types of child components. Uses base structures of other components — **no implementations required, only type data**. |
+| `children` | Names and types of child components. Uses base structures of other components - **no implementations required, only type data**. |
 | `msgScope` | Message bus channels this component works with. Sections: `subscribe`, `publish`, `provide`. Narrows the global bus scope to this component's responsibility zone. |
 | `effects` | List of effect names available in this component. Implementations are defined in `ComponentDef`. |
 
@@ -208,7 +207,7 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
 
     c = useComponent(def, params);
     m = c.model;
-    return c; // returned as Component<Struct> — ImplStruct stays private
+    return c; // returned as Component<Struct> - ImplStruct stays private
 };
 ```
 

@@ -1,11 +1,10 @@
 ---
 protocol: along
-protocol_version: "2.2.5"
 slug: architecture
 title: 01 Architecture
 type: topic
 created: 2026-08-27
-updated: 2026-09-02
+updated: 2026-09-10
 tags: [architecture]
 ---
 
@@ -68,7 +67,7 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 
 ## 3. Cross-Links
 - [[INDEX.md]] - Knowledge Base Root
-- [[02-domain-model.md]] - Domain Contracts and Component Structs
-- [[03-setup-and-workflow.md]] - Setup, Build, Tests & Storybook Workflow
+- [[02-[domain-model](./topic--domain-model.md).md]] - Domain Contracts and Component Structs
+- [[03-[setup-and-workflow](./topic--setup-and-workflow.md).md]] - Setup, Build, Tests & Storybook Workflow
 - [[04-api-reference.md]] - Exhaustive API Reference
 - [[05-patterns-and-recipes.md]] - Storybook Examples, Recipes and Architecture Patterns

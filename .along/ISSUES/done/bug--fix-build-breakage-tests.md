@@ -10,6 +10,9 @@ updated: 2026-09-07
 completed: 2026-09-07
 agent: antigravity
 tags: [build, typescript, contracts, tests]
+milestone: v1.3.0-knowledge-base-and-graph
+blocked_by: []
+related: []
 ---
 
 # Fix build breakage in dynstruct after commit 10b852a

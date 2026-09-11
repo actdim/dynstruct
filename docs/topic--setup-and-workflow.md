@@ -1,11 +1,10 @@
 ---
 protocol: along
-protocol_version: "2.2.5"
 slug: setup-and-workflow
 title: 03 Setup And Workflow
 type: topic
 created: 2026-08-27
-updated: 2026-09-02
+updated: 2026-09-10
 tags: [setup-and-workflow]
 ---
 
@@ -53,7 +52,7 @@ The Storybook suite provides live interactive demonstrations of all architectura
 
 ## 4. Cross-Links
 - [[INDEX.md]] - Knowledge Base Root
-- [[01-architecture.md]] - Architecture
-- [[02-domain-model.md]] - Domain Model
+- [[01-[architecture](./topic--architecture.md).md]] - Architecture
+- [[02-[domain-model](./topic--domain-model.md).md]] - Domain Model
 - [[04-api-reference.md]] - API Reference
 - [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples

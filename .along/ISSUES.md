@@ -1,9 +1,11 @@
 # Active Issues
 
 ## Active
+- [ ] `(feat)` [agent-ready-structured-tracing](ISSUES/feat--agent-ready-structured-tracing.md)
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
-- [ ] `(debt)` [safe-user-code-execution](ISSUES/debt--safe-user-code-execution.md)
 - [ ] `(feat)` [automatic-children-validation](ISSUES/feat--automatic-children-validation.md)
+- [ ] `(feat)` [binding-cycle-and-reentrancy-protection](ISSUES/feat--binding-cycle-and-reentrancy-protection.md)
+- [ ] `(feat)` [binding-divergence-limits](ISSUES/feat--binding-divergence-limits.md)
 - [ ] `(feat)` [business-telemetry-declarations](ISSUES/feat--business-telemetry-declarations.md)
 - [ ] `(feat)` [component-type-metadata](ISSUES/feat--component-type-metadata.md)
 - [ ] `(feat)` [control-persistence-providers](ISSUES/feat--control-persistence-providers.md)
@@ -15,6 +17,7 @@
 - [ ] `(feat)` [nav-service-dependencies](ISSUES/feat--nav-service-dependencies.md)
 - [ ] `(feat)` [problem-details-http-errors](ISSUES/feat--problem-details-http-errors.md)
 - [ ] `(feat)` [request-accepts-and-cors](ISSUES/feat--request-accepts-and-cors.md)
+- [ ] `(debt)` [safe-user-code-execution](ISSUES/debt--safe-user-code-execution.md)
 - [ ] `(feat)` [server-sent-events-support](ISSUES/feat--server-sent-events-support.md)
 - [ ] `(feat)` [signalr-integration](ISSUES/feat--signalr-integration.md)
 - [ ] `(feat)` [single-getter-prop-binding](ISSUES/feat--single-getter-prop-binding.md)
@@ -22,6 +25,7 @@
 - [ ] `(feat)` [store-has-and-clear-channels](ISSUES/feat--store-has-and-clear-channels.md)
 - [ ] `(feat)` [tanstack-query-integration](ISSUES/feat--tanstack-query-integration.md)
 - [ ] `(feat)` [trpc-integration](ISSUES/feat--trpc-integration.md)
+- [ ] `(feat)` [view-error-boundary-retries](ISSUES/feat--view-error-boundary-retries.md)
 - [ ] `(feat)` [visibility-interaction-states](ISSUES/feat--visibility-interaction-states.md)
 - [ ] `(feat)` [websocket-transport-support](ISSUES/feat--websocket-transport-support.md)
 - [ ] `(feat)` [www-authenticate-header-support](ISSUES/feat--www-authenticate-header-support.md)
@@ -30,6 +34,7 @@
 <!-- Planned or deferred issues -->
 
 ## Done (recent)
-<!-- No completed issues -->
-- [x] `(bug)` [fix-build-breakage-tests](ISSUES/done/bug--fix-build-breakage-tests.md)
+- [x] `(docs)` [ai-agent-reference-guide](ISSUES/done/docs--ai-agent-reference-guide.md)
+- [x] `(task)` [upgrade-jest-dom](ISSUES/done/task--upgrade-jest-dom.md)
 - [x] `(debt)` [remove-any-from-react-tests](ISSUES/done/debt--remove-any-from-react-tests.md)
+- [x] `(bug)` [fix-build-breakage-tests](ISSUES/done/bug--fix-build-breakage-tests.md)

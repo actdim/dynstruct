@@ -1,11 +1,24 @@
 ---
 protocol: along
+slug: 05-api-reference
+title: API Reference & Development Guide
+type: topic
+curated: true
+created: 2026-09-10
+updated: 2026-09-10
+tags: [05-api-reference]
+---
+
+---
+protocol: along
 protocol_version: "2.2.5"
+protocol_version: "2.2.27"
 slug: 05-api-reference
 title: API Reference & Development Guide
 type: topic
 created: 2026-08-31
 updated: 2026-09-02
+updated: 2026-09-10
 tags: [05-api-reference]
 ---
 
@@ -162,6 +175,7 @@ pnpm run lint
 ## License
 
 Proprietary / BUSL-1.1 (Business Source License). See `LICENSE` for details.
+MIT License. See `LICENSE` for details.
 
 ---
 

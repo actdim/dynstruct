@@ -1,11 +1,10 @@
 ---
 protocol: along
-protocol_version: "2.2.5"
 slug: domain-model
 title: 02 Domain Model
 type: topic
 created: 2026-08-27
-updated: 2026-09-02
+updated: 2026-09-10
 tags: [domain-model]
 ---
 
@@ -89,7 +88,7 @@ Accessible on `c.model.$`:
 
 ## 3. Cross-Links
 - [[INDEX.md]] - Knowledge Base Root
-- [[01-architecture.md]] - System Architecture
-- [[03-setup-and-workflow.md]] - Setup, Build & Storybook Workflow
+- [[01-[architecture](./topic--architecture.md).md]] - System Architecture
+- [[03-[setup-and-workflow](./topic--setup-and-workflow.md).md]] - Setup, Build & Storybook Workflow
 - [[04-api-reference.md]] - API Reference
 - [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples

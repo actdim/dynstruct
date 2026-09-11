@@ -1,11 +1,10 @@
 ---
 protocol: along
-protocol_version: "2.2.5"
 slug: 01-overview-and-advantages
 title: Overview & Key Advantages
 type: topic
 created: 2026-08-31
-updated: 2026-09-02
+updated: 2026-09-10
 tags: [01-overview-and-advantages]
 ---
 
@@ -20,19 +19,19 @@ tags: [01-overview-and-advantages]
 **`@actdim/dynstruct`** is a TypeScript-based component model and architectural framework for building scalable, modular web applications. It provides a **structure-first, declarative approach** to component design with:
 
 - **Type-safe component model** with explicit dependency wiring visible at compile-time.
-- **Decoupled messaging architecture** using `@actdim/msgmesh` for inter-component and service communication.
+- **Decoupled messaging [architecture](./topic--architecture.md)** using `@actdim/msgmesh` for inter-component and service communication.
 - **Component lifecycle management** with automatic initialization, ready, layout, and cleanup hooks.
-- **Zero-boilerplate reactive state** powered by MobX — properties automatically trigger UI re-renders on mutation.
-- **Type-safe component events** — automatic event handlers for lifecycle and property changes with full IntelliSense.
-- **UI Component Adapters** — seamless integration with design systems like Material UI (`@actdim/dynstruct-mui`).
+- **Zero-boilerplate reactive state** powered by MobX - properties automatically trigger UI re-renders on mutation.
+- **Type-safe component events** - automatic event handlers for lifecycle and property changes with full IntelliSense.
+- **UI Component Adapters** - seamless integration with design systems like Material UI (`@actdim/dynstruct-mui`).
 
 ---
 
 ## Framework Support
 
-- ✅ **React** — Fully supported (`useComponent`, `toReact`, `toReactView`, MobX integration).
-- 🚧 **SolidJS** — Planned / In development.
-- 🚧 **Vue.js** — Planned.
+- ✅ **React** - Fully supported (`useComponent`, `toReact`, `toReactView`, MobX integration).
+- 🚧 **SolidJS** - Planned / In development.
+- 🚧 **Vue.js** - Planned.
 
 The architectural core (`@actdim/dynstruct/componentModel/contracts`) is framework-agnostic. The exact same component structures, message buses, and business contracts work across UI frameworks.
 
@@ -40,7 +39,7 @@ The architectural core (`@actdim/dynstruct/componentModel/contracts`) is framewo
 
 ## UI Component Adapters & Companion Libraries
 
-- 🎨 **[@actdim/dynstruct-mui](https://github.com/actdim/dynstruct-mui)** — Official Material UI (MUI v5/v6) component adapters for dynstruct. Provides ready-to-use reactive hook-constructors and React components (`Button`, `TextField`, `Dialog`, `Drawer`, `Table`, `Tabs`, `Autocomplete`, etc.).
+- 🎨 **[@actdim/dynstruct-mui](https://github.com/actdim/dynstruct-mui)** - Official Material UI (MUI v5/v6) component adapters for dynstruct. Provides ready-to-use reactive hook-constructors and React components (`Button`, `TextField`, `Dialog`, `Drawer`, `Table`, `Tabs`, `Autocomplete`, etc.).
 
 ---
 
