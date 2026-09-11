@@ -1,0 +1,110 @@
+---
+protocol: along
+slug: license
+title: License
+type: license
+created: 2026-09-11
+updated: 2026-09-11
+tags: [license, busl]
+---
+
+# License
+
+`@actdim/dynstruct` is distributed under the **Business Source License 1.1 (BUSL-1.1)**, converting to the open-source **MIT License** on the Change Date.
+
+- Repository file: [LICENSE](https://github.com/actdim/dynstruct/blob/main/LICENSE)
+
+## Summary of Terms
+
+- **Non-Commercial & Evaluation Use**: Free to use, test, copy, modify, and integrate for personal, educational, or internal non-production purposes.
+- **Commercial Use**: Requires a commercial license agreement from the Licensor if used in revenue-generating products or hosted services prior to the Change Date.
+- **Change Date**: Effective 2028-04-01, the software automatically transitions to the standard open-source **MIT License**.
+- **Commercial Contact**: `pavel.borodaev@gmail.com`
+
+---
+
+## Full License Text
+
+```text
+Business Source License 1.1
+
+Licensor:             Pavel Borodaev
+Licensed Work:        @actdim/dynstruct
+                      Copyright (c) 2025-2026 Pavel Borodaev
+Change Date:          2028-04-01
+Change License:       MIT
+
+-----------------------------------------------------------------------------
+
+TERMS
+
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work.
+
+The Licensor may make an Additional Use Grant, above, permitting limited
+production use.
+
+Effective on the Change Date, or the fourth anniversary of the first publicly
+available distribution of a specific version of the Licensed Work under this
+License, whichever comes first, the Licensor hereby grants you rights under
+the terms of the Change License, and the rights granted in the paragraph
+above terminate.
+
+-----------------------------------------------------------------------------
+
+USE LIMITATION
+
+You may not use the Licensed Work for commercial purposes without a separate
+written commercial license from the Licensor.
+
+Commercial purposes include, but are not limited to:
+- Using the Licensed Work in a product or service that generates revenue
+- Offering the Licensed Work as a hosted or managed service
+- Selling access to the Licensed Work or derivative works
+
+For commercial licensing, contact: pavel.borodaev@gmail.com
+
+-----------------------------------------------------------------------------
+
+COVENANTS OF LICENSOR
+
+In consideration of the right to use this License's text, and having agreed
+to be bound by its terms, the Licensor covenants to all who receive notice
+of this License that:
+
+1. The Licensor will specify as the Change License the MIT License.
+2. The Licensor will not modify the terms of the MIT License as applied
+   to the Licensed Work after the Change Date.
+
+-----------------------------------------------------------------------------
+
+NOTICE
+
+The Business Source License (this document) is not an Open Source License.
+However, the Licensed Work will eventually be made available under an Open
+Source License (MIT) after the Change Date: 2028-04-01.
+
+-----------------------------------------------------------------------------
+
+MIT License (effective 2028-04-01)
+
+Copyright (c) 2025-2026 Pavel Borodaev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```

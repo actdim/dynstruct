@@ -1,0 +1,19 @@
+# @actdim/dynstruct
+
+> **Structure-First Component Model & Architecture for Large-Scale TypeScript Apps**
+
+## Documentation Links
+- [README.md](README.md): Overview, quick installation, and full skill list.
+- [AGENTS.md](AGENTS.md): Active ALONG-PROTOCOL conventions and instructions.
+- [docs/INDEX.md](docs/INDEX.md): Central Knowledge Base topic catalog.
+- [docs/topic--01-overview-and-advantages.md](docs/topic--01-overview-and-advantages.md): Overview & Key Advantages.
+- [docs/topic--02-core-concepts.md](docs/topic--02-core-concepts.md): Core Concepts.
+- [docs/topic--03-architecture-and-wiring.md](docs/topic--03-architecture-and-wiring.md): Architecture & Wiring.
+- [docs/topic--04-react-integration.md](docs/topic--04-react-integration.md): React Integration & Service Patterns.
+- [docs/topic--05-api-reference.md](docs/topic--05-api-reference.md): API Reference & Development Guide.
+- [docs/topic--architecture.md](docs/topic--architecture.md): 01 Architecture.
+- [docs/topic--domain-model.md](docs/topic--domain-model.md): 02 Domain Model.
+- [docs/topic--setup-and-workflow.md](docs/topic--setup-and-workflow.md): 03 Setup And Workflow.
+
+## Optional
+- [Full Documentation Context](llms-full.txt): Complete concatenated documentation in a single file.

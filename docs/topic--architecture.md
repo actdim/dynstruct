@@ -66,8 +66,13 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 `toReact` converts any dynstruct hook-constructor into an idiomatic, memoized React functional component (`React.memo`), enabling seamless integration into existing React codebases.
 
 ## 3. Cross-Links
-- [[INDEX.md]] - Knowledge Base Root
-- [[02-[domain-model](./topic--domain-model.md).md]] - Domain Contracts and Component Structs
-- [[03-[setup-and-workflow](./topic--setup-and-workflow.md).md]] - Setup, Build, Tests & Storybook Workflow
-- [[04-api-reference.md]] - Exhaustive API Reference
-- [[05-patterns-and-recipes.md]] - Storybook Examples, Recipes and Architecture Patterns
+
+- [Knowledge Base Index](./INDEX.md) - Knowledge Base Root
+- [Core Concepts](./topic--02-core-concepts.md) - Core Concepts and Component Structs
+- [Architecture & Wiring](./topic--03-architecture-and-wiring.md) - Architecture & Wiring
+- [React Integration](./topic--04-react-integration.md) - React Integration & Service Patterns
+- [API Reference](./topic--05-api-reference.md) - Exhaustive API Reference & Guide
+- [Domain Model](./topic--domain-model.md) - Domain Contracts and Component Structs
+- [Setup & Workflow](./topic--setup-and-workflow.md) - Setup, Build, Tests & Storybook Workflow
+- [License](./topic--license.md) - License Information
+

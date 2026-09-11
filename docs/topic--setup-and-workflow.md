@@ -51,8 +51,13 @@ The Storybook suite provides live interactive demonstrations of all architectura
 - **`ServiceCallExample` & `SecurityServiceExample`**: Backend API invocation, authentication tokens, and login dialog flows.
 
 ## 4. Cross-Links
-- [[INDEX.md]] - Knowledge Base Root
-- [[01-[architecture](./topic--architecture.md).md]] - Architecture
-- [[02-[domain-model](./topic--domain-model.md).md]] - Domain Model
-- [[04-api-reference.md]] - API Reference
-- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples
+
+- [Knowledge Base Index](./INDEX.md) - Knowledge Base Root
+- [01 Architecture](./topic--architecture.md) - Architecture
+- [02 Domain Model](./topic--domain-model.md) - Domain Model
+- [Core Concepts](./topic--02-core-concepts.md) - Core Concepts
+- [Architecture & Wiring](./topic--03-architecture-and-wiring.md) - Architecture & Wiring
+- [React Integration](./topic--04-react-integration.md) - React Integration & Service Patterns
+- [API Reference](./topic--05-api-reference.md) - API Reference & Guide
+- [License](./topic--license.md) - License Information
+
