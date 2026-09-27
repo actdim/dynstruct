@@ -12,7 +12,7 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 
 type TestMsgStruct = BaseAppMsgStruct;
 const msgBus = createMsgBus<TestMsgStruct>();
@@ -50,6 +50,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
                             if (!val || !val.includes('@')) {
                                 return { isValid: false, message: 'Invalid email address' };
                             }
+
                             return { isValid: true };
                         },
                     },
@@ -63,6 +64,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
                             if (val < 18) {
                                 return { isValid: false, message: 'Must be at least 18' };
                             }
+
                             return { isValid: true };
                         },
                     },
@@ -90,6 +92,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
         };
         c = useComponent(def, params);
         m = c.model;
+
         return c;
     };
 
@@ -97,6 +100,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
         let comp: Component<FormStruct>;
         const FormView = toReact<FormStruct>((p) => {
             comp = useFormComp(p);
+
             return comp;
         });
 
@@ -144,6 +148,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
         let comp: Component<FormStruct>;
         const FormView = toReact<FormStruct>((p) => {
             comp = useFormComp(p);
+
             return comp;
         });
 
@@ -175,6 +180,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
             };
             const c = useComponent(def, params);
             comp = c;
+
             return c;
         };
 
@@ -219,6 +225,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
                                 if (val.length < 3) {
                                     return { isValid: false, message: 'Too short' };
                                 }
+
                                 return { isValid: true };
                             },
                         },
@@ -228,6 +235,7 @@ describe('Validation and Form Mapping (prop validator, mapToEdit)', () => {
             };
             const c = useComponent(def, params);
             comp = c;
+
             return c;
         };
 

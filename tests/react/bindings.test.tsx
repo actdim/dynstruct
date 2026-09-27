@@ -13,7 +13,7 @@ import type {
     ValueConverter,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 
 type TestMsgStruct = BaseAppMsgStruct;
 const msgBus = createMsgBus<TestMsgStruct>();
@@ -60,6 +60,7 @@ describe('Data Bindings (bind, bindProp, ValueConverter)', () => {
         };
         c = useComponent(def, params);
         m = c.model;
+
         return c;
     };
 
@@ -74,6 +75,7 @@ describe('Data Bindings (bind, bindProp, ValueConverter)', () => {
         const BoundView = toReact<BoundStruct>((p) => {
             const c = useBoundComp(p);
             captured = c.model;
+
             return c;
         });
 
@@ -102,6 +104,7 @@ describe('Data Bindings (bind, bindProp, ValueConverter)', () => {
         const BoundView = toReact<BoundStruct>((p) => {
             const c = useBoundComp(p);
             captured = c.model;
+
             return c;
         });
 
@@ -133,6 +136,7 @@ describe('Data Bindings (bind, bindProp, ValueConverter)', () => {
         const BoundView = toReact<BoundStruct>((p) => {
             const c = useBoundComp(p);
             captured = c.model;
+
             return c;
         });
 
@@ -147,7 +151,7 @@ describe('Data Bindings (bind, bindProp, ValueConverter)', () => {
     });
 
     it('supports read-only bindings', () => {
-        let readOnlyValue = 'Constant Value';
+        const readOnlyValue = 'Constant Value';
         const roBinding = bind(() => readOnlyValue);
 
         expect(roBinding.readOnly).toBe(true);

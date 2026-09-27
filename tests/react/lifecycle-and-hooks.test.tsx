@@ -12,7 +12,7 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 
 type TestMsgStruct = BaseAppMsgStruct;
 const msgBus = createMsgBus<TestMsgStruct>();
@@ -48,6 +48,7 @@ describe('Component Lifecycle and Execution Hooks', () => {
                 view: () => <div data-testid="lifecycle-node">Node</div>,
             };
             c = useComponent(def, params);
+
             return c;
         };
 
@@ -55,6 +56,7 @@ describe('Component Lifecycle and Execution Hooks', () => {
 
         const Wrapper = () => {
             const [mounted, setMounted] = useState(true);
+
             return (
                 <div>
                     <button data-testid="unmount-btn" onClick={() => setMounted(false)}>
@@ -100,6 +102,7 @@ describe('Component Lifecycle and Execution Hooks', () => {
             c = useComponent(def, params);
             m = c.model;
             capturedComp = c;
+
             return c;
         };
 
@@ -107,6 +110,7 @@ describe('Component Lifecycle and Execution Hooks', () => {
 
         const ParentWrapper = () => {
             const [title, setTitle] = useState('First Title');
+
             return (
                 <div>
                     <button data-testid="change-btn" onClick={() => setTitle('Second Title')}>

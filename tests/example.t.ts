@@ -1,7 +1,7 @@
 /// <reference types="mocha" />
 /// <reference types="chai" />
 
-import "./mocha"
+import "./mocha";
 // import "mocha";
 
 import { expect } from "chai";

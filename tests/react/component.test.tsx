@@ -11,7 +11,7 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 
 type TestMsgStruct = BaseAppMsgStruct;
 
@@ -64,6 +64,7 @@ const useCounter = (params?: ComponentParams<CounterStruct>): Component<CounterS
 
     c = useComponent(def, params);
     m = c.model;
+
     return c;
 };
 
@@ -79,6 +80,7 @@ const useGreeter = (params?: ComponentParams<GreeterStruct>): Component<GreeterS
 
     c = useComponent(def, params);
     m = c.model;
+
     return c;
 };
 
@@ -108,6 +110,7 @@ const useAsyncLoad = (params?: ComponentParams<AsyncStruct>): Component<AsyncStr
 
     c = useComponent(def, params);
     m = c.model;
+
     return c;
 };
 
@@ -169,6 +172,7 @@ describe('useComponent – model access', () => {
         const useCounterWithCapture = (params?: ComponentParams<CounterStruct>) => {
             const c = useCounter(params);
             capturedModel = c.model;
+
             return c;
         };
         const Counter = toReact(useCounterWithCapture);
@@ -204,6 +208,7 @@ describe('useComponent – effects', () => {
             c = useComponent(def, params);
             m = c.model;
             captured = m;
+
             return c;
         });
 
@@ -233,6 +238,7 @@ describe('useComponent – effects', () => {
             m = c.model;
             capturedC = c;
             capturedM = m;
+
             return c;
         });
 
@@ -270,6 +276,7 @@ describe('useComponent – computed props', () => {
             c = useComponent(def, params);
             m = c.model;
             captured = m;
+
             return c;
         });
 
@@ -306,6 +313,7 @@ describe('useComponent – property events', () => {
             };
             c = useComponent(def, params);
             m = c.model;
+
             return c;
         });
 
@@ -332,6 +340,7 @@ describe('useComponent – property events', () => {
             c = useComponent(def, params);
             m = c.model;
             captured = m;
+
             return c;
         });
 
@@ -363,6 +372,7 @@ describe('useComponent – proxy toJSON', () => {
             c = useComponent(def, params);
             m = c.model;
             captured = m;
+
             return c;
         });
 
@@ -406,6 +416,7 @@ describe('useComponent – onCatch', () => {
             };
             c = useComponent(def, params);
             m = c.model;
+
             return c;
         });
 

@@ -9,8 +9,8 @@ import { StorageService } from '@/services/react/StorageService';
 import { PersistentStore } from '@actdim/utico/store/persistentStore';
 import { getUrlBuilder } from '@/appDomain/navigation';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { MsgProviderAdapter } from '@actdim/msgmesh/adapters';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type MsgProviderAdapter } from '@actdim/msgmesh/adapters';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 import { $STORE_GET, $STORE_REMOVE, $STORE_SET } from '@/appDomain/commonContracts';
 
 type TestMsgStruct = BaseAppMsgStruct;

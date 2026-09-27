@@ -59,7 +59,7 @@ Components communicate over typed channels provided by `@actdim/msgmesh`. `@actd
 ### Core Integration Principles
 
 1. **Context-Driven Bus Distribution**:
-   - In standard Dynstruct applications, `msgBus` is initialized at the application level via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`. All descendant components receive `msgBus` automatically through context.
+   - In standard Dynstruct applications, `msgBus` is initialized at the application root via `<ComponentContextProvider value={{ msgBus }}>` (from `@actdim/dynstruct/componentModel/react/componentContext`). All descendant components receive `msgBus` automatically through the React component registry context.
    - Multiple context providers can be nested if isolated scopes are required, but in most cases a single unified or modular bus structure is optimal.
    - Because `@actdim/msgmesh` supports hierarchical dotted channel prefixes (`'API.USER.'`, `'APP.NAV.'`) and TypeScript provides powerful type composition (`ApiStruct & MsgStruct<LocalEvents> & BaseAppMsgStruct`), developers can distribute channel definitions across multiple modular files while maintaining unified compile-time type safety.
    - Therefore, without a specific architectural need, creating ad-hoc bus instances inside individual components or manually passing `msgBus` through props is unnecessary and adds boilerplate.
@@ -218,13 +218,108 @@ children: {
 
 ---
 
-## Message Channels (`CommonAppMsgStruct`, `BaseSecurityMsgStruct`)
+### Hierarchical Filtering (`ComponentMsgFilter`)
 
-Built-in domain channel contracts simplify common application communication:
+In complex component hierarchies (e.g. nested modal dialogs, tree view nodes, or sub-editors), components often need to process messages originating only from their own subtree or parent chain, rather than global broadcasts.
 
-- **`CommonAppMsgStruct`**: Navigation (`APP.NAV.GOTO`), notifications (`APP.NOTIFY`), theme toggles.
-- **`BaseSecurityMsgStruct`**: Auth tokens, login events, permission updates.
+Use `componentFilter` in `msgBroker` subscriber and provider definitions:
+
+```typescript
+import { ComponentMsgFilter } from '@actdim/dynstruct/componentModel/contracts';
+
+const def: ComponentDef<TreeFolderStruct> = {
+    msgBroker: {
+        subscribe: {
+            'VFS.FOLDER.EXPAND': {
+                in: {
+                    // Only accept messages originating from child/descendant nodes
+                    componentFilter: ComponentMsgFilter.FromDescendants,
+                    callback: (msg, component) => {
+                        console.log('Child folder requested expand:', msg.payload);
+                    },
+                },
+            },
+        },
+        provide: {
+            'UI.THEME.GET': {
+                in: {
+                    // Only provide theme values to descendants in this component subtree
+                    componentFilter: ComponentMsgFilter.FromAncestors,
+                    callback: (msg) => ({ theme: m.localTheme }),
+                },
+            },
+        },
+    },
+};
+```
+
+---
+
+## Declarative Routing & Navigation (`createNavigationRoute`, `APP.NAV.GOTO`)
+
+Dynstruct decouples routing from React DOM hooks via `@actdim/dynstruct/appDomain/navigation`. Routes are defined as strongly typed structures, and navigation is performed through the `msgBus` rather than direct `useNavigate()` calls.
+
+### 1. Defining Routes (`createNavigationRoute`)
+
+Define routes using `createNavigationRoute` with parameterized types and path patterns (powered by `path-to-regexp`):
+
+```typescript
+import { type NavRoutes } from '@actdim/dynstruct/appDomain/commonContracts';
+import { createNavigationRoute } from '@actdim/dynstruct/appDomain/navigation';
+import { ExplorerPage } from './pages/explorer/ExplorerPage';
+import { SignInPage } from './pages/auth/signIn/SignInPage';
+
+export const appRoutes = {
+    index: createNavigationRoute({
+        pattern: '',
+        element: <ExplorerPage />,
+    }),
+    explorer: createNavigationRoute({
+        pattern: 'explorer',
+        element: <ExplorerPage />,
+    }),
+    'auth/sign-in': createNavigationRoute<{
+        callbackUrl?: string;
+    }>({
+        pattern: 'auth/sign-in',
+        element: <SignInPage />,
+    }),
+} satisfies NavRoutes;
+
+export type AppRoutes = typeof appRoutes;
+```
+
+Each navigation route provides:
+- `.url(params?)`: Compiles path, query params, and hashes into a clean URL string.
+- `.match(url)`: Matches a pathname and extracts strongly typed route parameters.
+- `.element`: The associated component view element.
+
+### 2. Navigating Over the Message Bus (`APP.NAV.GOTO`)
+
+Application components initiate navigation via `c.msgBus.send({ channel: 'APP.NAV.GOTO', group: 'ex', payload: { route: '...' } })`. This keeps UI components completely decoupled from browser history and router implementations:
+
+```typescript
+// Navigate by route key and typed parameters (group: 'ex')
+c.msgBus.send({
+    channel: 'APP.NAV.GOTO',
+    group: 'ex',
+    payload: {
+        route: 'auth/sign-in',
+        params: { callbackUrl: window.location.href },
+    },
+});
+
+// Navigate by raw path (group: 'in')
+c.msgBus.send({
+    channel: 'APP.NAV.GOTO',
+    group: 'in',
+    payload: {
+        path: '/explorer',
+    },
+});
+```
 
 ---
 
 [← Back to 02. Core Concepts](./topic--02-core-concepts.md) | [Next: 04. React Integration →](./topic--04-react-integration.md)
+

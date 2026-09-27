@@ -71,6 +71,125 @@ type Struct = ComponentStruct<
 | `msgScope` | Message bus channels this component works with. Sections: `subscribe`, `publish`, `provide`. Narrows the global bus scope to this component's responsibility zone. |
 | `effects` | List of effect names available in this component. Implementations are defined in `ComponentDef`. |
 
+### Public vs. Internal Contracts (`ComponentStructExt`)
+
+In real-world applications, placing transient state (e.g. `isLoading`, `cache`, `expandedKeys`) directly into `props` of `ComponentStruct` pollutes the public component interface. Callers would be able to pass `<MyComponent isLoading={true} />` in JSX, violating encapsulation.
+
+Use `ComponentStructExt` to cleanly separate the **Public Contract** (inputs accepted from parent and public message scope) from the **Internal Implementation Contract** (private state, internal actions, private effects):
+
+```typescript
+import {
+    type ComponentStruct,
+    type ComponentStructExt,
+} from '@actdim/dynstruct/componentModel/contracts';
+
+// 1. Public Contract: exported for parents and JSX callers
+export type DriveTreeStruct = ComponentStruct<
+    AppMsgStruct,
+    {
+        props: {
+            selectedDriveId?: string;
+            selectedPath?: string;
+            onSelectNode?: (drive: VfsDrive, node: VfsNode) => void;
+        };
+        msgScope: {
+            publish: AppMsgChannels<'API.VFS.GETDRIVES' | 'API.VFS.GETNODES'>;
+        };
+    }
+>;
+
+// 2. Internal Contract: private to component implementation
+type InternalState = {
+    props: {
+        drives: VfsDrive[];
+        loadingDrives: boolean;
+        expandedKeys: Record<string, boolean>;
+        nodesCache: Record<string, VfsNode[]>;
+    };
+    actions: {
+        loadDrives: () => Promise<void>;
+        toggleFolder: (drive: VfsDrive, path: string) => Promise<void>;
+    };
+};
+
+// 3. Merged Struct: used inside the hook-constructor
+type Struct = ComponentStructExt<DriveTreeStruct, InternalState>;
+```
+
+### Granular Reactivity Control (`reactive: 'shallow' | false`)
+
+By default, Dynstruct properties are deeply reactive - the internal proxy recursively tracks all nested objects and array elements. For large collections, deep trees (like file system nodes), or heavy read-only payloads, deep proxying introduces unnecessary memory and CPU overhead.
+
+Configure reactivity per property using `ComponentProp<T>`:
+
+```typescript
+import { type ComponentDef } from '@actdim/dynstruct/componentModel/contracts';
+
+const def: ComponentDef<Struct> = {
+    props: {
+        // Deep reactive by default
+        counter: 0,
+
+        // 'shallow': container mutations (push, pop, filter) are tracked,
+        // but items within nodesCache are NOT proxied deeply
+        nodesCache: {
+            initialValue: {},
+            reactive: 'shallow',
+        },
+
+        // false: completely disable reactivity tracking for static configurations
+        staticConfig: {
+            initialValue: { bufferSize: 1024 },
+            reactive: false,
+        },
+    },
+};
+```
+
+### Data Binding Primitives (`bind`, `bindProp`, `ValueConverter`)
+
+Dynstruct provides first-class reactive data binding primitives:
+
+1. **`bind(get, set?, converter?)`**:
+   Binds a property to an arbitrary reactive getter and optional setter.
+
+```typescript
+import { bind, type ValueConverter } from '@actdim/dynstruct/componentModel/core';
+
+// Two-way binding between parent model and child input
+const childInput = useTextField({
+    value: bind(
+        () => m.username,
+        (val) => { m.username = val; }
+    ),
+});
+
+// With ValueConverter: converts number model to string input and back
+const stringToNumberConverter: ValueConverter<string, number> = {
+    convert: (val: number) => String(val),
+    convertBack: (str: string) => Number(str) || 0,
+};
+
+const scoreInput = useTextField({
+    value: bind(
+        () => m.score,
+        (val) => { m.score = val; },
+        stringToNumberConverter
+    ),
+});
+```
+
+2. **`bindProp(target, path)`**:
+   Type-safe path-based binding to an object or component model:
+
+```typescript
+import { bindProp } from '@actdim/dynstruct/componentModel/core';
+
+const nameInput = useTextField({
+    value: bindProp(() => m, 'user.profile.name'),
+});
+```
+
 ---
 
 ## Component Definition
@@ -279,23 +398,79 @@ const def: ComponentDef<Struct> = {
 ```
 
 ### Form Helpers: `validate()` and `mapToEdit()`
-`c.mapToEdit('userInfo.email')` binds input elements directly to reactive model properties:
 
-```tsx
+Dynstruct eliminates manual `onChange` and `value` boilerplate using `c.mapToEdit()`:
+
+```typescript
+// Binds input value, onChange, onBlur directly to model property
 <input type="email" {...c.mapToEdit('userInfo.email')} />
+
+// With excluded handlers (e.g. if custom onBlur is needed)
+<input type="text" {...c.mapToEdit('username', ['onBlur'])} />
 ```
+
+`c.mapToEdit` automatically:
+- Syncs the DOM input's `event.target.value` to the reactive model property.
+- Triggers field validators configured in `ComponentProp.validator`.
+- Updates `c.model.$.propState['userInfo.email']` with validation errors and status.
+- Integrates seamlessly with Material UI / MUI components: `<TextField {...c.mapToEdit('username')} />`.
+
+### Child Component Composition & Typed Slots (`c.children`)
+
+When child components are declared in `Struct.children`, Dynstruct provides typed child accessors in two casing styles:
+
+```typescript
+type ParentStruct = ComponentStruct<AppMsgStruct, {
+    children: {
+        header: HeaderStruct;
+        sidebar: SidebarStruct;
+    };
+}>;
+```
+
+Inside the parent hook-constructor and view:
+- **Capitalized (`c.children.Header`, `c.children.Sidebar`)**: Directly renders the child component view slot in JSX:
+  ```tsx
+  view: () => (
+      <div>
+          <c.children.Header />
+          <main>
+              <c.children.Sidebar />
+          </main>
+      </div>
+  )
+  ```
+- **Lowercase (`c.children.header`, `c.children.sidebar`)**: Provides programmatic access to the child component instance and its reactive model:
+  ```typescript
+  // Access child model directly from parent logic
+  console.log(c.children.header.model.title);
+  ```
 
 ---
 
-## Component Events & Error Handling
+## Component Events & Lifecycle (`events` vs. Hooks)
 
-Component events handle lifecycle hooks (`onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`), errors (`onCatch`), and property changes (`onChangeX`, `onChangingX`).
+Dynstruct uses explicit lifecycle hooks declared in `def.events`. **Direct React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) are strictly prohibited in application UI code.**
+
+| Event Hook | Phase | Typical Use Case |
+|---|---|---|
+| `onInit` | Pre-mount | Setup synchronous defaults, validate initial params. |
+| `onLayoutReady` | Layout ready | Measure DOM elements before browser paint. |
+| `onReady` | Mounted | Trigger asynchronous data loading, subscribe to bus events. Replaces `useEffect(..., [])`. |
+| `onLayoutDestroy` | Pre-unmount | Clean up layout observers, measurements. |
+| `onDestroy` | Unmounted | Clean up non-bus resources (bus subscriptions in `c.msgBus` are auto-disposed). |
+| `onCatch` | Error Boundary | Catch unhandled exceptions in component view or effects. |
+| `onValidate` | Validation | Run component-wide multi-property validation. |
 
 ```typescript
 const def: ComponentDef<Struct> = {
     events: {
         onReady: async (component) => {
-            await loadInitialData();
+            // Data loading on component mount
+            await m.actions.loadInitialData();
+        },
+        onDestroy: (component) => {
+            // Cleanup timers or external subscriptions
         },
         onChangeEmail: (newValue) => {
             console.log('Email updated to:', newValue);

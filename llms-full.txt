@@ -797,6 +797,125 @@ type Struct = ComponentStruct<
 | `msgScope` | Message bus channels this component works with. Sections: `subscribe`, `publish`, `provide`. Narrows the global bus scope to this component's responsibility zone. |
 | `effects` | List of effect names available in this component. Implementations are defined in `ComponentDef`. |
 
+### Public vs. Internal Contracts (`ComponentStructExt`)
+
+In real-world applications, placing transient state (e.g. `isLoading`, `cache`, `expandedKeys`) directly into `props` of `ComponentStruct` pollutes the public component interface. Callers would be able to pass `<MyComponent isLoading={true} />` in JSX, violating encapsulation.
+
+Use `ComponentStructExt` to cleanly separate the **Public Contract** (inputs accepted from parent and public message scope) from the **Internal Implementation Contract** (private state, internal actions, private effects):
+
+```typescript
+import {
+    type ComponentStruct,
+    type ComponentStructExt,
+} from '@actdim/dynstruct/componentModel/contracts';
+
+// 1. Public Contract: exported for parents and JSX callers
+export type DriveTreeStruct = ComponentStruct<
+    AppMsgStruct,
+    {
+        props: {
+            selectedDriveId?: string;
+            selectedPath?: string;
+            onSelectNode?: (drive: VfsDrive, node: VfsNode) => void;
+        };
+        msgScope: {
+            publish: AppMsgChannels<'API.VFS.GETDRIVES' | 'API.VFS.GETNODES'>;
+        };
+    }
+>;
+
+// 2. Internal Contract: private to component implementation
+type InternalState = {
+    props: {
+        drives: VfsDrive[];
+        loadingDrives: boolean;
+        expandedKeys: Record<string, boolean>;
+        nodesCache: Record<string, VfsNode[]>;
+    };
+    actions: {
+        loadDrives: () => Promise<void>;
+        toggleFolder: (drive: VfsDrive, path: string) => Promise<void>;
+    };
+};
+
+// 3. Merged Struct: used inside the hook-constructor
+type Struct = ComponentStructExt<DriveTreeStruct, InternalState>;
+```
+
+### Granular Reactivity Control (`reactive: 'shallow' | false`)
+
+By default, Dynstruct properties are deeply reactive - the internal proxy recursively tracks all nested objects and array elements. For large collections, deep trees (like file system nodes), or heavy read-only payloads, deep proxying introduces unnecessary memory and CPU overhead.
+
+Configure reactivity per property using `ComponentProp<T>`:
+
+```typescript
+import { type ComponentDef } from '@actdim/dynstruct/componentModel/contracts';
+
+const def: ComponentDef<Struct> = {
+    props: {
+        // Deep reactive by default
+        counter: 0,
+
+        // 'shallow': container mutations (push, pop, filter) are tracked,
+        // but items within nodesCache are NOT proxied deeply
+        nodesCache: {
+            initialValue: {},
+            reactive: 'shallow',
+        },
+
+        // false: completely disable reactivity tracking for static configurations
+        staticConfig: {
+            initialValue: { bufferSize: 1024 },
+            reactive: false,
+        },
+    },
+};
+```
+
+### Data Binding Primitives (`bind`, `bindProp`, `ValueConverter`)
+
+Dynstruct provides first-class reactive data binding primitives:
+
+1. **`bind(get, set?, converter?)`**:
+   Binds a property to an arbitrary reactive getter and optional setter.
+
+```typescript
+import { bind, type ValueConverter } from '@actdim/dynstruct/componentModel/core';
+
+// Two-way binding between parent model and child input
+const childInput = useTextField({
+    value: bind(
+        () => m.username,
+        (val) => { m.username = val; }
+    ),
+});
+
+// With ValueConverter: converts number model to string input and back
+const stringToNumberConverter: ValueConverter<string, number> = {
+    convert: (val: number) => String(val),
+    convertBack: (str: string) => Number(str) || 0,
+};
+
+const scoreInput = useTextField({
+    value: bind(
+        () => m.score,
+        (val) => { m.score = val; },
+        stringToNumberConverter
+    ),
+});
+```
+
+2. **`bindProp(target, path)`**:
+   Type-safe path-based binding to an object or component model:
+
+```typescript
+import { bindProp } from '@actdim/dynstruct/componentModel/core';
+
+const nameInput = useTextField({
+    value: bindProp(() => m, 'user.profile.name'),
+});
+```
+
 ---
 
 ## Component Definition
@@ -1005,23 +1124,79 @@ const def: ComponentDef<Struct> = {
 ```
 
 ### Form Helpers: `validate()` and `mapToEdit()`
-`c.mapToEdit('userInfo.email')` binds input elements directly to reactive model properties:
 
-```tsx
+Dynstruct eliminates manual `onChange` and `value` boilerplate using `c.mapToEdit()`:
+
+```typescript
+// Binds input value, onChange, onBlur directly to model property
 <input type="email" {...c.mapToEdit('userInfo.email')} />
+
+// With excluded handlers (e.g. if custom onBlur is needed)
+<input type="text" {...c.mapToEdit('username', ['onBlur'])} />
 ```
+
+`c.mapToEdit` automatically:
+- Syncs the DOM input's `event.target.value` to the reactive model property.
+- Triggers field validators configured in `ComponentProp.validator`.
+- Updates `c.model.$.propState['userInfo.email']` with validation errors and status.
+- Integrates seamlessly with Material UI / MUI components: `<TextField {...c.mapToEdit('username')} />`.
+
+### Child Component Composition & Typed Slots (`c.children`)
+
+When child components are declared in `Struct.children`, Dynstruct provides typed child accessors in two casing styles:
+
+```typescript
+type ParentStruct = ComponentStruct<AppMsgStruct, {
+    children: {
+        header: HeaderStruct;
+        sidebar: SidebarStruct;
+    };
+}>;
+```
+
+Inside the parent hook-constructor and view:
+- **Capitalized (`c.children.Header`, `c.children.Sidebar`)**: Directly renders the child component view slot in JSX:
+  ```tsx
+  view: () => (
+      <div>
+          <c.children.Header />
+          <main>
+              <c.children.Sidebar />
+          </main>
+      </div>
+  )
+  ```
+- **Lowercase (`c.children.header`, `c.children.sidebar`)**: Provides programmatic access to the child component instance and its reactive model:
+  ```typescript
+  // Access child model directly from parent logic
+  console.log(c.children.header.model.title);
+  ```
 
 ---
 
-## Component Events & Error Handling
+## Component Events & Lifecycle (`events` vs. Hooks)
 
-Component events handle lifecycle hooks (`onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`), errors (`onCatch`), and property changes (`onChangeX`, `onChangingX`).
+Dynstruct uses explicit lifecycle hooks declared in `def.events`. **Direct React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) are strictly prohibited in application UI code.**
+
+| Event Hook | Phase | Typical Use Case |
+|---|---|---|
+| `onInit` | Pre-mount | Setup synchronous defaults, validate initial params. |
+| `onLayoutReady` | Layout ready | Measure DOM elements before browser paint. |
+| `onReady` | Mounted | Trigger asynchronous data loading, subscribe to bus events. Replaces `useEffect(..., [])`. |
+| `onLayoutDestroy` | Pre-unmount | Clean up layout observers, measurements. |
+| `onDestroy` | Unmounted | Clean up non-bus resources (bus subscriptions in `c.msgBus` are auto-disposed). |
+| `onCatch` | Error Boundary | Catch unhandled exceptions in component view or effects. |
+| `onValidate` | Validation | Run component-wide multi-property validation. |
 
 ```typescript
 const def: ComponentDef<Struct> = {
     events: {
         onReady: async (component) => {
-            await loadInitialData();
+            // Data loading on component mount
+            await m.actions.loadInitialData();
+        },
+        onDestroy: (component) => {
+            // Cleanup timers or external subscriptions
         },
         onChangeEmail: (newValue) => {
             console.log('Email updated to:', newValue);
@@ -1092,7 +1267,7 @@ Components communicate over typed channels provided by `@actdim/msgmesh`. `@actd
 ### Core Integration Principles
 
 1. **Context-Driven Bus Distribution**:
-   - In standard Dynstruct applications, `msgBus` is initialized at the application level via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`. All descendant components receive `msgBus` automatically through context.
+   - In standard Dynstruct applications, `msgBus` is initialized at the application root via `<ComponentContextProvider value={{ msgBus }}>` (from `@actdim/dynstruct/componentModel/react/componentContext`). All descendant components receive `msgBus` automatically through the React component registry context.
    - Multiple context providers can be nested if isolated scopes are required, but in most cases a single unified or modular bus structure is optimal.
    - Because `@actdim/msgmesh` supports hierarchical dotted channel prefixes (`'API.USER.'`, `'APP.NAV.'`) and TypeScript provides powerful type composition (`ApiStruct & MsgStruct<LocalEvents> & BaseAppMsgStruct`), developers can distribute channel definitions across multiple modular files while maintaining unified compile-time type safety.
    - Therefore, without a specific architectural need, creating ad-hoc bus instances inside individual components or manually passing `msgBus` through props is unnecessary and adds boilerplate.
@@ -1251,12 +1426,106 @@ children: {
 
 ---
 
-## Message Channels (`CommonAppMsgStruct`, `BaseSecurityMsgStruct`)
+### Hierarchical Filtering (`ComponentMsgFilter`)
 
-Built-in domain channel contracts simplify common application communication:
+In complex component hierarchies (e.g. nested modal dialogs, tree view nodes, or sub-editors), components often need to process messages originating only from their own subtree or parent chain, rather than global broadcasts.
 
-- **`CommonAppMsgStruct`**: Navigation (`APP.NAV.GOTO`), notifications (`APP.NOTIFY`), theme toggles.
-- **`BaseSecurityMsgStruct`**: Auth tokens, login events, permission updates.
+Use `componentFilter` in `msgBroker` subscriber and provider definitions:
+
+```typescript
+import { ComponentMsgFilter } from '@actdim/dynstruct/componentModel/contracts';
+
+const def: ComponentDef<TreeFolderStruct> = {
+    msgBroker: {
+        subscribe: {
+            'VFS.FOLDER.EXPAND': {
+                in: {
+                    // Only accept messages originating from child/descendant nodes
+                    componentFilter: ComponentMsgFilter.FromDescendants,
+                    callback: (msg, component) => {
+                        console.log('Child folder requested expand:', msg.payload);
+                    },
+                },
+            },
+        },
+        provide: {
+            'UI.THEME.GET': {
+                in: {
+                    // Only provide theme values to descendants in this component subtree
+                    componentFilter: ComponentMsgFilter.FromAncestors,
+                    callback: (msg) => ({ theme: m.localTheme }),
+                },
+            },
+        },
+    },
+};
+```
+
+---
+
+## Declarative Routing & Navigation (`createNavigationRoute`, `APP.NAV.GOTO`)
+
+Dynstruct decouples routing from React DOM hooks via `@actdim/dynstruct/appDomain/navigation`. Routes are defined as strongly typed structures, and navigation is performed through the `msgBus` rather than direct `useNavigate()` calls.
+
+### 1. Defining Routes (`createNavigationRoute`)
+
+Define routes using `createNavigationRoute` with parameterized types and path patterns (powered by `path-to-regexp`):
+
+```typescript
+import { type NavRoutes } from '@actdim/dynstruct/appDomain/commonContracts';
+import { createNavigationRoute } from '@actdim/dynstruct/appDomain/navigation';
+import { ExplorerPage } from './pages/explorer/ExplorerPage';
+import { SignInPage } from './pages/auth/signIn/SignInPage';
+
+export const appRoutes = {
+    index: createNavigationRoute({
+        pattern: '',
+        element: <ExplorerPage />,
+    }),
+    explorer: createNavigationRoute({
+        pattern: 'explorer',
+        element: <ExplorerPage />,
+    }),
+    'auth/sign-in': createNavigationRoute<{
+        callbackUrl?: string;
+    }>({
+        pattern: 'auth/sign-in',
+        element: <SignInPage />,
+    }),
+} satisfies NavRoutes;
+
+export type AppRoutes = typeof appRoutes;
+```
+
+Each navigation route provides:
+- `.url(params?)`: Compiles path, query params, and hashes into a clean URL string.
+- `.match(url)`: Matches a pathname and extracts strongly typed route parameters.
+- `.element`: The associated component view element.
+
+### 2. Navigating Over the Message Bus (`APP.NAV.GOTO`)
+
+Application components initiate navigation via `c.msgBus.send({ channel: 'APP.NAV.GOTO', group: 'ex', payload: { route: '...' } })`. This keeps UI components completely decoupled from browser history and router implementations:
+
+```typescript
+// Navigate by route key and typed parameters (group: 'ex')
+c.msgBus.send({
+    channel: 'APP.NAV.GOTO',
+    group: 'ex',
+    payload: {
+        route: 'auth/sign-in',
+        params: { callbackUrl: window.location.href },
+    },
+});
+
+// Navigate by raw path (group: 'in')
+c.msgBus.send({
+    channel: 'APP.NAV.GOTO',
+    group: 'in',
+    payload: {
+        path: '/explorer',
+    },
+});
+```
 
 ---
 
@@ -1276,7 +1545,27 @@ Built-in domain channel contracts simplify common application communication:
 
 `dynstruct` provides lightweight adapters to connect hook-constructors to React's component tree.
 
-### 1. `useComponent`
+### 1. Root Application Initialization (`ComponentContextProvider`)
+
+At the root of the React application, wrap the component tree with `ComponentContextProvider` (imported from `@actdim/dynstruct/componentModel/react/componentContext`). This registers the application-level `msgBus` and manages the component hierarchy registry:
+
+```tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/react/componentContext';
+import { createAppMsgBus } from '@/config/appConfig';
+import App from './App';
+
+const msgBus = createAppMsgBus();
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+    <ComponentContextProvider value={{ msgBus }}>
+        <App />
+    </ComponentContextProvider>
+);
+```
+
+### 2. `useComponent`
 Instantiates a `dynstruct` component inside a React hook-constructor:
 
 ```typescript
@@ -1295,7 +1584,7 @@ const useCounter = (params: ComponentParams<CounterStruct>) => {
 };
 ```
 
-### 2. `toReact`
+### 3. `toReact`
 Converts a `dynstruct` hook-constructor into a standard React FC component:
 
 ```typescript
@@ -1305,6 +1594,31 @@ export const Counter = toReact(useCounter);
 
 // Now usable anywhere in standard React:
 // <Counter counter={5} />
+```
+
+### 4. Zero-Hooks Invariant (Strict Rule)
+
+Application UI components built with Dynstruct **MUST NOT** use React hooks (`useState`, `useEffect`, `useReducer`, `useMemo`, `useCallback`, `useRef`). All state, side effects, and calculations are managed by the Dynstruct component model:
+
+| Standard React Pattern | Dynstruct Replacement | Rationale |
+|---|---|---|
+| `const [x, setX] = useState(0)` | `props: { x: 0 }` + `m.x = 1` | Automatically reactive, inspectable in hierarchy, serializable |
+| `useEffect(() => { ... }, [])` | `events: { onReady: (c) => ... }` | Explicit lifecycle, lifecycle-scoped `AbortSignal`, zero stale closures |
+| `useEffect(() => { ... }, [dep])` | `effects: { myEffect: (c) => ... }` | Automatic dependency tracking, pausable, zero manual dependency arrays |
+| `useCallback(() => { ... })` | `actions: { myAction: () => ... }` | Stable action references with automatic batched state updates |
+| `useMemo(() => fn(a), [a])` | Computed getter `get myVal() { return ... }` | Recomputed on demand via reactive proxy |
+| `useRef(...)` | Component fields or `ComponentState` | Avoids hidden state outside the reactive model |
+
+### 5. Form Input Integration (`c.mapToEdit`)
+
+To connect standard inputs (HTML `<input>` or MUI `<TextField>`) without writing boilerplate `value` and `onChange` hooks, use `c.mapToEdit()`:
+
+```tsx
+// Binds directly to model property with automatic validator triggers
+<input type="text" {...c.mapToEdit('username')} />
+
+// Fully compatible with MUI / @actdim/dynstruct-mui:
+<TextField label="Email" {...c.mapToEdit('user.email')} />
 ```
 
 ---
@@ -1422,19 +1736,6 @@ Security status and user credentials flow through standardized security channels
 
 ## Document: docs/topic--05-api-reference.md (API Reference & Development Guide)
 
----
-protocol: along
-protocol_version: "2.2.5"
-protocol_version: "2.2.27"
-slug: 05-api-reference
-title: API Reference & Development Guide
-type: topic
-created: 2026-08-31
-updated: 2026-09-02
-updated: 2026-09-10
-tags: [05-api-reference]
----
-
 # API Reference & Development Guide
 
 [← Back to 04. React Integration](./topic--04-react-integration.md) | [Back to Main README](../README.md)
@@ -1467,6 +1768,117 @@ type ComponentStructBase<TMsgStruct> = {
     };
 };
 ```
+
+### `ComponentStructExt<TStruct, TInternalStruct>`
+Combines a **public** `ComponentStruct` contract with an **internal** implementation contract, keeping caller JSX props clean:
+
+```typescript
+type ComponentStructExt<
+    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
+    TInternalStruct extends Skip<ComponentStructBase<TStruct['msg']>, 'msgScope'> = ...
+> = {
+    props?: TStruct['props'] & TInternalStruct['props'];
+    actions?: TStruct['actions'] & TInternalStruct['actions'];
+    effects?: TStruct['effects'] | TInternalStruct['effects'];
+    children?: TStruct['children'] & TInternalStruct['children'];
+    msgScope: TStruct['msgScope'];
+    msg: TStruct['msg'];
+};
+```
+
+### `ComponentMsgFilter`
+Enum for scoping message delivery within the component tree hierarchy:
+
+```typescript
+export enum ComponentMsgFilter {
+    None = 0,
+    FromAncestors = 1 << 0,   // Only receive messages from ancestor components
+    FromDescendants = 1 << 1, // Only receive messages from descendant/child components
+}
+```
+
+Configured via `componentFilter` in `msgBroker.provide` or `msgBroker.subscribe` definitions:
+```typescript
+msgBroker: {
+    subscribe: {
+        'MY.CHANNEL': {
+            in: {
+                componentFilter: ComponentMsgFilter.FromDescendants,
+                callback: (msg) => { ... },
+            },
+        },
+    },
+}
+```
+
+### `ComponentProp<T>`
+Configuration object for fine-grained property behavior and reactivity:
+
+```typescript
+type ComponentProp<T = any> = {
+    readonly initialValue?: T;
+    readonly validator?: Validator<T>;
+    isDisabled?: boolean;
+    isReadOnly?: boolean;
+    /** Controls reactivity of this prop:
+     * - `true` (default): fully reactive, proxy tracks all depths
+     * - `false`: not reactive at all (zero proxy overhead)
+     * - `'shallow'`: container is reactive (array mutations tracked), items are not proxied
+     */
+    readonly reactive?: true | false | 'shallow';
+};
+```
+
+### Data Binding Primitives: `bind`, `bindProp`, `ValueConverter`
+
+```typescript
+// 1. Functional two-way binding
+function bind<T, TFrom = any>(
+    get: () => T,
+    set?: (value: T) => void,
+    converter?: ValueConverter<T, TFrom>
+): Binding<T, TFrom>;
+
+// 2. Property path binding
+function bindProp<T extends object, P extends KeyPath<T, boolean>>(
+    target: () => T,
+    path: P
+): Binding;
+
+// 3. Bidirectional Value Converter
+type ValueConverter<TTo, TFrom> = {
+    convert: (value: TFrom) => TTo;
+    convertBack: (value: TTo) => TFrom;
+};
+```
+
+### Declarative Routing: `createNavigationRoute`
+
+```typescript
+function createNavigationRoute<TParams extends NavRouteParams = NavRouteParams>(options: {
+    pattern: string;
+    element: any;
+    defaultParams?: TParams;
+}): NavRoute<TParams>;
+```
+
+### `ComponentEvents<TStruct>`
+Explicit component lifecycle hooks and property change interceptors:
+
+| Hook | Type Signature | Trigger Phase |
+|---|---|---|
+| `onInit` | `(c: Component) => void \| Promise<void>` | Pre-mount phase. Initialize state before first render. |
+| `onLayoutReady` | `(c: Component) => void \| Promise<void>` | Synchronously after DOM mutations, before paint. |
+| `onReady` | `(c: Component) => void \| Promise<void>` | Mounted. Primary place for initial async data loading. |
+| `onLayoutDestroy` | `(c: Component) => void \| Promise<void>` | Pre-unmount. Cleanup layout-related observers. |
+| `onDestroy` | `(c: Component) => void \| Promise<void>` | Unmounted. Cleanup non-bus resources. |
+| `onCatch` | `(err: unknown, c: Component) => void` | Error boundary hook for view or effect errors. |
+| `onValidate` | `(c: Component) => Promise<ValidationResult>` | Component-wide form validation handler. |
+| `onPropChanging` | `(prop, oldVal, newVal) => boolean` | Global guard: returning `false` aborts property update. |
+| `onPropChange` | `(prop, val) => void` | Global post-change notification. |
+| `onChanging<Prop>` | `(oldVal, newVal) => boolean` | Property-specific guard: returning `false` aborts update. |
+| `onChange<Prop>` | `(newVal) => void` | Property-specific change notification. |
+| `onGet<Prop>` | `() => PropType` | Custom getter interceptor. |
 
 ### `ComponentDef<TStruct, TMsgHeaders>`
 Implementation definition passed to `useComponent`:
@@ -1665,6 +2077,39 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 - [Domain Model](./topic--domain-model.md) - Domain Contracts and Component Structs
 - [Setup & Workflow](./topic--setup-and-workflow.md) - Setup, Build, Tests & Storybook Workflow
 - [License](./topic--license.md) - License Information
+
+---
+
+## Document: docs/topic--dependencies.md (Dependencies & AI Documentation for @actdim/dynstruct)
+
+# Dependencies & AI Documentation for `@actdim/dynstruct`
+
+> [!NOTE]
+> This document maintains a localized registry of internal workspace dependencies and third-party libraries for `@actdim/dynstruct`.
+> Consult linked guidelines when developing, refactoring, or integrating components.
+
+## Internal Workspace Dependencies
+
+| Internal Package | Relative Path | AI Documentation & Context |
+| :--- | :--- | :--- |
+| **`@actdim/msgmesh`** | [`../../msgmesh`](../../msgmesh) | [AGENTS.md](../../msgmesh/AGENTS.md) <br> [CLAUDE.md](../../msgmesh/CLAUDE.md) <br> [llms-full.txt](../../msgmesh/llms-full.txt) <br> [llms.txt](../../msgmesh/llms.txt) <br> [.along/](../../msgmesh/.along) <br> [docs/](../../msgmesh/docs) |
+| **`@actdim/utico`** | [`../../utico`](../../utico) | [AGENTS.md](../../utico/AGENTS.md) <br> [CLAUDE.md](../../utico/CLAUDE.md) <br> [llms-full.txt](../../utico/llms-full.txt) <br> [llms.txt](../../utico/llms.txt) <br> [.along/](../../utico/.along) <br> [docs/](../../utico/docs) |
+
+## Declared External Dependencies with AI Guidelines
+
+| Package | Ecosystem | Version | AI Guidelines / Instructions |
+| :--- | :--- | :--- | :--- |
+| **`cytoscape`** | `npm` | `3.34.3` | [AGENTS.md](../node_modules/cytoscape/AGENTS.md) |
+| **`eslint-plugin-jsx-a11y`** | `npm` | `6.10.2` | [docs/](../node_modules/eslint-plugin-jsx-a11y/docs) |
+
+## Transitive Dependency Guidelines & Invariants
+
+No exported invariants detected across current dependencies.
+
+## Usage in Agent Sessions
+When working on features involving any of the modules or external libraries above:
+1. **Internal Submodules**: Follow conventions in the linked package `AGENTS.md` or package `docs/`.
+2. **Third-Party Libraries**: Read the linked instruction files directly for framework-specific patterns and best practices.
 
 ---
 

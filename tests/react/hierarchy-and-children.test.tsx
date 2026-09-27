@@ -11,7 +11,7 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 
 type TestMsgStruct = BaseAppMsgStruct;
 const msgBus = createMsgBus<TestMsgStruct>();
@@ -39,6 +39,7 @@ describe('Component Hierarchy and Context Tree', () => {
         };
         c = useComponent(def, params);
         m = c.model;
+
         return c;
     };
 
@@ -50,6 +51,7 @@ describe('Component Hierarchy and Context Tree', () => {
         const GrandChild = toReact<SimpleStruct>((params) => {
             const c = useSimple(params);
             grandChildComp = c;
+
             return c;
         });
 
@@ -67,6 +69,7 @@ describe('Component Hierarchy and Context Tree', () => {
             };
             c = useComponent(def, params);
             childComp = c;
+
             return c;
         };
         const Child = toReact(useChild);
@@ -85,6 +88,7 @@ describe('Component Hierarchy and Context Tree', () => {
             };
             c = useComponent(def, params);
             parentComp = c;
+
             return c;
         };
         const Parent = toReact(useParent);
@@ -147,6 +151,7 @@ describe('Component Hierarchy and Context Tree', () => {
 
         const Child = toReact<SimpleStruct>((params) => {
             childComp = useSimple(params);
+
             return childComp;
         });
 
@@ -176,6 +181,7 @@ describe('Component Hierarchy and Context Tree', () => {
             c = useComponent(def, params);
             m = c.model;
             parentComp = c;
+
             return c;
         };
         const Parent = toReact(useParent);
@@ -223,6 +229,7 @@ describe('Component Children and Slots (def.children)', () => {
             };
             c = useComponent(def, params);
             m = c.model;
+
             return c;
         };
 
@@ -249,6 +256,7 @@ describe('Component Children and Slots (def.children)', () => {
 
             c = useComponent(def, params);
             m = c.model;
+
             return c;
         };
 

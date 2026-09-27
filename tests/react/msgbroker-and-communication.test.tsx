@@ -12,8 +12,8 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { MsgStruct } from '@actdim/msgmesh/contracts';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type MsgStruct } from '@actdim/msgmesh/contracts';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 
 type TestMsgStruct = MsgStruct<{
     'CUSTOM.GREET': {
@@ -81,6 +81,7 @@ describe('MsgBroker and MsgMesh Integration', () => {
             };
             c = useComponent(def, params);
             m = c.model;
+
             return c;
         };
 
@@ -110,6 +111,7 @@ describe('MsgBroker and MsgMesh Integration', () => {
             c = useComponent(def, params);
             m = c.model;
             consumerComp = c;
+
             return c;
         };
 
@@ -163,6 +165,7 @@ describe('MsgBroker and MsgMesh Integration', () => {
                             in: {
                                 callback: async () => {
                                     await new Promise((res) => setTimeout(res, 50));
+
                                     return { ok: true };
                                 },
                             },
@@ -172,6 +175,7 @@ describe('MsgBroker and MsgMesh Integration', () => {
                 view: () => <div>Slow Provider</div>,
             };
             c = useComponent(def, params);
+
             return c;
         };
 
@@ -196,6 +200,7 @@ describe('MsgBroker and MsgMesh Integration', () => {
             c = useComponent(def, params);
             m = c.model;
             consumerComp = c;
+
             return c;
         };
 
@@ -264,6 +269,7 @@ describe('MsgBroker and MsgMesh Integration', () => {
                 view: () => <div>Child Node</div>,
             };
             c = useComponent(def, params);
+
             return c;
         };
         const Child = toReact(useChild);
@@ -290,6 +296,7 @@ describe('MsgBroker and MsgMesh Integration', () => {
             };
             c = useComponent(def, params);
             parentComp = c;
+
             return c;
         };
         const Parent = toReact(useParent);
@@ -312,6 +319,7 @@ describe('MsgBroker and MsgMesh Integration', () => {
             };
             c = useComponent(def, params);
             strangerComp = c;
+
             return c;
         };
         const Stranger = toReact(useStranger);

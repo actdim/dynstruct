@@ -18,7 +18,27 @@ tags: [04-react-integration]
 
 `dynstruct` provides lightweight adapters to connect hook-constructors to React's component tree.
 
-### 1. `useComponent`
+### 1. Root Application Initialization (`ComponentContextProvider`)
+
+At the root of the React application, wrap the component tree with `ComponentContextProvider` (imported from `@actdim/dynstruct/componentModel/react/componentContext`). This registers the application-level `msgBus` and manages the component hierarchy registry:
+
+```tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/react/componentContext';
+import { createAppMsgBus } from '@/config/appConfig';
+import App from './App';
+
+const msgBus = createAppMsgBus();
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+    <ComponentContextProvider value={{ msgBus }}>
+        <App />
+    </ComponentContextProvider>
+);
+```
+
+### 2. `useComponent`
 Instantiates a `dynstruct` component inside a React hook-constructor:
 
 ```typescript
@@ -37,7 +57,7 @@ const useCounter = (params: ComponentParams<CounterStruct>) => {
 };
 ```
 
-### 2. `toReact`
+### 3. `toReact`
 Converts a `dynstruct` hook-constructor into a standard React FC component:
 
 ```typescript
@@ -47,6 +67,31 @@ export const Counter = toReact(useCounter);
 
 // Now usable anywhere in standard React:
 // <Counter counter={5} />
+```
+
+### 4. Zero-Hooks Invariant (Strict Rule)
+
+Application UI components built with Dynstruct **MUST NOT** use React hooks (`useState`, `useEffect`, `useReducer`, `useMemo`, `useCallback`, `useRef`). All state, side effects, and calculations are managed by the Dynstruct component model:
+
+| Standard React Pattern | Dynstruct Replacement | Rationale |
+|---|---|---|
+| `const [x, setX] = useState(0)` | `props: { x: 0 }` + `m.x = 1` | Automatically reactive, inspectable in hierarchy, serializable |
+| `useEffect(() => { ... }, [])` | `events: { onReady: (c) => ... }` | Explicit lifecycle, lifecycle-scoped `AbortSignal`, zero stale closures |
+| `useEffect(() => { ... }, [dep])` | `effects: { myEffect: (c) => ... }` | Automatic dependency tracking, pausable, zero manual dependency arrays |
+| `useCallback(() => { ... })` | `actions: { myAction: () => ... }` | Stable action references with automatic batched state updates |
+| `useMemo(() => fn(a), [a])` | Computed getter `get myVal() { return ... }` | Recomputed on demand via reactive proxy |
+| `useRef(...)` | Component fields or `ComponentState` | Avoids hidden state outside the reactive model |
+
+### 5. Form Input Integration (`c.mapToEdit`)
+
+To connect standard inputs (HTML `<input>` or MUI `<TextField>`) without writing boilerplate `value` and `onChange` hooks, use `c.mapToEdit()`:
+
+```tsx
+// Binds directly to model property with automatic validator triggers
+<input type="text" {...c.mapToEdit('username')} />
+
+// Fully compatible with MUI / @actdim/dynstruct-mui:
+<TextField label="Email" {...c.mapToEdit('user.email')} />
 ```
 
 ---

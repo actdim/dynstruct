@@ -12,7 +12,7 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 
 type TestMsgStruct = BaseAppMsgStruct;
 const msgBus = createMsgBus<TestMsgStruct>();
@@ -82,6 +82,7 @@ describe('Deep Object and Array Reactivity', () => {
         };
         c = useComponent(def, params);
         m = c.model;
+
         return c;
     };
 
@@ -90,6 +91,7 @@ describe('Deep Object and Array Reactivity', () => {
         const DeepView = toReact<DeepStruct>((p) => {
             const c = useDeep(p);
             captured = c.model;
+
             return c;
         });
 
@@ -112,6 +114,7 @@ describe('Deep Object and Array Reactivity', () => {
         const DeepView = toReact<DeepStruct>((p) => {
             const c = useDeep(p);
             captured = c.model;
+
             return c;
         });
 
@@ -167,6 +170,7 @@ describe('Reactivity Controls (prop reactive options)', () => {
                 },
                 view: () => {
                     renderCount++;
+
                     return (
                         <div>
                             <span data-testid="static-val">{m.staticData.count}</span>
@@ -177,12 +181,14 @@ describe('Reactivity Controls (prop reactive options)', () => {
             };
             c = useComponent(def, params);
             m = c.model;
+
             return c;
         };
 
         const NonReactiveView = toReact<NonReactiveStruct>((p) => {
             const c = useNonReactive(p);
             captured = c.model;
+
             return c;
         });
 
@@ -220,6 +226,7 @@ describe('Global and Custom Property Hooks (onPropChanging, onPropChange, onGet)
             if (propName === 'first' && newVal === 'forbidden') {
                 return false;
             }
+
             return true;
         });
         const changeSpy = vi.fn();
@@ -248,12 +255,14 @@ describe('Global and Custom Property Hooks (onPropChanging, onPropChange, onGet)
             };
             c = useComponent(def, params);
             m = c.model;
+
             return c;
         };
 
         const HooksView = toReact<HooksStruct>((p) => {
             const c = useHooksComp(p);
             captured = c.model;
+
             return c;
         });
 

@@ -12,7 +12,7 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
-import { BaseAppMsgStruct } from '@/appDomain/appContracts';
+import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
 
 type TestMsgStruct = BaseAppMsgStruct;
 const msgBus = createMsgBus<TestMsgStruct>();
@@ -74,11 +74,13 @@ describe('ErrorBoundary and Fault Isolation', () => {
                     if (m.shouldCrash) {
                         throw new Error('View Render Error');
                     }
+
                     return <div data-testid="normal-view">Normal View</div>;
                 },
             };
             c = useComponent(def, params);
             m = c.model;
+
             return c;
         };
 
@@ -114,6 +116,7 @@ describe('ErrorBoundary and Fault Isolation', () => {
             };
             c = useComponent(def, params);
             comp = c;
+
             return c;
         };
 

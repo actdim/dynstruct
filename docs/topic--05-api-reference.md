@@ -3,23 +3,9 @@ protocol: along
 slug: 05-api-reference
 title: API Reference & Development Guide
 type: topic
-curated: true
-created: 2026-09-10
-updated: 2026-09-10
-tags: [05-api-reference]
----
-
----
-protocol: along
-protocol_version: "2.2.5"
-protocol_version: "2.2.27"
-slug: 05-api-reference
-title: API Reference & Development Guide
-type: topic
 created: 2026-08-31
-updated: 2026-09-02
-updated: 2026-09-10
-tags: [05-api-reference]
+updated: 2026-09-27
+tags: [05-api-reference, api, contracts]
 ---
 
 # API Reference & Development Guide
@@ -54,6 +40,117 @@ type ComponentStructBase<TMsgStruct> = {
     };
 };
 ```
+
+### `ComponentStructExt<TStruct, TInternalStruct>`
+Combines a **public** `ComponentStruct` contract with an **internal** implementation contract, keeping caller JSX props clean:
+
+```typescript
+type ComponentStructExt<
+    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
+    TInternalStruct extends Skip<ComponentStructBase<TStruct['msg']>, 'msgScope'> = ...
+> = {
+    props?: TStruct['props'] & TInternalStruct['props'];
+    actions?: TStruct['actions'] & TInternalStruct['actions'];
+    effects?: TStruct['effects'] | TInternalStruct['effects'];
+    children?: TStruct['children'] & TInternalStruct['children'];
+    msgScope: TStruct['msgScope'];
+    msg: TStruct['msg'];
+};
+```
+
+### `ComponentMsgFilter`
+Enum for scoping message delivery within the component tree hierarchy:
+
+```typescript
+export enum ComponentMsgFilter {
+    None = 0,
+    FromAncestors = 1 << 0,   // Only receive messages from ancestor components
+    FromDescendants = 1 << 1, // Only receive messages from descendant/child components
+}
+```
+
+Configured via `componentFilter` in `msgBroker.provide` or `msgBroker.subscribe` definitions:
+```typescript
+msgBroker: {
+    subscribe: {
+        'MY.CHANNEL': {
+            in: {
+                componentFilter: ComponentMsgFilter.FromDescendants,
+                callback: (msg) => { ... },
+            },
+        },
+    },
+}
+```
+
+### `ComponentProp<T>`
+Configuration object for fine-grained property behavior and reactivity:
+
+```typescript
+type ComponentProp<T = any> = {
+    readonly initialValue?: T;
+    readonly validator?: Validator<T>;
+    isDisabled?: boolean;
+    isReadOnly?: boolean;
+    /** Controls reactivity of this prop:
+     * - `true` (default): fully reactive, proxy tracks all depths
+     * - `false`: not reactive at all (zero proxy overhead)
+     * - `'shallow'`: container is reactive (array mutations tracked), items are not proxied
+     */
+    readonly reactive?: true | false | 'shallow';
+};
+```
+
+### Data Binding Primitives: `bind`, `bindProp`, `ValueConverter`
+
+```typescript
+// 1. Functional two-way binding
+function bind<T, TFrom = any>(
+    get: () => T,
+    set?: (value: T) => void,
+    converter?: ValueConverter<T, TFrom>
+): Binding<T, TFrom>;
+
+// 2. Property path binding
+function bindProp<T extends object, P extends KeyPath<T, boolean>>(
+    target: () => T,
+    path: P
+): Binding;
+
+// 3. Bidirectional Value Converter
+type ValueConverter<TTo, TFrom> = {
+    convert: (value: TFrom) => TTo;
+    convertBack: (value: TTo) => TFrom;
+};
+```
+
+### Declarative Routing: `createNavigationRoute`
+
+```typescript
+function createNavigationRoute<TParams extends NavRouteParams = NavRouteParams>(options: {
+    pattern: string;
+    element: any;
+    defaultParams?: TParams;
+}): NavRoute<TParams>;
+```
+
+### `ComponentEvents<TStruct>`
+Explicit component lifecycle hooks and property change interceptors:
+
+| Hook | Type Signature | Trigger Phase |
+|---|---|---|
+| `onInit` | `(c: Component) => void \| Promise<void>` | Pre-mount phase. Initialize state before first render. |
+| `onLayoutReady` | `(c: Component) => void \| Promise<void>` | Synchronously after DOM mutations, before paint. |
+| `onReady` | `(c: Component) => void \| Promise<void>` | Mounted. Primary place for initial async data loading. |
+| `onLayoutDestroy` | `(c: Component) => void \| Promise<void>` | Pre-unmount. Cleanup layout-related observers. |
+| `onDestroy` | `(c: Component) => void \| Promise<void>` | Unmounted. Cleanup non-bus resources. |
+| `onCatch` | `(err: unknown, c: Component) => void` | Error boundary hook for view or effect errors. |
+| `onValidate` | `(c: Component) => Promise<ValidationResult>` | Component-wide form validation handler. |
+| `onPropChanging` | `(prop, oldVal, newVal) => boolean` | Global guard: returning `false` aborts property update. |
+| `onPropChange` | `(prop, val) => void` | Global post-change notification. |
+| `onChanging<Prop>` | `(oldVal, newVal) => boolean` | Property-specific guard: returning `false` aborts update. |
+| `onChange<Prop>` | `(newVal) => void` | Property-specific change notification. |
+| `onGet<Prop>` | `() => PropType` | Custom getter interceptor. |
 
 ### `ComponentDef<TStruct, TMsgHeaders>`
 Implementation definition passed to `useComponent`:

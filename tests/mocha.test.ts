@@ -1,5 +1,5 @@
 
-import mocha from "./index"
+import mocha from "./index";
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll, test } from "vitest";
 
 test('Mocha tests', async () => {    

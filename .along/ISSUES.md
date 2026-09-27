@@ -1,8 +1,12 @@
 # Active Issues
 
 ## Active
-- [ ] `(feat)` [agent-ready-structured-tracing](ISSUES/feat--agent-ready-structured-tracing.md)
+<!-- No active issues -->
+
+## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
+- [ ] `(debt)` [safe-user-code-execution](ISSUES/debt--safe-user-code-execution.md)
+- [ ] `(feat)` [agent-ready-structured-tracing](ISSUES/feat--agent-ready-structured-tracing.md)
 - [ ] `(feat)` [automatic-children-validation](ISSUES/feat--automatic-children-validation.md)
 - [ ] `(feat)` [binding-cycle-and-reentrancy-protection](ISSUES/feat--binding-cycle-and-reentrancy-protection.md)
 - [ ] `(feat)` [binding-divergence-limits](ISSUES/feat--binding-divergence-limits.md)
@@ -17,7 +21,6 @@
 - [ ] `(feat)` [nav-service-dependencies](ISSUES/feat--nav-service-dependencies.md)
 - [ ] `(feat)` [problem-details-http-errors](ISSUES/feat--problem-details-http-errors.md)
 - [ ] `(feat)` [request-accepts-and-cors](ISSUES/feat--request-accepts-and-cors.md)
-- [ ] `(debt)` [safe-user-code-execution](ISSUES/debt--safe-user-code-execution.md)
 - [ ] `(feat)` [server-sent-events-support](ISSUES/feat--server-sent-events-support.md)
 - [ ] `(feat)` [signalr-integration](ISSUES/feat--signalr-integration.md)
 - [ ] `(feat)` [single-getter-prop-binding](ISSUES/feat--single-getter-prop-binding.md)
@@ -30,10 +33,8 @@
 - [ ] `(feat)` [websocket-transport-support](ISSUES/feat--websocket-transport-support.md)
 - [ ] `(feat)` [www-authenticate-header-support](ISSUES/feat--www-authenticate-header-support.md)
 
-## Backlog
-<!-- Planned or deferred issues -->
-
 ## Done (recent)
+- [x] `(docs)` [missing-architectural-features](ISSUES/done/docs--missing-architectural-features.md)
 - [x] `(docs)` [ai-agent-reference-guide](ISSUES/done/docs--ai-agent-reference-guide.md)
 - [x] `(task)` [upgrade-jest-dom](ISSUES/done/task--upgrade-jest-dom.md)
 - [x] `(debt)` [remove-any-from-react-tests](ISSUES/done/debt--remove-any-from-react-tests.md)
