@@ -68,7 +68,8 @@
     "sideEffects": false,
     "packageManager": "pnpm@10.21.0",
     "scripts": {
-        "test": "npx vitest --config=vitest.node.config.ts --no-cache",
+        "test": "npm run test:node && npm run test:react",
+        "test:node": "npx vitest --config=vitest.node.config.ts --no-cache",
         "test:w": "npx vitest --config=vitest.node.config.ts --watch",
         "test:react": "npx vitest --config=vitest.react.config.ts --no-cache",
         "test:react:w": "npx vitest --config=vitest.react.config.ts --watch",

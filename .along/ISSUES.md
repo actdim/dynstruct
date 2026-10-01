@@ -39,4 +39,4 @@
 - [x] `(docs)` [child-composition-and-bindprop-priority](ISSUES/done/docs--child-composition-and-bindprop-priority.md)
 - [x] `(bug)` [strictmode-lifecycle](ISSUES/done/bug--strictmode-lifecycle.md)
 - [x] `(bug)` [stale-params-events](ISSUES/done/bug--stale-params-events.md)
-<!-- 6 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 7 older completed issue(s) archived in .along/ISSUES/done/ -->

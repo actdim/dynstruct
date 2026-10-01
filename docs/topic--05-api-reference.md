@@ -243,21 +243,22 @@ export const Default: StoryObj<typeof Counter> = {
 
 ### Running Unit Tests
 
-Run Vitest unit tests:
+Run all Vitest tests (Node.js suite, then React suite):
 
 ```bash
 pnpm run test
 ```
 
-Watch mode:
+Watch mode (Node.js suite):
 
 ```bash
 pnpm run test:w
 ```
 
-React environment tests:
+Single suite: Node.js (`test:node`) or React environment (`test:react`):
 
 ```bash
+pnpm run test:node
 pnpm run test:react
 ```
 

@@ -31,8 +31,10 @@ pnpm add @actdim/msgmesh @actdim/utico react react-dom mobx mobx-react-lite mobx
 | Command | Action | Description |
 |---|---|---|
 | `pnpm run build` | `tsc -b tsconfig.json && vite build` | Typechecks and compiles ESM packages with `.d.ts` declaration maps |
-| `pnpm run test` | `npx vitest --config=vitest.node.config.ts --no-cache` | Runs unit test suite under Node.js |
-| `pnpm run test:w` | `npx vitest --config=vitest.node.config.ts --watch` | Runs test watcher in interactive mode |
+| `pnpm run test` | `npm run test:node && npm run test:react` | Runs all tests: the Node.js suite, then the React (happy-dom) suite |
+| `pnpm run test:node` | `npx vitest --config=vitest.node.config.ts --no-cache` | Runs the Node.js unit test suite only |
+| `pnpm run test:react` | `npx vitest --config=vitest.react.config.ts --no-cache` | Runs the React (happy-dom) test suite only |
+| `pnpm run test:w` | `npx vitest --config=vitest.node.config.ts --watch` | Runs the Node.js test watcher in interactive mode |
 | `pnpm run storybook` | `storybook dev -p 6006` | Launches interactive Storybook environment at `http://localhost:6006` |
 | `pnpm run build-storybook` | `storybook build` | Builds static Storybook documentation bundle |
 | `pnpm run typecheck` | `tsc -b tsconfig.json` | Validates TypeScript compiler checks across all source files and stories |
