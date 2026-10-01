@@ -402,8 +402,13 @@ export function createModel<
     });
 
     function createEventHandlers() {
+        const onGetKeys = new Map<string, string>();
         function resolveOnGetEventHandler(prop: string) {
-            const key = `${$ON_GET}${capitalize(prop)}`;
+            let key = onGetKeys.get(prop);
+            if (!key) {
+                key = `${$ON_GET}${capitalize(prop)}`;
+                onGetKeys.set(prop, key);
+            }
             let handler = params.$events?.[key] || def.events?.[key];
             return handler;
         }
@@ -434,32 +439,28 @@ export function createModel<
             }) as ValueChangeHandler;
         }
 
+        // Always installed: params.$events may be replaced on later renders,
+        // so handlers are resolved at call time rather than at model creation.
         const commonHandlers: Pick<ComponentModelEventHandlers, 'onPropChanging' | 'onPropChange'> =
             {
-                onPropChanging:
-                    params.$events?.onPropChanging || def.events?.onPropChanging
-                        ? (prop, oldValue, newValue) => {
-                              let result = true;
-                              let handler = params.$events?.onPropChanging;
-                              if (handler) {
-                                  result = handler(String(prop), oldValue, newValue);
-                              }
-                              if (result) {
-                                  handler = def.events?.onPropChanging;
-                                  if (handler) {
-                                      result = handler(String(prop), oldValue, newValue);
-                                  }
-                              }
-                              return result;
-                          }
-                        : undefined,
-                onPropChange:
-                    params.$events?.onPropChange || def.events?.onPropChange
-                        ? (prop, value) => {
-                              params.$events?.onPropChange?.(String(prop), value);
-                              def.events?.onPropChange?.(String(prop), value);
-                          }
-                        : undefined,
+                onPropChanging: (prop, oldValue, newValue) => {
+                    let result = true;
+                    let handler = params.$events?.onPropChanging;
+                    if (handler) {
+                        result = handler(String(prop), oldValue, newValue);
+                    }
+                    if (result) {
+                        handler = def.events?.onPropChanging;
+                        if (handler) {
+                            result = handler(String(prop), oldValue, newValue);
+                        }
+                    }
+                    return result;
+                },
+                onPropChange: (prop, value) => {
+                    params.$events?.onPropChange?.(String(prop), value);
+                    def.events?.onPropChange?.(String(prop), value);
+                },
             };
 
         const propHandlers: Record<PropertyKey, PropEventHandlers> = {};
@@ -467,7 +468,10 @@ export function createModel<
         if (def.props) {
             for (const prop of Object.keys(def.props)) {
                 propHandlers[prop] = {
-                    onGet: resolveOnGetEventHandler(prop),
+                    // resolved on every read (see commonHandlers)
+                    get onGet() {
+                        return resolveOnGetEventHandler(prop);
+                    },
                     onChanging: resolveOnChangingEventHandler(prop),
                     onChange: resolveOnChangeEventHandler(prop),
                 };
@@ -726,7 +730,9 @@ export function registerMsgBroker<
             if (!providerGroups) continue;
             for (const [g, p] of Object.entries(providerGroups)) {
                 if (!p) continue;
-                const providerParams = p as MsgChannelGroupProviderParams;
+                // Build new params instead of mutating the definition:
+                // registration repeats on every (re)mount (e.g. StrictMode).
+                const providerParams = { ...(p as MsgChannelGroupProviderParams) };
                 const callback = providerParams.callback;
                 if (callback) {
                     providerParams.callback = (msg, headers) => {
@@ -753,6 +759,8 @@ export function registerMsgBroker<
 
                 component.msgBus.provide({
                     ...p,
+                    callback: providerParams.callback,
+                    filter: providerParams.filter,
                     channel: channel,
                     group: g,
                 });
@@ -765,7 +773,7 @@ export function registerMsgBroker<
             if (!subscriberGroups) continue;
             for (const [g, s] of Object.entries(subscriberGroups)) {
                 if (!s) continue;
-                const subscriberParams = s as MsgChannelGroupSubscriberParams;
+                const subscriberParams = { ...(s as MsgChannelGroupSubscriberParams) };
                 const callback = subscriberParams.callback;
                 if (callback) {
                     subscriberParams.callback = (msg) => {
@@ -792,6 +800,8 @@ export function registerMsgBroker<
 
                 component.msgBus.on({
                     ...s,
+                    callback: subscriberParams.callback,
+                    filter: subscriberParams.filter,
                     channel: channel,
                     group: g,
                 });

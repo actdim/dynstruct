@@ -49,6 +49,9 @@ import { isPlainObject } from '@actdim/utico/typeUtils';
 
 let _lastDispatchedError: unknown;
 
+// Internal: replaces params.$events of a created component with the latest ones.
+const _eventsUpdaters = new WeakMap<Component<any, any>, (events: unknown) => void>();
+
 function cleanSourceRef(sourceRef: string) {
     // remove origin
     return sourceRef.replace(/^[a-z][a-z0-9+.-]*:\/\/[^\/]+/, '');
@@ -165,7 +168,16 @@ function createComponent<
         msgBroker: def.msgBroker ? wrapUserCode(def.msgBroker, false) : undefined,
         useErrorBoundary: def.useErrorBoundary == undefined ? true : def.useErrorBoundary,
     };
+    let lastEvents: unknown = params?.$events;
     params = wrapUserCode(params, true) || {};
+
+    const updateEvents = (events: unknown) => {
+        if (events === lastEvents) {
+            return;
+        }
+        lastEvents = events;
+        params.$events = wrapUserCode(events, true) as ComponentParams<TStruct>['$events'];
+    };
 
     const initEffects = () => {
         if (def.effects) {
@@ -179,7 +191,9 @@ function createComponent<
         }
     };
 
-    const abortController = new AbortController();
+    // Per-mount controller: created on (re)mount, aborted on unmount/dispose.
+    // StrictMode re-runs effects, so a single creation-time controller would stay aborted.
+    let abortController: AbortController | null = null;
     const OrigView = observer((props: ComponentViewProps) => {
         const context = useComponentContext() as ComponentRegistryContext<
             TStruct['msg'],
@@ -235,8 +249,9 @@ function createComponent<
         }, [def, params, context]);
 
         useEffect(() => {
-            // const abortController = new AbortController();
-            component.abortSignal = abortController.signal;
+            const mountAbortController = new AbortController();
+            abortController = mountAbortController;
+            component.abortSignal = mountAbortController.signal;
             try {
                 registerMsgBroker(component);
                 def.events?.onReady?.(component);
@@ -253,7 +268,6 @@ function createComponent<
                 }
             }
             return () => {
-                // abortController.abort();
                 for (const [, fn] of Object.entries(component.effects)) {
                     (fn as EffectController).stop();
                 }
@@ -262,6 +276,11 @@ function createComponent<
                 if (getGlobalFlags().debug) {
                     const hierarchyId = component.getHierarchyId();
                     console.debug(`${hierarchyId}>destroy`);
+                }
+                // releases msgBroker subscriptions/providers and pending requests of this mount
+                mountAbortController.abort();
+                if (abortController === mountAbortController) {
+                    abortController = null;
                 }
             };
         }, [def, params, context]);
@@ -371,9 +390,11 @@ function createComponent<
             return mapToEdit(component, def, params, path, exclude);
         },
         [Symbol.dispose]: () => {
-            abortController.abort();
+            abortController?.abort();
         },
     };
+
+    _eventsUpdaters.set(component as Component<any, any>, updateEvents);
 
     def.events?.onInit?.(component);
     params.$events?.onInit?.(component);
@@ -402,31 +423,42 @@ export function useComponent<
         return component;
     });
 
-    // Sync incoming params to the model on every render.
+    const c = ref.current;
+
+    // Sync incoming params to the model after every commit.
     // Needed for toReact usage: React re-renders the wrapper with new prop values
     // but the component instance (and its model) is created only once via useLazyRef.
-    const c = ref.current;
-    if (c && def.props) {
+    // Must not run in the render body: mutating observables there synchronously triggers
+    // observer reactions (e.g. OrigView) while another component is rendering.
+    // In a layout effect the resulting re-render is flushed synchronously before paint.
+    useLayoutEffect(() => {
+        if (!c || !params) {
+            return;
+        }
+        // Latest $events first, so the props sync below already fires the new handlers.
+        _eventsUpdaters.get(c)?.(params.$events);
+        if (!def.props) {
+            return;
+        }
         runInAction(() => {
-            if (params) {
-                for (const [key, val] of Object.entries(params)) {
-                    if (key in def.props && !isBinding(val)) {
-                        const current = c.model[key];
-                        if (current !== val) {
-                            Reflect.set(c.model, key, val);
-                        }
+            for (const [key, val] of Object.entries(params)) {
+                if (key in def.props && !isBinding(val)) {
+                    const current = c.model[key];
+                    if (current !== val) {
+                        Reflect.set(c.model, key, val);
                     }
                 }
             }
         });
-    }
+    });
 
     useLayoutEffect(() => {
         return () => {
-            ref.current[Symbol.dispose]();
-            ref.current = null;
+            // Keep the instance: under StrictMode this cleanup is followed by a re-mount
+            // of the same component, which starts a new mount lifecycle (see OrigView).
+            ref.current?.[Symbol.dispose]();
         };
-    }, []); // using [] here as deps - means real unmount!
+    }, []); // using [] here as deps - means real unmount (or StrictMode simulated one)!
     return c;
 }
 

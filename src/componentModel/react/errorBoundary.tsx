@@ -71,7 +71,10 @@ export class ErrorBoundary extends React.Component<
                 );
             }
         } else {
-            content = this.props.children;
+            // No wrapper here: the tree shape must not depend on `id`, which is assigned
+            // during the first render of the child view. Toggling a wrapper would remount
+            // the child (full destroy/ready cycle) on its second render.
+            return this.props.children;
         }
         const id = this.props.id?.();
         return id ? <div id={id}>{content}</div> : content;

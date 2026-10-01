@@ -450,7 +450,7 @@ Inside the parent hook-constructor and view:
 
 ## Component Events & Lifecycle (`events` vs. Hooks)
 
-Dynstruct uses explicit lifecycle hooks declared in `def.events`. **Direct React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) are strictly prohibited in application UI code.**
+Dynstruct uses explicit lifecycle hooks declared in `def.events`. They replace built-in React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) in typical components, so those are not needed there. Hooks are not banned, though: custom and third-party hooks are allowed as long as they respect the component model (see [Hooks Policy](./topic--04-react-integration.md)).
 
 | Event Hook | Phase | Typical Use Case |
 |---|---|---|

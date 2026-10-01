@@ -294,13 +294,13 @@ Use hook-constructors as the primary component format:
 - `actions` for user intent
 - `events` for lifecycle and property change reactions
 - `effects` for auto-tracked reactive logic
-- `children` for explicit composition
+- `children` for explicit composition - **every nested dynstruct component is declared here** (via its `useXxx` hook-constructor, or as a `React.FC` fragment), never instantiated inline in `view` (see Composition and Performance Rules)
 - `view` for rendering - use `<c.children.Name />` (Capitalized) for all child types
 4. Instantiate via `useComponent(def, params)`.
 5. Prefer `let c` and `let m` pattern:
 - `c` is component instance
 - `m` is `c.model` reactive model - **actions are blended into the model**, so call `m.actionName(...)` not `c.actions.actionName(...)`. `Component` has no `.actions` property.
-6. Export `toReact(useXxx)` only when React component interoperability is needed.
+6. Export `toReact(useXxx)` only when React component interoperability is needed. A `toReact` export is for plain React code and backward compatibility - inside another dynstruct component use the hook in `children` instead.
 
 ## Component Identity (`id`, `regType`, `$key`)
 
@@ -380,7 +380,20 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
   }
   ```
 
-- Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child - `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
+- Use bindings for value flow between parent and child. **Never pass `m` directly** to a child - `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bindProp(() => m, 'prop')` or `bind(() => m...)`.
+- **Binding priority** (pick the first that fits):
+  1. `bindProp(() => m, 'prop')` - default for two-way binding to a model prop. Typed by key path, supports nested paths (`bindProp(() => m, 'user.name')`).
+  2. `bind(() => expr)` - read-only or derived value (no setter: the child cannot write back).
+  3. `bind(get, set[, converter])` - **only** when the getter or setter needs specific logic (transformation, side effects, writing somewhere else, a converter).
+
+  ```ts
+  // Preferred
+  open: bindProp(() => m, 'addDialogOpen'),
+  // Avoid - same behavior, just longer
+  open: bind(() => m.addDialogOpen, (v) => { m.addDialogOpen = v; }),
+  // OK - the setter has specific logic
+  open: bind(() => m.addDialogOpen, (v) => { m.addDialogOpen = v; if (!v) { m.draft = null; } }),
+  ```
 - Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
 - Use `ComponentStructExt<Struct, {...}>` **inside** a hook-constructor to declare private reactive props, internal children (often `React.FC` sections), and effects. The extended type is invisible to callers; return `Component<Struct>` from the hook to preserve the public API. See `componentState/StateExample.tsx`.
 - Use `ComponentImpl<Struct, Internals>` when you need non-reactive, per-instance data (e.g., a cache or lock). Pass initial internals as the third argument to `useComponent`; access via `c._`. Return `Component<Struct>` to hide internals from callers. See `services/react/StorageService.tsx`.
@@ -469,6 +482,8 @@ Avoid:
 - introducing local `useState`/`useReducer` for state that belongs to component model
 - ad-hoc cross-component mutation without message bus or bindings
 - hidden dependencies not declared in `children` or `msgScope`
+- rendering dynstruct components inline in `view` with props/callbacks (`<Xxx value={m.value} onX={() => ...} />`, including `toReact` exports) - declare them in `children` instead
+- `bind(get, set)` pairs that just read and write one model prop - use `bindProp(() => m, 'prop')`
 - **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) - the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
 - passing reactive model values to external APIs without stripping proxies - use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
 
@@ -548,7 +563,26 @@ For service APIs:
 
 ## Composition and Performance Rules
 
-- Prefer parent-child composition via `children` over passing unstable inline objects/functions deep into tree.
+- **Nested dynstruct components go into `def.children`, never inline in `view`** (priority rule). Declare the child's struct in `children`, instantiate it with its hook-constructor, pass values via bindings (`bindProp` first, see Binding priority) and callbacks as params, and render it as `<c.children.Name />`.
+  - Why: the child is created once and its bindings are lazy, so the parent does not track the child's values and only the child re-renders when they change - no `useMemo` / `useCallback` needed.
+  - Inline `<Xxx prop={m.value} onX={() => ...} />` in `view` is kept only for compatibility: the parent tracks `m.value` and re-renders on every change, and each render passes new params/callbacks that are re-synced into the child on every commit.
+  - A fragment that needs no model of its own is shortened to a `React.FC` child: `section: () => <div>{m.x}</div>` (see `componentState/StateExample.tsx`).
+
+  ```tsx
+  // struct: children: { toast: ToastStruct }
+  children: {
+      toast: useToast({
+          items: bindProp(() => m, 'items'),
+          onDismiss: (id) => {
+              m.items = m.items.filter((item) => item.id !== id);
+          },
+      }),
+  },
+  view: () => <c.children.Toast />,
+
+  // Avoid (compatibility only):
+  // view: () => <Toast items={m.items} onDismiss={(id) => { ... }} />,
+  ```
 - Keep JSX mostly structural; put behavior in `actions/events/effects`.
 - Reuse existing component structures rather than creating parallel incompatible patterns.
 - In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This is a JSX shortcut - instead of `<c.children.avatarView.View />` you write `<c.children.AvatarView />`. For full dynstruct component children (`ComponentStruct` types) the camelCase name additionally exposes the full component instance (`c.children.avatarView.model`, `c.children.avatarView.effects`). For `React.FC` and factory function children only the Capitalized JSX shortcut exists - these are lightweight fragments without their own model.
@@ -606,11 +640,15 @@ If full run is heavy, run minimum impacted checks and state what was not run.
 
 ## Quick Template
 
-```ts
+```tsx
+// useTextField / TextFieldStruct: any dynstruct hook-constructor, e.g. from '@actdim/dynstruct-mui/TextField'
 type MyStruct = ComponentStruct<AppMsgStruct, {
   props: { value: string };
   actions: { setValue: (v: string) => void };
-  children: {};
+  children: {
+    valueInput: TextFieldStruct; // dynstruct child (hook-constructor)
+    summary: React.FC;           // lightweight fragment, no own model
+  };
   effects: 'syncSomething';
 }>;
 
@@ -623,12 +661,23 @@ const useMy = (params: ComponentParams<MyStruct>) => {
     actions: {
       setValue: (v) => { m.value = v; },
     },
+    children: {
+      valueInput: useTextField({
+        value: bindProp(() => m, 'value'),
+      }),
+      summary: () => <span>{m.value.length} chars</span>,
+    },
     effects: {
       syncSomething: () => {
         // reactive logic
       },
     },
-    view: () => <div>{m.value}</div>,
+    view: () => (
+      <div>
+        <c.children.ValueInput />
+        <c.children.Summary />
+      </div>
+    ),
   };
 
   c = useComponent(def, params);
@@ -1176,7 +1225,7 @@ Inside the parent hook-constructor and view:
 
 ## Component Events & Lifecycle (`events` vs. Hooks)
 
-Dynstruct uses explicit lifecycle hooks declared in `def.events`. **Direct React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) are strictly prohibited in application UI code.**
+Dynstruct uses explicit lifecycle hooks declared in `def.events`. They replace built-in React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) in typical components, so those are not needed there. Hooks are not banned, though: custom and third-party hooks are allowed as long as they respect the component model (see [Hooks Policy](./topic--04-react-integration.md)).
 
 | Event Hook | Phase | Typical Use Case |
 |---|---|---|
@@ -1596,9 +1645,15 @@ export const Counter = toReact(useCounter);
 // <Counter counter={5} />
 ```
 
-### 4. Zero-Hooks Invariant (Strict Rule)
+### 4. Hooks Policy (Dynstruct-First, Not a Ban)
 
-Application UI components built with Dynstruct **MUST NOT** use React hooks (`useState`, `useEffect`, `useReducer`, `useMemo`, `useCallback`, `useRef`). All state, side effects, and calculations are managed by the Dynstruct component model:
+React hooks are **not forbidden**. Dynstruct was built to cover the needs of typical components, so that you do not have to think about `useCallback` / `useMemo`, dependency arrays, stable inline callbacks, or which built-in hook fits a case best. For typical scenarios and typical components everything is already solved by reactive model props, lifecycle events, effects, actions, bindings, and MsgMesh - built-in hooks are simply not needed there (in the vast majority of cases).
+
+- **Built-in hooks** (`useState`, `useEffect`, `useLayoutEffect`, `useReducer`, `useMemo`, `useCallback`, `useRef`): do not use them by default - use the Dynstruct replacement from the table below. Reach for one only in a non-typical case the component model does not cover, and leave a short comment explaining why.
+- **Custom and third-party hooks** (your own `useXxx`, library hooks such as a media player state hook): allowed inside Dynstruct components. Just do not break the Dynstruct ideology: state the rest of the app depends on lives in the model (`props`), communication goes through bindings and MsgMesh, and the hook stays an implementation detail of the component.
+- **React context**: usually unnecessary, because data flows down and up the hierarchy through bindings and MsgMesh. It is still allowed when a library or a service extension needs it (Dynstruct itself uses `useContext` in `ReactComponentContext`, and `ServiceProvider` uses `useEffect`).
+
+Typical React patterns and their Dynstruct replacements:
 
 | Standard React Pattern | Dynstruct Replacement | Rationale |
 |---|---|---|
@@ -1917,7 +1972,8 @@ Instance interface returned by `useComponent`:
 - **Communication & Lifecycle**:
   - `c.msgBus`: Lifecycle-scoped message bus wrapper (auto-unwraps MobX observables, manages `abortSignal`, sets `headers.sourceId`).
   - `c.msgBroker`: Message broker configuration.
-  - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount.
+  - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount. It is per-mount: a new signal is created each time the view mounts (including the React StrictMode simulated re-mount), and it is `null` before the first mount.
+- **Params**: `$events` passed via `ComponentParams` (e.g. through `toReact`) are refreshed on every commit - handlers supplied or replaced on later renders are used, including `onPropChanging` / `onPropChange` / `onGetX`.
   - `c.effects`: Effect controllers with `.pause()`, `.resume()`, and `.stop()`.
 - **Rendering & Forms**:
   - `c.View`: React component view slot (`<c.View />`).

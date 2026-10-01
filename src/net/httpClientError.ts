@@ -38,7 +38,7 @@ export class HttpClientError<TDetails = any> extends Error {
         Object.setPrototypeOf(this, HttpClientError.prototype);
     }
 
-    static create(response: Partial<IResponseState>, request?: IRequestState) {
+    static async create(response: Partial<IResponseState>, request?: IRequestState) {
         if (!response) {
             return new HttpClientError("Invalid request", {
                 request
@@ -47,23 +47,44 @@ export class HttpClientError<TDetails = any> extends Error {
 
         const status = response.status;
 
-        if (status === HttpStatus.OK) {
+        if (typeof status === "number" && status >= 200 && status < 300) {
             return null;
         }
 
-        // const statusClass = HttpStatus[`${status}_CLASS`] as HttpStatus.HttpStatusClasses;
-        // const statusClassName = HttpStatus.classes[String(statusClass)]; // HttpStatus.classes[`${statusClass}_NAME`]
-        // const statusClassMsg = HttpStatus.classes[`${statusClass}_MESSAGE`];
-        const msg = HttpStatus[`${status}_MESSAGE`] as string; // || "An unexpected server error occurred."
-        const name = `HTTP_STATUS_${status}`;
-        // response.resolved.json:        
-        // 400/404: { message?: string, error?: string; }
-        // 422: { errors: ValidationError[] }
+        let msg = (typeof status === "number" && HttpStatus[`${status}_MESSAGE`] as string) || "An unexpected server error occurred.";
+        const name = typeof status === "number" ? `HTTP_STATUS_${status}` : API_ERROR_INTERNAL_ERROR;
+        let details: unknown = undefined;
+
+        if (response && typeof (response as Response).clone === "function") {
+            try {
+                const cloned = (response as Response).clone();
+                const text = await cloned.text();
+                if (text) {
+                    try {
+                        const json = JSON.parse(text);
+                        details = json;
+                        const serverDetail = json.detail || json.message || json.error;
+                        if (typeof serverDetail === "string" && serverDetail.trim()) {
+                            msg = `${serverDetail.trim()} (${name})`;
+                        }
+                    } catch {
+                        details = text;
+                        if (text.length < 200) {
+                            msg = `${text.trim()} (${name})`;
+                        }
+                    }
+                }
+            } catch {
+                // Ignore clone/read errors
+            }
+        }
+
         const error = new HttpClientError(msg, {
             status,
             request,
             response,
-            name
+            name,
+            cause: details,
         });
         return error;
     }
@@ -76,6 +97,73 @@ export class HttpClientError<TDetails = any> extends Error {
     }
 
     static isApiError(obj: any): obj is HttpClientError {
-        return obj.isApiError === true;
+        return obj?.isApiError === true || obj?.name?.startsWith?.("HTTP_STATUS_");
     }
+}
+
+export type NetworkErrorKind = 'offline' | 'unreachable' | 'timeout' | 'aborted';
+
+export type HttpNetworkErrorOptions = ErrorOptions & {
+    kind: NetworkErrorKind;
+    url: string;
+    method?: string;
+    request?: IRequestState;
+};
+
+export class HttpNetworkError extends Error {
+    public readonly isNetworkError = true;
+
+    readonly kind: NetworkErrorKind;
+
+    readonly url: string;
+
+    readonly method?: string;
+
+    readonly request?: IRequestState;
+
+    public constructor(message: string, options: HttpNetworkErrorOptions) {
+        super(message, { cause: options.cause });
+        this.name = 'HttpNetworkError';
+        this.kind = options.kind;
+        this.url = options.url;
+        this.method = options.method;
+        this.request = options.request;
+        Object.setPrototypeOf(this, HttpNetworkError.prototype);
+    }
+
+    static isNetworkError(obj: unknown): obj is HttpNetworkError {
+        return (
+            typeof obj === 'object' &&
+            obj !== null &&
+            ((obj as HttpNetworkError).isNetworkError === true ||
+                (obj as Error).name === 'HttpNetworkError')
+        );
+    }
+}
+
+export function isNetworkFailure(err: unknown): boolean {
+    if (!err) {
+        return false;
+    }
+    if (HttpNetworkError.isNetworkError(err)) {
+        return true;
+    }
+    const name = (err as Error).name;
+    const message = (err as Error).message || '';
+    if (name === 'TypeError') {
+        return /failed to fetch|networkerror|load failed|fetch failed/i.test(message);
+    }
+    if (name === 'AbortError') {
+        return true;
+    }
+    const causeCode = (err as { cause?: { code?: string } })?.cause?.code;
+    if (
+        causeCode === 'ECONNREFUSED' ||
+        causeCode === 'ENOTFOUND' ||
+        causeCode === 'ETIMEDOUT'
+    ) {
+        return true;
+    }
+
+    return false;
 }

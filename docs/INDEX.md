@@ -4,7 +4,7 @@ slug: INDEX
 title: '@actdim/dynstruct - Knowledge Base Topic Index'
 type: index
 created: 2026-09-10
-updated: 2026-09-27
+updated: 2026-10-01
 tags: [index, kb, topics, map]
 ---
 
@@ -41,6 +41,7 @@ flowchart TD
     T_01_OVERVIEW_AND_ADVANTAGES -.->|references| T_ARCHITECTURE
     T_02_CORE_CONCEPTS -.->|references| T_01_OVERVIEW_AND_ADVANTAGES
     T_02_CORE_CONCEPTS -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
+    T_02_CORE_CONCEPTS -.->|references| T_04_REACT_INTEGRATION
     T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING -.->|references| T_02_CORE_CONCEPTS
     T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING -.->|references| T_04_REACT_INTEGRATION
     T_04_REACT_INTEGRATION -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING

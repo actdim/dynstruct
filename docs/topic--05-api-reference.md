@@ -189,7 +189,8 @@ Instance interface returned by `useComponent`:
 - **Communication & Lifecycle**:
   - `c.msgBus`: Lifecycle-scoped message bus wrapper (auto-unwraps MobX observables, manages `abortSignal`, sets `headers.sourceId`).
   - `c.msgBroker`: Message broker configuration.
-  - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount.
+  - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount. It is per-mount: a new signal is created each time the view mounts (including the React StrictMode simulated re-mount), and it is `null` before the first mount.
+- **Params**: `$events` passed via `ComponentParams` (e.g. through `toReact`) are refreshed on every commit - handlers supplied or replaced on later renders are used, including `onPropChanging` / `onPropChange` / `onGetX`.
   - `c.effects`: Effect controllers with `.pause()`, `.resume()`, and `.stop()`.
 - **Rendering & Forms**:
   - `c.View`: React component view slot (`<c.View />`).

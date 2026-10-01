@@ -1,7 +1,7 @@
 import { v4 as uuid } from "uuid";
 import httpStatus from "http-status";
 import { getResponseResult, IFetcher, IRequestCallbacks, IRequestParams, IRequestState } from "./request";
-import { HttpClientError } from "./httpClientError";
+import { HttpClientError, HttpNetworkError, isNetworkFailure, type NetworkErrorKind } from "./httpClientError";
 import { BaseAppMsgStruct, BaseApiConfig } from "@/appDomain/appContracts";
 import { MsgBus, MsgSubOptions } from "@actdim/msgmesh/contracts";
 import { $AUTH_ENSURE, $AUTH_REFRESH, $AUTH_APPLY } from "@/appDomain/securityContracts";
@@ -180,7 +180,7 @@ export class HttpClient {
             if (proceed) {
                 request.status = "executing";
                 const response = await this.fetcher.fetch(request.url, request);
-                HttpClientError.assert(response, request);
+                await HttpClientError.assert(response, request);
                 let onResponseRead = request.callbacks && request.callbacks.onResponseRead;
                 if (!onResponseRead) {
                     onResponseRead = async (event) => {
@@ -198,7 +198,32 @@ export class HttpClient {
             }
         } catch (err) {
             request.status = "failed";
-            // throw ApiError.create(undefined, request);
+            if (err instanceof HttpClientError || err instanceof HttpNetworkError) {
+                throw err;
+            }
+            if (isNetworkFailure(err)) {
+                const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
+                const isTimeout = (err as Error)?.name === "AbortError";
+                let kind: NetworkErrorKind = "unreachable";
+                if (isTimeout) {
+                    kind = "timeout";
+                } else if (isOffline) {
+                    kind = "offline";
+                }
+                let message = `Could not connect to server at ${request.url}`;
+                if (isTimeout) {
+                    message = `Request timeout connecting to ${request.url}`;
+                } else if (isOffline) {
+                    message = "No internet connection";
+                }
+                throw new HttpNetworkError(message, {
+                    kind,
+                    url: request.url,
+                    method: request.method,
+                    request,
+                    cause: err,
+                });
+            }
             throw err;
         }
         return request;
@@ -279,14 +304,15 @@ export class HttpClient {
             requestParams.headers = new Headers(requestParams.headers);
         }
 
-        requestParams.headers.append("Content-Type", requestParams.contentType);
-        // "api-version"
-
-        if (requestParams.method === "POST") {
-            if (!requestParams.body) {
-                requestParams.body = "";
-            }
+        // Content-Type describes the request body: sending it without a body is invalid
+        // (e.g. Fastify rejects an empty body declared as application/json with 400).
+        // FormData/URLSearchParams set their own Content-Type (multipart boundary) in fetch.
+        const hasBody = requestParams.body !== null && requestParams.body !== undefined && requestParams.body !== "";
+        const isSelfDescribingBody = requestParams.body instanceof FormData || requestParams.body instanceof URLSearchParams;
+        if (hasBody && !isSelfDescribingBody && requestParams.contentType && !requestParams.headers.has("Content-Type")) {
+            requestParams.headers.set("Content-Type", requestParams.contentType);
         }
+        // "api-version"
 
         let request = {
             ...requestParams,

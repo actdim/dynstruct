@@ -13,6 +13,7 @@
 [![npm version](https://img.shields.io/npm/v/@actdim/dynstruct.svg)](https://www.npmjs.com/package/@actdim/dynstruct)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-red.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
 
 ---
@@ -53,7 +54,7 @@ const useCounter = (params: ComponentParams<CounterStruct>) => {
 
     const def: ComponentDef<CounterStruct> = {
         props: { count: 0 },
-        actions: { increment: () => { m.count++; } }, // Mutate directly — reactive UI updates automatically
+        actions: { increment: () => { m.count++; } }, // Mutate directly - reactive UI updates automatically
         view: () => (
             <button onClick={m.increment}>Count: {m.count}</button>
         ),
@@ -92,6 +93,19 @@ Explore the complete guide step-by-step from core concepts to advanced patterns:
 
 ---
 
+## AI Coding Assistants (Cursor, Claude Code, Copilot, Antigravity)
+
+To enable AI coding agents in your project to follow Dynstruct component architecture, type-safe contracts, and reactive state conventions, add a reference to the bundled LLM documentation in your project's `AGENTS.md`, `CLAUDE.md`, or `.cursorrules`:
+
+```markdown
+## Dynstruct Component Guidelines
+- Reference: `node_modules/@actdim/dynstruct/llms.txt`
+```
+
+This points agents directly to the compact index and modular topics in `node_modules/@actdim/dynstruct/docs/` matching your installed version, avoiding token bloat and version mismatch.
+
+---
+
 ## Quick Interactive Demo
 
 Try `@actdim/dynstruct` in your browser via StackBlitz:
@@ -114,6 +128,7 @@ Developed with [Along](https://github.com/actdim/along) - a provider-agnostic co
 ## License
 
 Proprietary / BUSL-1.1. See [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
@@ -124,11 +139,11 @@ This folder belongs to a repository that uses the ALONG structure. The full work
 guidance + agent-context protocol live once in the nearest ancestor `AGENTS.md` (`../../../AGENTS.md`) -
 read it there. This folder keeps its OWN `.along/` state; use the nearest one.
 Only this folder's specifics follow.
-<!-- END ALONG-PROTOCOL --># Agent Development Guide for `@actdim/dynstruct`
+<!-- END ALONG-PROTOCOL -->
+
+# Agent Development Guide for `@actdim/dynstruct`
 
 This file defines how agents should implement and modify code in this repository.
-
-> `CLAUDE.md` is a symlink to this file — edit `AGENTS.md` only; changes apply to both.
 
 ## Goal
 
@@ -155,11 +170,11 @@ Use public package paths (or equivalent local source paths in this repo):
 - `@actdim/dynstruct/componentModel/react`
 - `@actdim/dynstruct/componentModel/core`
 - `@actdim/dynstruct/appDomain/appContracts`
-- `@actdim/dynstruct/appDomain/commonContracts` — common channels: store, nav, config, fetch, DI
-- `@actdim/dynstruct/appDomain/securityContracts` — auth channels and security types
+- `@actdim/dynstruct/appDomain/commonContracts` - common channels: store, nav, config, fetch, DI
+- `@actdim/dynstruct/appDomain/securityContracts` - auth channels and security types
 - `@actdim/dynstruct/services/react/ServiceProvider`
 - `@actdim/dynstruct/services/react/SecurityService`
-- `@actdim/dynstruct/net/httpClient` — `HttpClient` base class for auth-aware API clients
+- `@actdim/dynstruct/net/httpClient` - `HttpClient` base class for auth-aware API clients
 - `@actdim/msgmesh/contracts`
 - `@actdim/msgmesh/core`
 - `@actdim/msgmesh/adapters`
@@ -168,24 +183,24 @@ Use public package paths (or equivalent local source paths in this repo):
 
 ### SecurityService
 
-`SecurityService` is a built-in service component — mount it near the app root. It manages `AuthInfo` state and exposes auth channels to all descendants.
+`SecurityService` is a built-in service component - mount it near the app root. It manages `AuthInfo` state and exposes auth channels to all descendants.
 
 - `useConventions: true` (default): handles Bearer token flow (HTTP sign-in, storage, refresh). Configure via `domainConfig.endpoints.*`.
 - `useConventions: false`: delegates to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use for demos, mocks, or custom backends.
 
-Key channels (string constants from `appDomain/securityContracts` — reference by the string value, e.g. `'APP.SECURITY.AUTH.SIGNIN'`, not by the `$AUTH_*` variable name):
-- `APP.SECURITY.AUTH.SIGNIN` — authenticate and register the result; returns `AuthInfo`
-- `APP.SECURITY.AUTH.SIGNOUT` — sign out, clears state
-- `APP.SECURITY.AUTH.REFRESH` — refresh auth data without a full re-login; returns `AuthInfo`
-- `APP.SECURITY.AUTH.ENSURE` — ensure authenticated; navigates to the sign-in page if not; returns `AuthInfo`
-- `APP.SECURITY.AUTH.APPLY` — authorize an outgoing request (provided only when `useConventions: true`)
-- `APP.SECURITY.AUTH.INFO.GET` — get current `AuthInfo`
-- `APP.SECURITY.CONFIG.GET` / `APP.SECURITY.CONFIG.CHANGED` — read / react to `BaseSecurityDomainConfig`
-- `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `…SIGNOUT.REQUEST` / `…REFRESH.REQUEST` — custom-handler hooks used when `useConventions: false`
+Key channels (string constants from `appDomain/securityContracts` - reference by the string value, e.g. `'APP.SECURITY.AUTH.SIGNIN'`, not by the `$AUTH_*` variable name):
+- `APP.SECURITY.AUTH.SIGNIN` - authenticate and register the result; returns `AuthInfo`
+- `APP.SECURITY.AUTH.SIGNOUT` - sign out, clears state
+- `APP.SECURITY.AUTH.REFRESH` - refresh auth data without a full re-login; returns `AuthInfo`
+- `APP.SECURITY.AUTH.ENSURE` - ensure authenticated; navigates to the sign-in page if not; returns `AuthInfo`
+- `APP.SECURITY.AUTH.APPLY` - authorize an outgoing request (provided only when `useConventions: true`)
+- `APP.SECURITY.AUTH.INFO.GET` - get current `AuthInfo`
+- `APP.SECURITY.CONFIG.GET` / `APP.SECURITY.CONFIG.CHANGED` - read / react to `BaseSecurityDomainConfig`
+- `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `...SIGNOUT.REQUEST` / `...REFRESH.REQUEST` - custom-handler hooks used when `useConventions: false`
 
 ### HttpClient
 
-`HttpClient` is the base class for typed API service clients. Extend it for each API — each public method becomes a typed bus channel via the service adapter.
+`HttpClient` is the base class for typed API service clients. Extend it for each API - each public method becomes a typed bus channel via the service adapter.
 
 - Call `this.fetch({ url, method, useAuth?, body?, contentType? })` inside methods.
 - Set `useAuth: true` on a request to inject the `Authorization` header automatically (reads current `AuthInfo` from SecurityService via the bus).
@@ -216,8 +231,8 @@ type AuthScheme =
     | "Session" | "ApiKey";                                            // de facto
 ```
 
-- `SignInCredentials` — discriminated union by `scheme`, passed to `APP.SECURITY.AUTH.SIGNIN` (and `…SIGNIN.REQUEST`). Members: `Basic`/`Bearer`/`Digest`/`Session` (`userName`, `password`), `NTLM`/`Negotiate` (+ `domain?`), `VAPID` (`privateKey`, `subject`), `ApiKey` (`apiKey`).
-- `AuthInfo` — discriminated union by `scheme`, returned by sign-in/refresh/`INFO.GET` and persisted by SecurityService. All members extend `AuthInfoBase` (`isAuthenticated?`, `authority?`, `provider?`, `accessToken?`, `properties?`, `domain?`). Scheme extras: `Bearer` (`refreshToken?`, `tokenExpiresAt?`), `Session` (`sessionId?`, `refreshToken?`, `tokenExpiresAt?`), `Digest` (`realm?`, `nonce?`, `algorithm?`), `NTLM`/`Negotiate` (`negotiationToken?`), `VAPID` (`publicKey?`, `subject?`), `ApiKey` (`apiKey?`, `keyName?`, `keyLocation?`).
+- `SignInCredentials` - discriminated union by `scheme`, passed to `APP.SECURITY.AUTH.SIGNIN` (and `...SIGNIN.REQUEST`). Members: `Basic`/`Bearer`/`Digest`/`Session` (`userName`, `password`), `NTLM`/`Negotiate` (+ `domain?`), `VAPID` (`privateKey`, `subject`), `ApiKey` (`apiKey`).
+- `AuthInfo` - discriminated union by `scheme`, returned by sign-in/refresh/`INFO.GET` and persisted by SecurityService. All members extend `AuthInfoBase` (`isAuthenticated?`, `authority?`, `provider?`, `accessToken?`, `properties?`, `domain?`). Scheme extras: `Bearer` (`refreshToken?`, `tokenExpiresAt?`), `Session` (`sessionId?`, `refreshToken?`, `tokenExpiresAt?`), `Digest` (`realm?`, `nonce?`, `algorithm?`), `NTLM`/`Negotiate` (`negotiationToken?`), `VAPID` (`publicKey?`, `subject?`), `ApiKey` (`apiKey?`, `keyName?`, `keyLocation?`).
 
 Built-in conventions (`useConventions: true`) currently implement `Bearer` for sign-in/refresh and `Bearer` + `Basic` for request authorization (`APPLY`). Other schemes require `useConventions: false` with your own `*.REQUEST` / `APPLY` handlers.
 
@@ -225,13 +240,13 @@ When editing this repo source, mirror existing import style from nearby files.
 
 ## Standard Bus Channels
 
-dynstruct declares typed bus channels (`@actdim/msgmesh`) used by its subsystems and reusable by app code. They are members of `CommonAppMsgStruct` (`commonContracts.ts`) and `BaseSecurityMsgStruct` (`securityContracts.ts`). Each exports a string constant (`$NAV_GOTO = 'APP.NAV.GOTO'`); **reference channels by string value, not by the `$…` variable**. Channels with both `in`/`out` are request/response (`msgBus.request`); channels with only `in` are events (`msgBus.send` + subscriber).
+dynstruct declares typed bus channels (`@actdim/msgmesh`) used by its subsystems and reusable by app code. They are members of `CommonAppMsgStruct` (`commonContracts.ts`) and `BaseSecurityMsgStruct` (`securityContracts.ts`). Each exports a string constant (`$NAV_GOTO = 'APP.NAV.GOTO'`); **reference channels by string value, not by the `$...` variable**. Channels with both `in`/`out` are request/response (`msgBus.request`); channels with only `in` are events (`msgBus.send` + subscriber).
 
 ### Common channels (`CommonAppMsgStruct`)
 
 | Channel | In | Out |
 |---|---|---|
-| `APP.RELOAD` | `void` | — (event) |
+| `APP.RELOAD` | `void` | - (event) |
 | `APP.NOTICE` | `{ text; title?; detail?; severity?; presentation?; userAction?; category?; scope?; source?; properties? }` | `void` |
 | `APP.CONFIG.GET` | `void` | `BaseAppDomainConfig` |
 | `APP.CONFIG.SET` | `BaseAppDomainConfig` | `void` |
@@ -258,15 +273,15 @@ Provided by `SecurityService`. The `*.REQUEST` channels are the custom-handler h
 |---|---|---|
 | `APP.SECURITY.AUTH.SIGNIN.REQUEST` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` |
 | `APP.SECURITY.AUTH.SIGNIN` | `{ credentials: SignInCredentials; auth?: AuthInfo }` | `AuthInfo` |
-| `APP.SECURITY.AUTH.SIGNOUT.REQUEST` | `AuthInfo` | — (event) |
-| `APP.SECURITY.AUTH.SIGNOUT` | `AuthInfo` | — (event) |
+| `APP.SECURITY.AUTH.SIGNOUT.REQUEST` | `AuthInfo` | - (event) |
+| `APP.SECURITY.AUTH.SIGNOUT` | `AuthInfo` | - (event) |
 | `APP.SECURITY.AUTH.REFRESH.REQUEST` | `AuthInfo` | `AuthInfo` |
 | `APP.SECURITY.AUTH.REFRESH` | `AuthInfo` | `AuthInfo` |
 | `APP.SECURITY.AUTH.ENSURE` | `void` | `AuthInfo` |
 | `APP.SECURITY.AUTH.APPLY` | `Partial<RequestInit> & { url: string; headers: Record<string,string> }` | `{ query?; headers?; credentials? }` |
 | `APP.SECURITY.AUTH.INFO.GET` | `void` | `AuthInfo` |
 | `APP.SECURITY.CONFIG.GET` | `void` | `BaseSecurityDomainConfig` |
-| `APP.SECURITY.CONFIG.CHANGED` | `BaseSecurityDomainConfig` | — (event) |
+| `APP.SECURITY.CONFIG.CHANGED` | `BaseSecurityDomainConfig` | - (event) |
 
 ## Component Authoring Standard
 
@@ -279,17 +294,17 @@ Use hook-constructors as the primary component format:
 - `actions` for user intent
 - `events` for lifecycle and property change reactions
 - `effects` for auto-tracked reactive logic
-- `children` for explicit composition
-- `view` for rendering — use `<c.children.Name />` (Capitalized) for all child types
+- `children` for explicit composition - **every nested dynstruct component is declared here** (via its `useXxx` hook-constructor, or as a `React.FC` fragment), never instantiated inline in `view` (see Composition and Performance Rules)
+- `view` for rendering - use `<c.children.Name />` (Capitalized) for all child types
 4. Instantiate via `useComponent(def, params)`.
 5. Prefer `let c` and `let m` pattern:
 - `c` is component instance
-- `m` is `c.model` reactive model — **actions are blended into the model**, so call `m.actionName(...)` not `c.actions.actionName(...)`. `Component` has no `.actions` property.
-6. Export `toReact(useXxx)` only when React component interoperability is needed.
+- `m` is `c.model` reactive model - **actions are blended into the model**, so call `m.actionName(...)` not `c.actions.actionName(...)`. `Component` has no `.actions` property.
+6. Export `toReact(useXxx)` only when React component interoperability is needed. A `toReact` export is for plain React code and backward compatibility - inside another dynstruct component use the hook in `children` instead.
 
 ## Component Identity (`id`, `regType`, `$key`)
 
-Every component instance gets a unique `id` at runtime. The framework does **not** apply it to any DOM element automatically — the component author must do so explicitly:
+Every component instance gets a unique `id` at runtime. The framework does **not** apply it to any DOM element automatically - the component author must do so explicitly:
 
 ```tsx
 view: () => <div id={c.id}>...</div>
@@ -300,9 +315,9 @@ view: () => <div id={c.id}>...</div>
 2. `$key` param provided → `toHtmlId(regType) + '#' + key`
 3. Neither → `toHtmlId(regType) + '#' + N` (sequential per `regType` within the context)
 
-**`regType`** — set in `def.regType` (shared across all instances). If omitted, auto-detected from source file path via stack inspection.
+**`regType`** - set in `def.regType` (shared across all instances). If omitted, auto-detected from source file path via stack inspection.
 
-**`$id` / `$key`** — instance-level, passed via `ComponentParams` in JSX, in the hook-constructor call, or via binding:
+**`$id` / `$key`** - instance-level, passed via `ComponentParams` in JSX, in the hook-constructor call, or via binding:
 
 ```tsx
 <MyComponent $id="main-card" />          // explicit, stable id
@@ -319,14 +334,14 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
   - `onChangingX` to validate/sanitize before set
   - `onChangeX` after set
   - `onPropChanging`/`onPropChange` for generic handlers
-  - `onCatch` (not `onError`) for error handling — signature: `(error, component?) => void`
+  - `onCatch` (not `onError`) for error handling - signature: `(error, component?) => void`
   - Lifecycle handlers may be `async`:
-    - `onInit` — once on creation, before first render; sync setup only, no DOM
-    - `onLayoutReady` / `onLayoutDestroy` — maps to `useLayoutEffect` / its cleanup; sync, DOM is available
-    - `onReady` / `onDestroy` — maps to `useEffect` / its cleanup; async-safe, primary hook for data loading
-  - Effect bodies (`def.effects`) are also wrapped by the framework error router — errors propagate to `onCatch`.
+    - `onInit` - once on creation, before first render; sync setup only, no DOM
+    - `onLayoutReady` / `onLayoutDestroy` - maps to `useLayoutEffect` / its cleanup; sync, DOM is available
+    - `onReady` / `onDestroy` - maps to `useEffect` / its cleanup; async-safe, primary hook for data loading
+  - Effect bodies (`def.effects`) are also wrapped by the framework error router - errors propagate to `onCatch`.
 - Use `effects` for derived/auto-tracked behavior; pause/resume/stop through `c.effects.<name>`.
-- Use a **getter in `def.props`** to declare a computed (auto-tracked) property. The framework detects getter-only descriptors and registers them as computed values automatically — no manual annotation needed. Declare the prop as `readonly` in the struct type. Reference `m` (not `this`) inside the getter body because TypeScript does not type `this` in `PropertyDescriptor` getters:
+- Use a **getter in `def.props`** to declare a computed (auto-tracked) property. The framework detects getter-only descriptors and registers them as computed values automatically - no manual annotation needed. Declare the prop as `readonly` in the struct type. Reference `m` (not `this`) inside the getter body because TypeScript does not type `this` in `PropertyDescriptor` getters:
 
   ```ts
   // struct type
@@ -334,7 +349,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
     props: {
       firstName: string;
       lastName: string;
-      readonly fullName: string;  // computed — mark readonly
+      readonly fullName: string;  // computed - mark readonly
     };
   }>;
 
@@ -344,7 +359,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
       firstName: '',
       lastName: '',
       get fullName() {
-        // `this` is untyped in TS getter descriptors — use `m` instead
+        // `this` is untyped in TS getter descriptors - use `m` instead
         return `${m.firstName} ${m.lastName}`.trim();
       },
     },
@@ -353,8 +368,8 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
 
   This also works for **nested object properties**: define the getter on the nested object literal inside `def.props`. The framework propagates computed annotations through any depth of nesting.
 - Use `prop({ reactive: ... })` to control how a prop is tracked. Default is fully reactive. Options:
-  - `reactive: false` — completely non-reactive; reads and writes are invisible to the reactivity system
-  - `reactive: 'shallow'` — array container is reactive (push/pop tracked), but item properties are not
+  - `reactive: false` - completely non-reactive; reads and writes are invisible to the reactivity system
+  - `reactive: 'shallow'` - array container is reactive (push/pop tracked), but item properties are not
 
   Works for top-level and nested paths alike. Can be used without `initialValue` as a pure annotation:
 
@@ -365,7 +380,20 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
   }
   ```
 
-- Prefer `bind(...)` or `bindProp(...)` for two-way value flow between parent and child. **Never pass `m` directly** to a child — `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bind(() => m)` or `bindProp(() => m, 'prop')`.
+- Use bindings for value flow between parent and child. **Never pass `m` directly** to a child - `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bindProp(() => m, 'prop')` or `bind(() => m...)`.
+- **Binding priority** (pick the first that fits):
+  1. `bindProp(() => m, 'prop')` - default for two-way binding to a model prop. Typed by key path, supports nested paths (`bindProp(() => m, 'user.name')`).
+  2. `bind(() => expr)` - read-only or derived value (no setter: the child cannot write back).
+  3. `bind(get, set[, converter])` - **only** when the getter or setter needs specific logic (transformation, side effects, writing somewhere else, a converter).
+
+  ```ts
+  // Preferred
+  open: bindProp(() => m, 'addDialogOpen'),
+  // Avoid - same behavior, just longer
+  open: bind(() => m.addDialogOpen, (v) => { m.addDialogOpen = v; }),
+  // OK - the setter has specific logic
+  open: bind(() => m.addDialogOpen, (v) => { m.addDialogOpen = v; if (!v) { m.draft = null; } }),
+  ```
 - Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
 - Use `ComponentStructExt<Struct, {...}>` **inside** a hook-constructor to declare private reactive props, internal children (often `React.FC` sections), and effects. The extended type is invisible to callers; return `Component<Struct>` from the hook to preserve the public API. See `componentState/StateExample.tsx`.
 - Use `ComponentImpl<Struct, Internals>` when you need non-reactive, per-instance data (e.g., a cache or lock). Pass initial internals as the third argument to `useComponent`; access via `c._`. Return `Component<Struct>` to hide internals from callers. See `services/react/StorageService.tsx`.
@@ -374,7 +402,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
 
 `onCatch` is called automatically whenever an error crosses the **dynstruct API boundary**. The framework wraps all user code at component creation time. There are two propagation modes:
 
-**Routes to `onCatch` only — error is swallowed after dispatch:**
+**Routes to `onCatch` only - error is swallowed after dispatch:**
 - Lifecycle hooks: `onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`
 - Effect bodies (`def.effects`)
 - Property event handlers: `onGetX`, `onChangingX`, `onChangeX`, `onPropChanging`, `onPropChange`
@@ -383,12 +411,12 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
 These have no caller waiting for a return value, so swallowing after `onCatch` is safe.
 
 **Routes to `onCatch` AND re-throws to caller:**
-- Actions (`def.actions`) — caller may `await m.action()` and expect a result or a rejection
-- MsgBus provider/subscriber callbacks — provider must return a response; subscriber may be awaited
+- Actions (`def.actions`) - caller may `await m.action()` and expect a result or a rejection
+- MsgBus provider/subscriber callbacks - provider must return a response; subscriber may be awaited
 
 Swallowing in these cases would silently return `undefined` to the caller and cause hard-to-diagnose bugs.
 
-Manual `try/catch` is needed only for code that is **outside** this boundary — a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
+Manual `try/catch` is needed only for code that is **outside** this boundary - a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
 
 ```ts
 function handleError(err: unknown) {
@@ -403,7 +431,7 @@ const def: ComponentDef<Struct> = {
         onCatch: (err) => { handleError(err); },
     },
     view: () => (
-        // load() calls a plain fetchData() — not a dynstruct call, so catch manually
+        // load() calls a plain fetchData() - not a dynstruct call, so catch manually
         <button onClick={async () => {
             try { await load(); } catch (err) { handleError(err); }
         }}>Retry</button>
@@ -413,9 +441,9 @@ const def: ComponentDef<Struct> = {
 
 When `view` itself may throw, keep `useErrorBoundary: true` (default) and optionally provide `fallbackView`.
 
-### `c.run` — manual boundary entry
+### `c.run` - manual boundary entry
 
-`c.run(handler, silent?)` executes any code inside the framework error boundary — errors are routed to `onCatch` exactly like any framework-managed call:
+`c.run(handler, silent?)` executes any code inside the framework error boundary - errors are routed to `onCatch` exactly like any framework-managed call:
 
 ```ts
 // silent=true: error → onCatch, swallowed (no re-throw)
@@ -425,7 +453,7 @@ onClick={() => c.run(() => load(), true)}
 onClick={() => c.run(() => submit())}
 ```
 
-**In practice prefer `def.actions`** — they combine error routing with automatic MobX action batching (all reactive prop mutations within the call commit as one transaction):
+**In practice prefer `def.actions`** - they combine error routing with automatic MobX action batching (all reactive prop mutations within the call commit as one transaction):
 
 ```ts
 actions: {
@@ -438,7 +466,7 @@ actions: {
 // called as: m.load()
 ```
 
-If an action is an implementation detail not needed in the public contract, declare it privately via `ComponentStructExt` — callers see only the original `Struct`:
+If an action is an implementation detail not needed in the public contract, declare it privately via `ComponentStructExt` - callers see only the original `Struct`:
 
 ```ts
 type ImplStruct = ComponentStructExt<Struct, {
@@ -454,8 +482,10 @@ Avoid:
 - introducing local `useState`/`useReducer` for state that belongs to component model
 - ad-hoc cross-component mutation without message bus or bindings
 - hidden dependencies not declared in `children` or `msgScope`
-- **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) — the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
-- passing reactive model values to external APIs without stripping proxies — use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
+- rendering dynstruct components inline in `view` with props/callbacks (`<Xxx value={m.value} onX={() => ...} />`, including `toReact` exports) - declare them in `children` instead
+- `bind(get, set)` pairs that just read and write one model prop - use `bindProp(() => m, 'prop')`
+- **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) - the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
+- passing reactive model values to external APIs without stripping proxies - use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
 
 ## Messaging & MsgMesh Integration Architecture
 
@@ -533,10 +563,29 @@ For service APIs:
 
 ## Composition and Performance Rules
 
-- Prefer parent-child composition via `children` over passing unstable inline objects/functions deep into tree.
+- **Nested dynstruct components go into `def.children`, never inline in `view`** (priority rule). Declare the child's struct in `children`, instantiate it with its hook-constructor, pass values via bindings (`bindProp` first, see Binding priority) and callbacks as params, and render it as `<c.children.Name />`.
+  - Why: the child is created once and its bindings are lazy, so the parent does not track the child's values and only the child re-renders when they change - no `useMemo` / `useCallback` needed.
+  - Inline `<Xxx prop={m.value} onX={() => ...} />` in `view` is kept only for compatibility: the parent tracks `m.value` and re-renders on every change, and each render passes new params/callbacks that are re-synced into the child on every commit.
+  - A fragment that needs no model of its own is shortened to a `React.FC` child: `section: () => <div>{m.x}</div>` (see `componentState/StateExample.tsx`).
+
+  ```tsx
+  // struct: children: { toast: ToastStruct }
+  children: {
+      toast: useToast({
+          items: bindProp(() => m, 'items'),
+          onDismiss: (id) => {
+              m.items = m.items.filter((item) => item.id !== id);
+          },
+      }),
+  },
+  view: () => <c.children.Toast />,
+
+  // Avoid (compatibility only):
+  // view: () => <Toast items={m.items} onDismiss={(id) => { ... }} />,
+  ```
 - Keep JSX mostly structural; put behavior in `actions/events/effects`.
 - Reuse existing component structures rather than creating parallel incompatible patterns.
-- In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This is a JSX shortcut — instead of `<c.children.avatarView.View />` you write `<c.children.AvatarView />`. For full dynstruct component children (`ComponentStruct` types) the camelCase name additionally exposes the full component instance (`c.children.avatarView.model`, `c.children.avatarView.effects`). For `React.FC` and factory function children only the Capitalized JSX shortcut exists — these are lightweight fragments without their own model.
+- In `view`, render all children with a **Capitalized** name: `<c.children.Name />`. This is a JSX shortcut - instead of `<c.children.avatarView.View />` you write `<c.children.AvatarView />`. For full dynstruct component children (`ComponentStruct` types) the camelCase name additionally exposes the full component instance (`c.children.avatarView.model`, `c.children.avatarView.effects`). For `React.FC` and factory function children only the Capitalized JSX shortcut exists - these are lightweight fragments without their own model.
 
 ## File and Story Conventions
 
@@ -545,11 +594,11 @@ For service APIs:
 - App domain contracts/utilities: `src/appDomain/*`
 - Services: `src/services/*`
 - Examples/stories: `src/_stories/componentModel/*`
-  - `basicCommunication/` — producer/consumer pattern
-  - `serviceCall/` — API adapter integration
-  - `securityService/` — auth flow
-  - `storageService/` — storage service
-  - `componentState/` — `ComponentStructExt`, form validation with validators, `m.$` and `mapToEdit`
+  - `basicCommunication/` - producer/consumer pattern
+  - `serviceCall/` - API adapter integration
+  - `securityService/` - auth flow
+  - `storageService/` - storage service
+  - `componentState/` - `ComponentStructExt`, form validation with validators, `m.$` and `mapToEdit`
 - Shared story styles: `src/_stories/componentModel/styles.ts` (`row`, `labelStyle`, `detailsStyle`)
 
 When adding a feature:
@@ -558,16 +607,16 @@ When adding a feature:
 
 ## TypeScript Config Layout
 
-Solution-style split — do not collapse it back into one config:
+Solution-style split - do not collapse it back into one config:
 
-- `tsconfig.base.json` — shared `compilerOptions` only. `moduleResolution: "bundler"` (this is a Vite package; do NOT switch to `"node"`/`node10` (deprecated) or `nodenext` (would force `.js` import extensions)). No `baseUrl` (deprecated in TS 6.0) — `paths` targets are relative: `"@/*": ["./src/*"]`. `extends` inherits only `compilerOptions`, not `include`/`files`/`references`.
-- `tsconfig.json` — pure orchestrator: `{ "files": [], "references": [...] }`. It compiles nothing itself; it only wires the leaf projects.
-- `tsconfig.build.json` — library build; emits `.d.ts` to `dist`. Consumed by `vite-plugin-dts` via its `tsconfigPath` (must stay a config WITHOUT `references`, else the plugin emits zero declarations).
-- `tsconfig.dev.json` — editor/dev + tests; broad `types` (node, vitest/globals, vite/client, …).
+- `tsconfig.base.json` - shared `compilerOptions` only. `moduleResolution: "bundler"` (this is a Vite package; do NOT switch to `"node"`/`node10` (deprecated) or `nodenext` (would force `.js` import extensions)). No `baseUrl` (deprecated in TS 6.0) - `paths` targets are relative: `"@/*": ["./src/*"]`. `extends` inherits only `compilerOptions`, not `include`/`files`/`references`.
+- `tsconfig.json` - pure orchestrator: `{ "files": [], "references": [...] }`. It compiles nothing itself; it only wires the leaf projects.
+- `tsconfig.build.json` - library build; emits `.d.ts` to `dist`. Consumed by `vite-plugin-dts` via its `tsconfigPath` (must stay a config WITHOUT `references`, else the plugin emits zero declarations).
+- `tsconfig.dev.json` - editor/dev + tests; broad `types` (node, vitest/globals, vite/client, ...).
 
 Rules:
-- Root Node files (`packageConfig.ts`, `vite.config.ts`, `vitest*.config.ts`) get node types via `types: ["node"]` in the build/dev projects — NOT by editing includes elsewhere or adding `node` to a shared `types` array (that leaks node globals into browser `src`). If the editor shows "Cannot find name 'path'/'__dirname'" on such a file, it means the file isn't routed to a project — check the `references` chain, don't hack the source with `/// <reference>`.
-- Always type-check the solution with `tsc -b` (build mode), never `tsc -p` — `-p` sees `files: []` and checks nothing. Both `typecheck` and `build` scripts already use `tsc -b tsconfig.json`.
+- Root Node files (`packageConfig.ts`, `vite.config.ts`, `vitest*.config.ts`) get node types via `types: ["node"]` in the build/dev projects - NOT by editing includes elsewhere or adding `node` to a shared `types` array (that leaks node globals into browser `src`). If the editor shows "Cannot find name 'path'/'__dirname'" on such a file, it means the file isn't routed to a project - check the `references` chain, don't hack the source with `/// <reference>`.
+- Always type-check the solution with `tsc -b` (build mode), never `tsc -p` - `-p` sees `files: []` and checks nothing. Both `typecheck` and `build` scripts already use `tsc -b tsconfig.json`.
 
 ## Validation Checklist (before finishing)
 
@@ -591,11 +640,15 @@ If full run is heavy, run minimum impacted checks and state what was not run.
 
 ## Quick Template
 
-```ts
+```tsx
+// useTextField / TextFieldStruct: any dynstruct hook-constructor, e.g. from '@actdim/dynstruct-mui/TextField'
 type MyStruct = ComponentStruct<AppMsgStruct, {
   props: { value: string };
   actions: { setValue: (v: string) => void };
-  children: {};
+  children: {
+    valueInput: TextFieldStruct; // dynstruct child (hook-constructor)
+    summary: React.FC;           // lightweight fragment, no own model
+  };
   effects: 'syncSomething';
 }>;
 
@@ -608,12 +661,23 @@ const useMy = (params: ComponentParams<MyStruct>) => {
     actions: {
       setValue: (v) => { m.value = v; },
     },
+    children: {
+      valueInput: useTextField({
+        value: bindProp(() => m, 'value'),
+      }),
+      summary: () => <span>{m.value.length} chars</span>,
+    },
     effects: {
       syncSomething: () => {
         // reactive logic
       },
     },
-    view: () => <div>{m.value}</div>,
+    view: () => (
+      <div>
+        <c.children.ValueInput />
+        <c.children.Summary />
+      </div>
+    ),
   };
 
   c = useComponent(def, params);
@@ -645,19 +709,19 @@ See the following engineering guidelines:
 **`@actdim/dynstruct`** is a TypeScript-based component model and architectural framework for building scalable, modular web applications. It provides a **structure-first, declarative approach** to component design with:
 
 - **Type-safe component model** with explicit dependency wiring visible at compile-time.
-- **Decoupled messaging architecture** using `@actdim/msgmesh` for inter-component and service communication.
+- **Decoupled messaging [architecture](./topic--architecture.md)** using `@actdim/msgmesh` for inter-component and service communication.
 - **Component lifecycle management** with automatic initialization, ready, layout, and cleanup hooks.
-- **Zero-boilerplate reactive state** powered by MobX — properties automatically trigger UI re-renders on mutation.
-- **Type-safe component events** — automatic event handlers for lifecycle and property changes with full IntelliSense.
-- **UI Component Adapters** — seamless integration with design systems like Material UI (`@actdim/dynstruct-mui`).
+- **Zero-boilerplate reactive state** powered by MobX - properties automatically trigger UI re-renders on mutation.
+- **Type-safe component events** - automatic event handlers for lifecycle and property changes with full IntelliSense.
+- **UI Component Adapters** - seamless integration with design systems like Material UI (`@actdim/dynstruct-mui`).
 
 ---
 
 ## Framework Support
 
-- ✅ **React** — Fully supported (`useComponent`, `toReact`, `toReactView`, MobX integration).
-- 🚧 **SolidJS** — Planned / In development.
-- 🚧 **Vue.js** — Planned.
+- ✅ **React** - Fully supported (`useComponent`, `toReact`, `toReactView`, MobX integration).
+- 🚧 **SolidJS** - Planned / In development.
+- 🚧 **Vue.js** - Planned.
 
 The architectural core (`@actdim/dynstruct/componentModel/contracts`) is framework-agnostic. The exact same component structures, message buses, and business contracts work across UI frameworks.
 
@@ -665,7 +729,7 @@ The architectural core (`@actdim/dynstruct/componentModel/contracts`) is framewo
 
 ## UI Component Adapters & Companion Libraries
 
-- 🎨 **[@actdim/dynstruct-mui](https://github.com/actdim/dynstruct-mui)** — Official Material UI (MUI v5/v6) component adapters for dynstruct. Provides ready-to-use reactive hook-constructors and React components (`Button`, `TextField`, `Dialog`, `Drawer`, `Table`, `Tabs`, `Autocomplete`, etc.).
+- 🎨 **[@actdim/dynstruct-mui](https://github.com/actdim/dynstruct-mui)** - Official Material UI (MUI v5/v6) component adapters for dynstruct. Provides ready-to-use reactive hook-constructors and React components (`Button`, `TextField`, `Dialog`, `Drawer`, `Table`, `Tabs`, `Autocomplete`, etc.).
 
 ---
 
@@ -727,9 +791,9 @@ expect(sendSpy).toHaveBeenCalledWith({
 
 ## Component Structure
 
-The first step in the `dynstruct` architectural pattern is defining the **component structure**. The base generic class `ComponentStruct` acts as a structural constructor — a scaffold that provides constraints, hints, and full IntelliSense to the developer when forming the base type contract. All derived component model APIs are built on top of this contract through TypeScript's type system.
+The first step in the `dynstruct` architectural pattern is defining the **component structure**. The base generic class `ComponentStruct` acts as a structural constructor - a scaffold that provides constraints, hints, and full IntelliSense to the developer when forming the base type contract. All derived component model APIs are built on top of this contract through TypeScript's type system.
 
-**Crucially, component structures are pure type declarations** — they require no implementations (hook-constructors), only type information. This means you can define the entire application's component hierarchy at the type level before writing a single line of runtime code.
+**Crucially, component structures are pure type declarations** - they require no implementations (hook-constructors), only type information. This means you can define the entire application's component hierarchy at the type level before writing a single line of runtime code.
 
 ```typescript
 type Struct = ComponentStruct<
@@ -778,9 +842,128 @@ type Struct = ComponentStruct<
 |---|---|
 | `props` | Reactive property names and types. All declared properties (including nested values) become reactive after component creation. |
 | `actions` | Method signatures that operate on props. Action calls are optimized for batching reactive property change application. |
-| `children` | Names and types of child components. Uses base structures of other components — **no implementations required, only type data**. |
+| `children` | Names and types of child components. Uses base structures of other components - **no implementations required, only type data**. |
 | `msgScope` | Message bus channels this component works with. Sections: `subscribe`, `publish`, `provide`. Narrows the global bus scope to this component's responsibility zone. |
 | `effects` | List of effect names available in this component. Implementations are defined in `ComponentDef`. |
+
+### Public vs. Internal Contracts (`ComponentStructExt`)
+
+In real-world applications, placing transient state (e.g. `isLoading`, `cache`, `expandedKeys`) directly into `props` of `ComponentStruct` pollutes the public component interface. Callers would be able to pass `<MyComponent isLoading={true} />` in JSX, violating encapsulation.
+
+Use `ComponentStructExt` to cleanly separate the **Public Contract** (inputs accepted from parent and public message scope) from the **Internal Implementation Contract** (private state, internal actions, private effects):
+
+```typescript
+import {
+    type ComponentStruct,
+    type ComponentStructExt,
+} from '@actdim/dynstruct/componentModel/contracts';
+
+// 1. Public Contract: exported for parents and JSX callers
+export type DriveTreeStruct = ComponentStruct<
+    AppMsgStruct,
+    {
+        props: {
+            selectedDriveId?: string;
+            selectedPath?: string;
+            onSelectNode?: (drive: VfsDrive, node: VfsNode) => void;
+        };
+        msgScope: {
+            publish: AppMsgChannels<'API.VFS.GETDRIVES' | 'API.VFS.GETNODES'>;
+        };
+    }
+>;
+
+// 2. Internal Contract: private to component implementation
+type InternalState = {
+    props: {
+        drives: VfsDrive[];
+        loadingDrives: boolean;
+        expandedKeys: Record<string, boolean>;
+        nodesCache: Record<string, VfsNode[]>;
+    };
+    actions: {
+        loadDrives: () => Promise<void>;
+        toggleFolder: (drive: VfsDrive, path: string) => Promise<void>;
+    };
+};
+
+// 3. Merged Struct: used inside the hook-constructor
+type Struct = ComponentStructExt<DriveTreeStruct, InternalState>;
+```
+
+### Granular Reactivity Control (`reactive: 'shallow' | false`)
+
+By default, Dynstruct properties are deeply reactive - the internal proxy recursively tracks all nested objects and array elements. For large collections, deep trees (like file system nodes), or heavy read-only payloads, deep proxying introduces unnecessary memory and CPU overhead.
+
+Configure reactivity per property using `ComponentProp<T>`:
+
+```typescript
+import { type ComponentDef } from '@actdim/dynstruct/componentModel/contracts';
+
+const def: ComponentDef<Struct> = {
+    props: {
+        // Deep reactive by default
+        counter: 0,
+
+        // 'shallow': container mutations (push, pop, filter) are tracked,
+        // but items within nodesCache are NOT proxied deeply
+        nodesCache: {
+            initialValue: {},
+            reactive: 'shallow',
+        },
+
+        // false: completely disable reactivity tracking for static configurations
+        staticConfig: {
+            initialValue: { bufferSize: 1024 },
+            reactive: false,
+        },
+    },
+};
+```
+
+### Data Binding Primitives (`bind`, `bindProp`, `ValueConverter`)
+
+Dynstruct provides first-class reactive data binding primitives:
+
+1. **`bind(get, set?, converter?)`**:
+   Binds a property to an arbitrary reactive getter and optional setter.
+
+```typescript
+import { bind, type ValueConverter } from '@actdim/dynstruct/componentModel/core';
+
+// Two-way binding between parent model and child input
+const childInput = useTextField({
+    value: bind(
+        () => m.username,
+        (val) => { m.username = val; }
+    ),
+});
+
+// With ValueConverter: converts number model to string input and back
+const stringToNumberConverter: ValueConverter<string, number> = {
+    convert: (val: number) => String(val),
+    convertBack: (str: string) => Number(str) || 0,
+};
+
+const scoreInput = useTextField({
+    value: bind(
+        () => m.score,
+        (val) => { m.score = val; },
+        stringToNumberConverter
+    ),
+});
+```
+
+2. **`bindProp(target, path)`**:
+   Type-safe path-based binding to an object or component model:
+
+```typescript
+import { bindProp } from '@actdim/dynstruct/componentModel/core';
+
+const nameInput = useTextField({
+    value: bindProp(() => m, 'user.profile.name'),
+});
+```
 
 ---
 
@@ -918,7 +1101,7 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
 
     c = useComponent(def, params);
     m = c.model;
-    return c; // returned as Component<Struct> — ImplStruct stays private
+    return c; // returned as Component<Struct> - ImplStruct stays private
 };
 ```
 
@@ -990,23 +1173,79 @@ const def: ComponentDef<Struct> = {
 ```
 
 ### Form Helpers: `validate()` and `mapToEdit()`
-`c.mapToEdit('userInfo.email')` binds input elements directly to reactive model properties:
 
-```tsx
+Dynstruct eliminates manual `onChange` and `value` boilerplate using `c.mapToEdit()`:
+
+```typescript
+// Binds input value, onChange, onBlur directly to model property
 <input type="email" {...c.mapToEdit('userInfo.email')} />
+
+// With excluded handlers (e.g. if custom onBlur is needed)
+<input type="text" {...c.mapToEdit('username', ['onBlur'])} />
 ```
+
+`c.mapToEdit` automatically:
+- Syncs the DOM input's `event.target.value` to the reactive model property.
+- Triggers field validators configured in `ComponentProp.validator`.
+- Updates `c.model.$.propState['userInfo.email']` with validation errors and status.
+- Integrates seamlessly with Material UI / MUI components: `<TextField {...c.mapToEdit('username')} />`.
+
+### Child Component Composition & Typed Slots (`c.children`)
+
+When child components are declared in `Struct.children`, Dynstruct provides typed child accessors in two casing styles:
+
+```typescript
+type ParentStruct = ComponentStruct<AppMsgStruct, {
+    children: {
+        header: HeaderStruct;
+        sidebar: SidebarStruct;
+    };
+}>;
+```
+
+Inside the parent hook-constructor and view:
+- **Capitalized (`c.children.Header`, `c.children.Sidebar`)**: Directly renders the child component view slot in JSX:
+  ```tsx
+  view: () => (
+      <div>
+          <c.children.Header />
+          <main>
+              <c.children.Sidebar />
+          </main>
+      </div>
+  )
+  ```
+- **Lowercase (`c.children.header`, `c.children.sidebar`)**: Provides programmatic access to the child component instance and its reactive model:
+  ```typescript
+  // Access child model directly from parent logic
+  console.log(c.children.header.model.title);
+  ```
 
 ---
 
-## Component Events & Error Handling
+## Component Events & Lifecycle (`events` vs. Hooks)
 
-Component events handle lifecycle hooks (`onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`), errors (`onCatch`), and property changes (`onChangeX`, `onChangingX`).
+Dynstruct uses explicit lifecycle hooks declared in `def.events`. They replace built-in React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) in typical components, so those are not needed there. Hooks are not banned, though: custom and third-party hooks are allowed as long as they respect the component model (see "Hooks Policy" in the React Integration section).
+
+| Event Hook | Phase | Typical Use Case |
+|---|---|---|
+| `onInit` | Pre-mount | Setup synchronous defaults, validate initial params. |
+| `onLayoutReady` | Layout ready | Measure DOM elements before browser paint. |
+| `onReady` | Mounted | Trigger asynchronous data loading, subscribe to bus events. Replaces `useEffect(..., [])`. |
+| `onLayoutDestroy` | Pre-unmount | Clean up layout observers, measurements. |
+| `onDestroy` | Unmounted | Clean up non-bus resources (bus subscriptions in `c.msgBus` are auto-disposed). |
+| `onCatch` | Error Boundary | Catch unhandled exceptions in component view or effects. |
+| `onValidate` | Validation | Run component-wide multi-property validation. |
 
 ```typescript
 const def: ComponentDef<Struct> = {
     events: {
         onReady: async (component) => {
-            await loadInitialData();
+            // Data loading on component mount
+            await m.actions.loadInitialData();
+        },
+        onDestroy: (component) => {
+            // Cleanup timers or external subscriptions
         },
         onChangeEmail: (newValue) => {
             console.log('Email updated to:', newValue);
@@ -1077,7 +1316,7 @@ Components communicate over typed channels provided by `@actdim/msgmesh`. `@actd
 ### Core Integration Principles
 
 1. **Context-Driven Bus Distribution**:
-   - In standard Dynstruct applications, `msgBus` is initialized at the application level via `<AppContextProvider value={{ msgBus }}>` or `<ServiceProvider>`. All descendant components receive `msgBus` automatically through context.
+   - In standard Dynstruct applications, `msgBus` is initialized at the application root via `<ComponentContextProvider value={{ msgBus }}>` (from `@actdim/dynstruct/componentModel/react/componentContext`). All descendant components receive `msgBus` automatically through the React component registry context.
    - Multiple context providers can be nested if isolated scopes are required, but in most cases a single unified or modular bus structure is optimal.
    - Because `@actdim/msgmesh` supports hierarchical dotted channel prefixes (`'API.USER.'`, `'APP.NAV.'`) and TypeScript provides powerful type composition (`ApiStruct & MsgStruct<LocalEvents> & BaseAppMsgStruct`), developers can distribute channel definitions across multiple modular files while maintaining unified compile-time type safety.
    - Therefore, without a specific architectural need, creating ad-hoc bus instances inside individual components or manually passing `msgBus` through props is unnecessary and adds boilerplate.
@@ -1236,12 +1475,106 @@ children: {
 
 ---
 
-## Message Channels (`CommonAppMsgStruct`, `BaseSecurityMsgStruct`)
+### Hierarchical Filtering (`ComponentMsgFilter`)
 
-Built-in domain channel contracts simplify common application communication:
+In complex component hierarchies (e.g. nested modal dialogs, tree view nodes, or sub-editors), components often need to process messages originating only from their own subtree or parent chain, rather than global broadcasts.
 
-- **`CommonAppMsgStruct`**: Navigation (`APP.NAV.GOTO`), notifications (`APP.NOTIFY`), theme toggles.
-- **`BaseSecurityMsgStruct`**: Auth tokens, login events, permission updates.
+Use `componentFilter` in `msgBroker` subscriber and provider definitions:
+
+```typescript
+import { ComponentMsgFilter } from '@actdim/dynstruct/componentModel/contracts';
+
+const def: ComponentDef<TreeFolderStruct> = {
+    msgBroker: {
+        subscribe: {
+            'VFS.FOLDER.EXPAND': {
+                in: {
+                    // Only accept messages originating from child/descendant nodes
+                    componentFilter: ComponentMsgFilter.FromDescendants,
+                    callback: (msg, component) => {
+                        console.log('Child folder requested expand:', msg.payload);
+                    },
+                },
+            },
+        },
+        provide: {
+            'UI.THEME.GET': {
+                in: {
+                    // Only provide theme values to descendants in this component subtree
+                    componentFilter: ComponentMsgFilter.FromAncestors,
+                    callback: (msg) => ({ theme: m.localTheme }),
+                },
+            },
+        },
+    },
+};
+```
+
+---
+
+## Declarative Routing & Navigation (`createNavigationRoute`, `APP.NAV.GOTO`)
+
+Dynstruct decouples routing from React DOM hooks via `@actdim/dynstruct/appDomain/navigation`. Routes are defined as strongly typed structures, and navigation is performed through the `msgBus` rather than direct `useNavigate()` calls.
+
+### 1. Defining Routes (`createNavigationRoute`)
+
+Define routes using `createNavigationRoute` with parameterized types and path patterns (powered by `path-to-regexp`):
+
+```typescript
+import { type NavRoutes } from '@actdim/dynstruct/appDomain/commonContracts';
+import { createNavigationRoute } from '@actdim/dynstruct/appDomain/navigation';
+import { ExplorerPage } from './pages/explorer/ExplorerPage';
+import { SignInPage } from './pages/auth/signIn/SignInPage';
+
+export const appRoutes = {
+    index: createNavigationRoute({
+        pattern: '',
+        element: <ExplorerPage />,
+    }),
+    explorer: createNavigationRoute({
+        pattern: 'explorer',
+        element: <ExplorerPage />,
+    }),
+    'auth/sign-in': createNavigationRoute<{
+        callbackUrl?: string;
+    }>({
+        pattern: 'auth/sign-in',
+        element: <SignInPage />,
+    }),
+} satisfies NavRoutes;
+
+export type AppRoutes = typeof appRoutes;
+```
+
+Each navigation route provides:
+- `.url(params?)`: Compiles path, query params, and hashes into a clean URL string.
+- `.match(url)`: Matches a pathname and extracts strongly typed route parameters.
+- `.element`: The associated component view element.
+
+### 2. Navigating Over the Message Bus (`APP.NAV.GOTO`)
+
+Application components initiate navigation via `c.msgBus.send({ channel: 'APP.NAV.GOTO', group: 'ex', payload: { route: '...' } })`. This keeps UI components completely decoupled from browser history and router implementations:
+
+```typescript
+// Navigate by route key and typed parameters (group: 'ex')
+c.msgBus.send({
+    channel: 'APP.NAV.GOTO',
+    group: 'ex',
+    payload: {
+        route: 'auth/sign-in',
+        params: { callbackUrl: window.location.href },
+    },
+});
+
+// Navigate by raw path (group: 'in')
+c.msgBus.send({
+    channel: 'APP.NAV.GOTO',
+    group: 'in',
+    payload: {
+        path: '/explorer',
+    },
+});
+```
 
 ---
 
@@ -1261,7 +1594,27 @@ Built-in domain channel contracts simplify common application communication:
 
 `dynstruct` provides lightweight adapters to connect hook-constructors to React's component tree.
 
-### 1. `useComponent`
+### 1. Root Application Initialization (`ComponentContextProvider`)
+
+At the root of the React application, wrap the component tree with `ComponentContextProvider` (imported from `@actdim/dynstruct/componentModel/react/componentContext`). This registers the application-level `msgBus` and manages the component hierarchy registry:
+
+```tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/react/componentContext';
+import { createAppMsgBus } from '@/config/appConfig';
+import App from './App';
+
+const msgBus = createAppMsgBus();
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+    <ComponentContextProvider value={{ msgBus }}>
+        <App />
+    </ComponentContextProvider>
+);
+```
+
+### 2. `useComponent`
 Instantiates a `dynstruct` component inside a React hook-constructor:
 
 ```typescript
@@ -1280,7 +1633,7 @@ const useCounter = (params: ComponentParams<CounterStruct>) => {
 };
 ```
 
-### 2. `toReact`
+### 3. `toReact`
 Converts a `dynstruct` hook-constructor into a standard React FC component:
 
 ```typescript
@@ -1292,11 +1645,42 @@ export const Counter = toReact(useCounter);
 // <Counter counter={5} />
 ```
 
+### 4. Hooks Policy (Dynstruct-First, Not a Ban)
+
+React hooks are **not forbidden**. Dynstruct was built to cover the needs of typical components, so that you do not have to think about `useCallback` / `useMemo`, dependency arrays, stable inline callbacks, or which built-in hook fits a case best. For typical scenarios and typical components everything is already solved by reactive model props, lifecycle events, effects, actions, bindings, and MsgMesh - built-in hooks are simply not needed there (in the vast majority of cases).
+
+- **Built-in hooks** (`useState`, `useEffect`, `useLayoutEffect`, `useReducer`, `useMemo`, `useCallback`, `useRef`): do not use them by default - use the Dynstruct replacement from the table below. Reach for one only in a non-typical case the component model does not cover, and leave a short comment explaining why.
+- **Custom and third-party hooks** (your own `useXxx`, library hooks such as a media player state hook): allowed inside Dynstruct components. Just do not break the Dynstruct ideology: state the rest of the app depends on lives in the model (`props`), communication goes through bindings and MsgMesh, and the hook stays an implementation detail of the component.
+- **React context**: usually unnecessary, because data flows down and up the hierarchy through bindings and MsgMesh. It is still allowed when a library or a service extension needs it (Dynstruct itself uses `useContext` in `ReactComponentContext`, and `ServiceProvider` uses `useEffect`).
+
+Typical React patterns and their Dynstruct replacements:
+
+| Standard React Pattern | Dynstruct Replacement | Rationale |
+|---|---|---|
+| `const [x, setX] = useState(0)` | `props: { x: 0 }` + `m.x = 1` | Automatically reactive, inspectable in hierarchy, serializable |
+| `useEffect(() => { ... }, [])` | `events: { onReady: (c) => ... }` | Explicit lifecycle, lifecycle-scoped `AbortSignal`, zero stale closures |
+| `useEffect(() => { ... }, [dep])` | `effects: { myEffect: (c) => ... }` | Automatic dependency tracking, pausable, zero manual dependency arrays |
+| `useCallback(() => { ... })` | `actions: { myAction: () => ... }` | Stable action references with automatic batched state updates |
+| `useMemo(() => fn(a), [a])` | Computed getter `get myVal() { return ... }` | Recomputed on demand via reactive proxy |
+| `useRef(...)` | Component fields or `ComponentState` | Avoids hidden state outside the reactive model |
+
+### 5. Form Input Integration (`c.mapToEdit`)
+
+To connect standard inputs (HTML `<input>` or MUI `<TextField>`) without writing boilerplate `value` and `onChange` hooks, use `c.mapToEdit()`:
+
+```tsx
+// Binds directly to model property with automatic validator triggers
+<input type="text" {...c.mapToEdit('username')} />
+
+// Fully compatible with MUI / @actdim/dynstruct-mui:
+<TextField label="Email" {...c.mapToEdit('user.email')} />
+```
+
 ---
 
 ## Service Integration & Adapters
 
-`dynstruct` integrates natively with the **service adapter** system from [`@actdim/msgmesh`](https://github.com/actdim/msgmesh). Adapters automatically register any service class (such as an API client) as a message bus provider — channel names, payload types, and return types are all derived from the service class at compile-time.
+`dynstruct` integrates natively with the **service adapter** system from [`@actdim/msgmesh`](https://github.com/actdim/msgmesh). Adapters automatically register any service class (such as an API client) as a message bus provider - channel names, payload types, and return types are all derived from the service class at compile-time.
 
 ### 1. Define an API Client Class
 
@@ -1440,6 +1824,117 @@ type ComponentStructBase<TMsgStruct> = {
 };
 ```
 
+### `ComponentStructExt<TStruct, TInternalStruct>`
+Combines a **public** `ComponentStruct` contract with an **internal** implementation contract, keeping caller JSX props clean:
+
+```typescript
+type ComponentStructExt<
+    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
+    TInternalStruct extends Skip<ComponentStructBase<TStruct['msg']>, 'msgScope'> = ...
+> = {
+    props?: TStruct['props'] & TInternalStruct['props'];
+    actions?: TStruct['actions'] & TInternalStruct['actions'];
+    effects?: TStruct['effects'] | TInternalStruct['effects'];
+    children?: TStruct['children'] & TInternalStruct['children'];
+    msgScope: TStruct['msgScope'];
+    msg: TStruct['msg'];
+};
+```
+
+### `ComponentMsgFilter`
+Enum for scoping message delivery within the component tree hierarchy:
+
+```typescript
+export enum ComponentMsgFilter {
+    None = 0,
+    FromAncestors = 1 << 0,   // Only receive messages from ancestor components
+    FromDescendants = 1 << 1, // Only receive messages from descendant/child components
+}
+```
+
+Configured via `componentFilter` in `msgBroker.provide` or `msgBroker.subscribe` definitions:
+```typescript
+msgBroker: {
+    subscribe: {
+        'MY.CHANNEL': {
+            in: {
+                componentFilter: ComponentMsgFilter.FromDescendants,
+                callback: (msg) => { ... },
+            },
+        },
+    },
+}
+```
+
+### `ComponentProp<T>`
+Configuration object for fine-grained property behavior and reactivity:
+
+```typescript
+type ComponentProp<T = any> = {
+    readonly initialValue?: T;
+    readonly validator?: Validator<T>;
+    isDisabled?: boolean;
+    isReadOnly?: boolean;
+    /** Controls reactivity of this prop:
+     * - `true` (default): fully reactive, proxy tracks all depths
+     * - `false`: not reactive at all (zero proxy overhead)
+     * - `'shallow'`: container is reactive (array mutations tracked), items are not proxied
+     */
+    readonly reactive?: true | false | 'shallow';
+};
+```
+
+### Data Binding Primitives: `bind`, `bindProp`, `ValueConverter`
+
+```typescript
+// 1. Functional two-way binding
+function bind<T, TFrom = any>(
+    get: () => T,
+    set?: (value: T) => void,
+    converter?: ValueConverter<T, TFrom>
+): Binding<T, TFrom>;
+
+// 2. Property path binding
+function bindProp<T extends object, P extends KeyPath<T, boolean>>(
+    target: () => T,
+    path: P
+): Binding;
+
+// 3. Bidirectional Value Converter
+type ValueConverter<TTo, TFrom> = {
+    convert: (value: TFrom) => TTo;
+    convertBack: (value: TTo) => TFrom;
+};
+```
+
+### Declarative Routing: `createNavigationRoute`
+
+```typescript
+function createNavigationRoute<TParams extends NavRouteParams = NavRouteParams>(options: {
+    pattern: string;
+    element: any;
+    defaultParams?: TParams;
+}): NavRoute<TParams>;
+```
+
+### `ComponentEvents<TStruct>`
+Explicit component lifecycle hooks and property change interceptors:
+
+| Hook | Type Signature | Trigger Phase |
+|---|---|---|
+| `onInit` | `(c: Component) => void \| Promise<void>` | Pre-mount phase. Initialize state before first render. |
+| `onLayoutReady` | `(c: Component) => void \| Promise<void>` | Synchronously after DOM mutations, before paint. |
+| `onReady` | `(c: Component) => void \| Promise<void>` | Mounted. Primary place for initial async data loading. |
+| `onLayoutDestroy` | `(c: Component) => void \| Promise<void>` | Pre-unmount. Cleanup layout-related observers. |
+| `onDestroy` | `(c: Component) => void \| Promise<void>` | Unmounted. Cleanup non-bus resources. |
+| `onCatch` | `(err: unknown, c: Component) => void` | Error boundary hook for view or effect errors. |
+| `onValidate` | `(c: Component) => Promise<ValidationResult>` | Component-wide form validation handler. |
+| `onPropChanging` | `(prop, oldVal, newVal) => boolean` | Global guard: returning `false` aborts property update. |
+| `onPropChange` | `(prop, val) => void` | Global post-change notification. |
+| `onChanging<Prop>` | `(oldVal, newVal) => boolean` | Property-specific guard: returning `false` aborts update. |
+| `onChange<Prop>` | `(newVal) => void` | Property-specific change notification. |
+| `onGet<Prop>` | `() => PropType` | Custom getter interceptor. |
+
 ### `ComponentDef<TStruct, TMsgHeaders>`
 Implementation definition passed to `useComponent`:
 
@@ -1477,7 +1972,8 @@ Instance interface returned by `useComponent`:
 - **Communication & Lifecycle**:
   - `c.msgBus`: Lifecycle-scoped message bus wrapper (auto-unwraps MobX observables, manages `abortSignal`, sets `headers.sourceId`).
   - `c.msgBroker`: Message broker configuration.
-  - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount.
+  - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount. It is per-mount: a new signal is created each time the view mounts (including the React StrictMode simulated re-mount), and it is `null` before the first mount.
+- **Params**: `$events` passed via `ComponentParams` (e.g. through `toReact`) are refreshed on every commit - handlers supplied or replaced on later renders are used, including `onPropChanging` / `onPropChange` / `onGetX`.
   - `c.effects`: Effect controllers with `.pause()`, `.resume()`, and `.stop()`.
 - **Rendering & Forms**:
   - `c.View`: React component view slot (`<c.View />`).
@@ -1560,6 +2056,7 @@ pnpm run lint
 ## License
 
 Proprietary / BUSL-1.1 (Business Source License). See `LICENSE` for details.
+MIT License. See `LICENSE` for details.
 
 ---
 
@@ -1627,11 +2124,48 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 `toReact` converts any dynstruct hook-constructor into an idiomatic, memoized React functional component (`React.memo`), enabling seamless integration into existing React codebases.
 
 ## 3. Cross-Links
-- [[INDEX.md]] - Knowledge Base Root
-- [[02-domain-model.md]] - Domain Contracts and Component Structs
-- [[03-setup-and-workflow.md]] - Setup, Build, Tests & Storybook Workflow
-- [[04-api-reference.md]] - Exhaustive API Reference
-- [[05-patterns-and-recipes.md]] - Storybook Examples, Recipes and Architecture Patterns
+
+- [Knowledge Base Index](./INDEX.md) - Knowledge Base Root
+- [Core Concepts](./topic--02-core-concepts.md) - Core Concepts and Component Structs
+- [Architecture & Wiring](./topic--03-architecture-and-wiring.md) - Architecture & Wiring
+- [React Integration](./topic--04-react-integration.md) - React Integration & Service Patterns
+- [API Reference](./topic--05-api-reference.md) - Exhaustive API Reference & Guide
+- [Domain Model](./topic--domain-model.md) - Domain Contracts and Component Structs
+- [Setup & Workflow](./topic--setup-and-workflow.md) - Setup, Build, Tests & Storybook Workflow
+- [License](./topic--license.md) - License Information
+
+---
+
+## Document: docs/topic--dependencies.md (Dependencies & AI Documentation for @actdim/dynstruct)
+
+# Dependencies & AI Documentation for `@actdim/dynstruct`
+
+> [!NOTE]
+> This document maintains a localized registry of internal workspace dependencies and third-party libraries for `@actdim/dynstruct`.
+> Consult linked guidelines when developing, refactoring, or integrating components.
+
+## Internal Workspace Dependencies
+
+| Internal Package | Relative Path | AI Documentation & Context |
+| :--- | :--- | :--- |
+| **`@actdim/msgmesh`** | [`../../msgmesh`](../../msgmesh) | [AGENTS.md](../../msgmesh/AGENTS.md) <br> [CLAUDE.md](../../msgmesh/CLAUDE.md) <br> [llms-full.txt](../../msgmesh/llms-full.txt) <br> [llms.txt](../../msgmesh/llms.txt) <br> [.along/](../../msgmesh/.along) <br> [docs/](../../msgmesh/docs) |
+| **`@actdim/utico`** | [`../../utico`](../../utico) | [AGENTS.md](../../utico/AGENTS.md) <br> [CLAUDE.md](../../utico/CLAUDE.md) <br> [llms-full.txt](../../utico/llms-full.txt) <br> [llms.txt](../../utico/llms.txt) <br> [.along/](../../utico/.along) <br> [docs/](../../utico/docs) |
+
+## Declared External Dependencies with AI Guidelines
+
+| Package | Ecosystem | Version | AI Guidelines / Instructions |
+| :--- | :--- | :--- | :--- |
+| **`cytoscape`** | `npm` | `3.34.3` | [AGENTS.md](../node_modules/cytoscape/AGENTS.md) |
+| **`eslint-plugin-jsx-a11y`** | `npm` | `6.10.2` | [docs/](../node_modules/eslint-plugin-jsx-a11y/docs) |
+
+## Transitive Dependency Guidelines & Invariants
+
+No exported invariants detected across current dependencies.
+
+## Usage in Agent Sessions
+When working on features involving any of the modules or external libraries above:
+1. **Internal Submodules**: Follow conventions in the linked package `AGENTS.md` or package `docs/`.
+2. **Third-Party Libraries**: Read the linked instruction files directly for framework-specific patterns and best practices.
 
 ---
 
@@ -1716,11 +2250,120 @@ Accessible on `c.model.$`:
 - **`SecurityService`**: Authentication domain (`AuthInfo`, `login`, `logout`, `refreshToken`, JWT token claims).
 
 ## 3. Cross-Links
-- [[INDEX.md]] - Knowledge Base Root
-- [[01-architecture.md]] - System Architecture
-- [[03-setup-and-workflow.md]] - Setup, Build & Storybook Workflow
-- [[04-api-reference.md]] - API Reference
-- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples
+
+- [Knowledge Base Index](./INDEX.md) - Knowledge Base Root
+- [01 Architecture](./topic--architecture.md) - System Architecture
+- [Core Concepts](./topic--02-core-concepts.md) - Core Concepts
+- [Architecture & Wiring](./topic--03-architecture-and-wiring.md) - Architecture & Wiring
+- [React Integration](./topic--04-react-integration.md) - React Integration & Service Patterns
+- [API Reference](./topic--05-api-reference.md) - API Reference & Guide
+- [Setup & Workflow](./topic--setup-and-workflow.md) - Setup, Build & Storybook Workflow
+- [License](./topic--license.md) - License Information
+
+---
+
+## Document: docs/topic--license.md (License)
+
+# License
+
+`@actdim/dynstruct` is distributed under the **Business Source License 1.1 (BUSL-1.1)**, converting to the open-source **MIT License** on the Change Date.
+
+- Repository file: [LICENSE](https://github.com/actdim/dynstruct/blob/main/LICENSE)
+
+## Summary of Terms
+
+- **Non-Commercial & Evaluation Use**: Free to use, test, copy, modify, and integrate for personal, educational, or internal non-production purposes.
+- **Commercial Use**: Requires a commercial license agreement from the Licensor if used in revenue-generating products or hosted services prior to the Change Date.
+- **Change Date**: Effective 2028-04-01, the software automatically transitions to the standard open-source **MIT License**.
+- **Commercial Contact**: `pavel.borodaev@gmail.com`
+
+---
+
+## Full License Text
+
+```text
+Business Source License 1.1
+
+Licensor:             Pavel Borodaev
+Licensed Work:        @actdim/dynstruct
+                      Copyright (c) 2025-2026 Pavel Borodaev
+Change Date:          2028-04-01
+Change License:       MIT
+
+-----------------------------------------------------------------------------
+
+TERMS
+
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work.
+
+The Licensor may make an Additional Use Grant, above, permitting limited
+production use.
+
+Effective on the Change Date, or the fourth anniversary of the first publicly
+available distribution of a specific version of the Licensed Work under this
+License, whichever comes first, the Licensor hereby grants you rights under
+the terms of the Change License, and the rights granted in the paragraph
+above terminate.
+
+-----------------------------------------------------------------------------
+
+USE LIMITATION
+
+You may not use the Licensed Work for commercial purposes without a separate
+written commercial license from the Licensor.
+
+Commercial purposes include, but are not limited to:
+- Using the Licensed Work in a product or service that generates revenue
+- Offering the Licensed Work as a hosted or managed service
+- Selling access to the Licensed Work or derivative works
+
+For commercial licensing, contact: pavel.borodaev@gmail.com
+
+-----------------------------------------------------------------------------
+
+COVENANTS OF LICENSOR
+
+In consideration of the right to use this License's text, and having agreed
+to be bound by its terms, the Licensor covenants to all who receive notice
+of this License that:
+
+1. The Licensor will specify as the Change License the MIT License.
+2. The Licensor will not modify the terms of the MIT License as applied
+   to the Licensed Work after the Change Date.
+
+-----------------------------------------------------------------------------
+
+NOTICE
+
+The Business Source License (this document) is not an Open Source License.
+However, the Licensed Work will eventually be made available under an Open
+Source License (MIT) after the Change Date: 2028-04-01.
+
+-----------------------------------------------------------------------------
+
+MIT License (effective 2028-04-01)
+
+Copyright (c) 2025-2026 Pavel Borodaev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
 
 ---
 
@@ -1769,8 +2412,12 @@ The Storybook suite provides live interactive demonstrations of all architectura
 - **`ServiceCallExample` & `SecurityServiceExample`**: Backend API invocation, authentication tokens, and login dialog flows.
 
 ## 4. Cross-Links
-- [[INDEX.md]] - Knowledge Base Root
-- [[01-architecture.md]] - Architecture
-- [[02-domain-model.md]] - Domain Model
-- [[04-api-reference.md]] - API Reference
-- [[05-patterns-and-recipes.md]] - Practical Recipes and Storybook Examples
+
+- [Knowledge Base Index](./INDEX.md) - Knowledge Base Root
+- [01 Architecture](./topic--architecture.md) - Architecture
+- [02 Domain Model](./topic--domain-model.md) - Domain Model
+- [Core Concepts](./topic--02-core-concepts.md) - Core Concepts
+- [Architecture & Wiring](./topic--03-architecture-and-wiring.md) - Architecture & Wiring
+- [React Integration](./topic--04-react-integration.md) - React Integration & Service Patterns
+- [API Reference](./topic--05-api-reference.md) - API Reference & Guide
+- [License](./topic--license.md) - License Information

@@ -69,9 +69,15 @@ export const Counter = toReact(useCounter);
 // <Counter counter={5} />
 ```
 
-### 4. Zero-Hooks Invariant (Strict Rule)
+### 4. Hooks Policy (Dynstruct-First, Not a Ban)
 
-Application UI components built with Dynstruct **MUST NOT** use React hooks (`useState`, `useEffect`, `useReducer`, `useMemo`, `useCallback`, `useRef`). All state, side effects, and calculations are managed by the Dynstruct component model:
+React hooks are **not forbidden**. Dynstruct was built to cover the needs of typical components, so that you do not have to think about `useCallback` / `useMemo`, dependency arrays, stable inline callbacks, or which built-in hook fits a case best. For typical scenarios and typical components everything is already solved by reactive model props, lifecycle events, effects, actions, bindings, and MsgMesh - built-in hooks are simply not needed there (in the vast majority of cases).
+
+- **Built-in hooks** (`useState`, `useEffect`, `useLayoutEffect`, `useReducer`, `useMemo`, `useCallback`, `useRef`): do not use them by default - use the Dynstruct replacement from the table below. Reach for one only in a non-typical case the component model does not cover, and leave a short comment explaining why.
+- **Custom and third-party hooks** (your own `useXxx`, library hooks such as a media player state hook): allowed inside Dynstruct components. Just do not break the Dynstruct ideology: state the rest of the app depends on lives in the model (`props`), communication goes through bindings and MsgMesh, and the hook stays an implementation detail of the component.
+- **React context**: usually unnecessary, because data flows down and up the hierarchy through bindings and MsgMesh. It is still allowed when a library or a service extension needs it (Dynstruct itself uses `useContext` in `ReactComponentContext`, and `ServiceProvider` uses `useEffect`).
+
+Typical React patterns and their Dynstruct replacements:
 
 | Standard React Pattern | Dynstruct Replacement | Rationale |
 |---|---|---|

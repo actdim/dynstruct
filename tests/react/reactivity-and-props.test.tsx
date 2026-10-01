@@ -284,3 +284,55 @@ describe('Global and Custom Property Hooks (onPropChanging, onPropChange, onGet)
     });
 });
 
+describe('toReact props sync', () => {
+    type LabelStruct = ComponentStruct<TestMsgStruct, {
+        props: {
+            label: string;
+        };
+    }>;
+
+    const useLabel = (params?: ComponentParams<LabelStruct>) => {
+        let c: Component<LabelStruct>;
+        let m: ComponentModel<LabelStruct>;
+        const def: ComponentDef<LabelStruct> = {
+            regType: 'LabelComp',
+            props: {
+                label: '',
+            },
+            view: () => <span data-testid="label">{m.label}</span>,
+        };
+        c = useComponent(def, params);
+        m = c.model;
+        return c;
+    };
+
+    const Label = toReact(useLabel);
+
+    it('syncs changed props into the model without render-phase updates', () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            const tree = (label: string) => (
+                <ComponentContextProvider value={{ msgBus }}>
+                    <Label label={label} />
+                </ComponentContextProvider>
+            );
+            const { rerender } = render(tree('first'));
+            expect(screen.getByTestId('label')).toHaveTextContent('first');
+
+            rerender(tree('second'));
+            expect(screen.getByTestId('label')).toHaveTextContent('second');
+
+            const renderPhaseWarnings = errorSpy.mock.calls.filter((args) =>
+                args.some(
+                    (arg) =>
+                        typeof arg === 'string' &&
+                        arg.includes('Cannot update a component'),
+                ),
+            );
+            expect(renderPhaseWarnings).toHaveLength(0);
+        } finally {
+            errorSpy.mockRestore();
+        }
+    });
+});
+
