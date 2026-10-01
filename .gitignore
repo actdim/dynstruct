@@ -140,4 +140,10 @@ storybook-static
 
 # VitePress
 docs/.vitepress/dist
-docs/.vitepress/cache
+docs/.vitepress/cache
+
+# Along: generated dashboard exports and session state (must not be tracked)
+.along/dashboard.html
+.along/DASHBOARD.md
+.along/.session/
+.along/diagnostics/
