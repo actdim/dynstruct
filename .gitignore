@@ -146,4 +146,8 @@ docs/.vitepress/cache
 .along/dashboard.html
 .along/DASHBOARD.md
 .along/.session/
-.along/diagnostics/
+.along/diagnostics/
+
+# Python bytecode cache (Along lifecycle scripts)
+__pycache__/
+*.pyc

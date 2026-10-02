@@ -4,7 +4,7 @@ slug: INDEX
 title: '@actdim/dynstruct - Knowledge Base Topic Index'
 type: index
 created: 2026-09-10
-updated: 2026-10-01
+updated: 2026-10-02
 tags: [index, kb, topics, map]
 ---
 

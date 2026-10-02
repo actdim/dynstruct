@@ -10,6 +10,7 @@ Commit `2979886`.
 - Components no longer break under the React StrictMode effect re-mount (`bug--strictmode-lifecycle`).
 - `params.$events` callbacks are no longer frozen at the first render: lifecycle hooks, `onCatch` and model event handlers call the latest ones (`bug--stale-params-events`).
 - Syncing incoming `params` into the model no longer mutates MobX observables during render (`bug--render-phase-props-sync`).
+- `npm test` runs both the node and React vitest suites (commit `368c305`).
 
 ### Added
 - `net`: `HttpClientError` / `HttpNetworkError` classification and `isNetworkFailure` (browser and node network errors).
@@ -30,4 +31,4 @@ Commits `3c37508`, `14857fe`.
 
 ## Earlier versions
 
-See the git history (`git log --oneline`).
+See the [Changelog section of README.md](./README.md#changelog).
