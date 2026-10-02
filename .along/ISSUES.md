@@ -35,8 +35,8 @@
 
 ## Done (recent)
 - [x] `(docs)` [readme-version-history](ISSUES/done/docs--readme-version-history.md)
+- [x] `(docs)` [mit-license-leftovers](ISSUES/done/docs--mit-license-leftovers.md)
 - [x] `(task)` [release-v1-8-0](ISSUES/done/task--release-v1-8-0.md)
 - [x] `(task)` [along-metadata-reconciliation](ISSUES/done/task--along-metadata-reconciliation.md)
 - [x] `(docs)` [child-composition-and-bindprop-priority](ISSUES/done/docs--child-composition-and-bindprop-priority.md)
-- [x] `(bug)` [strictmode-lifecycle](ISSUES/done/bug--strictmode-lifecycle.md)
-<!-- 8 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 9 older completed issue(s) archived in .along/ISSUES/done/ -->

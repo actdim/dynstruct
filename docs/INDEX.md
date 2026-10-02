@@ -82,7 +82,7 @@ flowchart TD
 - **[01 Architecture](./topic--architecture.md)** (topic) `architecture`
 - **[Dependencies & AI Documentation for @actdim/dynstruct](./topic--dependencies.md)** (topic) `dependencies`, `subproject`, `ai-context`, `rules`
 - **[02 Domain Model](./topic--domain-model.md)** (topic) `domain-model`
-- **[License](./topic--license.md)** (license) `license`, `busl`
+- **[License](./topic--license.md)** (license) `license`, `mit`
 - **[03 Setup And Workflow](./topic--setup-and-workflow.md)** (topic) `setup-and-workflow`
 
 ---

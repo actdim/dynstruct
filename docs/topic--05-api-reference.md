@@ -273,7 +273,6 @@ pnpm run lint
 
 ## License
 
-Proprietary / BUSL-1.1 (Business Source License). See `LICENSE` for details.
 MIT License. See `LICENSE` for details.
 
 ---

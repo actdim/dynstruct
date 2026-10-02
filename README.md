@@ -4,7 +4,6 @@
 
 [![npm version](https://img.shields.io/npm/v/@actdim/dynstruct.svg)](https://www.npmjs.com/package/@actdim/dynstruct)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
-[![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-red.svg)](LICENSE)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
 
@@ -294,5 +293,4 @@ Developed with [Along](https://github.com/actdim/along) - a provider-agnostic co
 
 ## License
 
-Proprietary / BUSL-1.1. See [LICENSE](LICENSE) for details.
 MIT License. See [LICENSE](LICENSE) for details.

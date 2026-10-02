@@ -12,7 +12,6 @@
 
 [![npm version](https://img.shields.io/npm/v/@actdim/dynstruct.svg)](https://www.npmjs.com/package/@actdim/dynstruct)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
-[![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-red.svg)](LICENSE)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
 
@@ -125,9 +124,183 @@ Developed with [Along](https://github.com/actdim/along) - a provider-agnostic co
 
 ---
 
+## Changelog
+
+### 1.8.0 (2026-10-01)
+- `componentModel/react`: components survive the React StrictMode effect re-mount (`bug--strictmode-lifecycle`)
+- `params.$events` callbacks are no longer frozen at the first render; lifecycle hooks, `onCatch` and model event handlers call the latest ones (`bug--stale-params-events`)
+- Syncing incoming `params` into the model no longer mutates MobX observables during render (`bug--render-phase-props-sync`)
+- `net`: `HttpClientError` / `HttpNetworkError` classification (`NetworkErrorKind`) and `isNetworkFailure`; docs on `def.children` composition and `bindProp` priority; `npm test` now runs both the node and React vitest suites
+
+### 1.7.2 (2026-09-27)
+- Docs: `ComponentStructExt`, `ComponentProp<T>` reactivity modes and other implemented features documented
+- `peerDependencies` on `@actdim/msgmesh` / `@actdim/utico` aligned with published npm versions (`>=1.7.0`)
+- Documentation CI workflow and lockfile synchronization fixed
+
+### 1.7.0 - 1.7.1 (2026-09-11)
+- Docs and tooling only (AI guidelines, VitePress documentation portal, GitHub Pages workflow); no library changes
+
+### 1.5.15 (2026-09-07)
+- `appDomain/commonContracts`: `params` of the `$NAV_GOTO` message is now optional
+- React test suites typed without `any`
+
+### 1.5.7 - 1.5.14 (2026-08-27 - 2026-09-07)
+- Docs, Along metadata, ESLint config and version bumps only; no library changes
+
+### 1.5.6 (2026-08-27)
+- `net/request`: response `Content-Type` is validated against the requested one (throws `HttpClientError` on mismatch); `getHeaderValue`, `getBaseContentType` added
+- `net/httpClient`: improved `extractApiName` and init error handling; `ToApiName` type added
+- `IRequestParams` / `IRequestCallbacks` are now `type` aliases instead of interfaces
+
+### 1.5.5 (2026-08-26)
+- `services/react/SecurityService`: auth support updates; `$RELOAD` message channel added
+- `globals`: `__DYNSTRUCT__` flags read from the global object instead of `window`
+- tsconfig split (`tsconfig.base` / `build` / `dev`), dependency updates, AGENTS.md and KB docs
+
+### 1.4.8 (2026-06-11)
+- **Breaking:** component event handlers moved from `params` to `params.$events`
+- **Breaking:** `net/apiError` renamed to `net/httpClientError`, `ApiError` renamed to `HttpClientError`
+- `appDomain/securityContracts`: `$AUTH_APPLY` channel to apply auth to outgoing requests
+- `ErrorBoundary` re-entrancy guard; React vitest suite added
+
+### 1.4.7 (2026-06-08)
+- Extendable security system: `AuthScheme` and per-scheme sign-in credentials (`BasicSignInCredentials`, `BearerSignInCredentials`, ...); `SecurityService` reworked
+- **Breaking:** `$AUTH_SESSION_GET` / `$AUTH_SESSION_CHANGED` renamed to `$AUTH_INFO_GET` / `$AUTH_INFO_CHANGED`
+- **Breaking:** `net/client` (`ClientBase`) renamed to `net/httpClient` (`HttpClient`, `extractApiName`); `componentModel/react/react` renamed to `componentModel/react/hooks`
+- `appDomain/commonContracts`: message taxonomy types (`EventSeverity`, `AppMsgCategory`, `Intent`, ...); `navigation`: `getUrlBuilder`, `getUrlMatcher`
+
+### 1.4.6 (2026-06-04)
+- `publishConfig` added to `package.json`; no library changes
+
+### 1.4.4 (2026-05-15)
+- `defineByKeyPath`: default key path depth reduced from 5 to 3 after dependency upgrade
+
+### 1.4.3 (2026-05-15)
+- License and dependency updates only; no library changes
+
+### 1.4.2 (2026-05-15)
+- README cosmetic updates only; no library changes
+
+### 1.4.1 (2026-05-11)
+- Computed (getter) model props backed by MobX `computed`; `defineByKeyPath`, `observableWithPaths`
+- Array observability fixes
+- `ComponentProp.reactive` (`true | false | 'shallow'`) controls prop reactivity
+- `toPlain` added
+
+### 1.4.0 (2026-05-08)
+- **Breaking:** `ComponentImplStruct` renamed to `ComponentStructExt`, `mapToInput` renamed to `mapToEdit`; `HtmlInputProps<T>` is generic
+- `componentModel/react`: incoming params are synced into the model on every render (fixes standard React params with `toReact`)
+
+### 1.3.8 (2026-05-05)
+- Model state under `$` via `BaseComponentModel`; `mapToInput(path, exclude)` returns `HtmlInputProps`
+- `bindProp` accepts key paths (`KeyPath`)
+- Validation refactoring and fixes
+
+### 1.3.7 (2026-05-01)
+- `prop()`, `ComponentProp`, `isComponentProp` for declaring props with metadata
+- `validate` and `mapToInput` helpers; `ChangeEventHandler` / `BlurEventHandler` types
+
+### 1.3.5 (2026-04-28)
+- **Breaking:** `ComponentBase` renamed to `Component`
+- `ComponentImplStruct`, `ComponentState`, `ComponentPropState` added; `SecurityService` / `StorageService` updates
+
+### 1.3.4 (2026-04-24)
+- `ComponentChildren`: capitalized keys expose a child component's `View` for `<c.children.Name />`
+
+### 1.3.3 (2026-04-24)
+- **Breaking:** `componentModel/react` moved to `componentModel/react/react`; `componentModel/scope` and `DisposableComponent` removed
+- **Breaking:** `ComponentMethodStruct` renamed to `ComponentActionStruct`; `createRecursiveProxy` replaced by `createModel`
+
+### 1.3.2 (2026-04-22)
+- **Breaking:** `SecurityProvider` replaced by `services/react/SecurityService`; `appDomain/commonContracts` split out of `appContracts`; `securityContracts` moved to `appDomain/`
+- Lifecycle events `onInit`, `onLayoutReady`, `onReady`, `onLayoutDestroy`, `onDestroy`, `onCatch`; `fallbackView`; component `run` and `abortSignal`
+- New channels `$NAV_HISTORY_BACK`, `$NAV_HISTORY_FORWARD`, `$CONFIG_SET`, `$CONFIG_CHANGED`; `di/diContracts`
+- `componentContext` moved to `componentModel/react/`
+
+### 1.3.1 (2026-02-21)
+- Internal cleanup (type casts, unused view arguments); no API changes
+
+### 1.3.0 (2026-02-16)
+- Unmount support: component message bus subscriptions are aborted via `AbortSignal` when the component unmounts (`getComponentMsgBus` takes a global abort signal)
+- `BaseSecurityMsgStruct` is now based on `MsgStruct`
+
+### 1.2.9 (2026-02-15)
+- `componentModel/react/errorBoundary`: `ErrorBoundary` added; effect fixes
+- `isComponent` / `$isComponent` brand; `DynamicContent` updates
+- **Breaking:** service adapters (`registerAdapters`, `MsgProviderAdapter`, `ToMsgStruct`, ...) moved from `componentModel/adapters` to `@actdim/msgmesh`
+
+### 1.2.7 (2026-02-13)
+- **Breaking:** `getFC` renamed to `toReact`
+- Components implement `[Symbol.dispose]`; `onError` disposes the component
+- `net/client`: requests abortable via an internal `AbortController` combined with the context `abortSignal`; `[Symbol.dispose]` support
+
+### 1.2.6 (2026-01-22)
+- **Breaking:** message channel constants renamed to dot notation (`APP.NAV.GOTO`, `APP.STORE.GET`, ...); `$KV_STORE_*` renamed to `$STORE_*`, security `$SIGNIN` etc. renamed to `$AUTH_SIGNIN` etc.
+- `appDomain/util`: `toAppError`, `isAppError`; `SecurityProvider` / `SecurityContext` no longer generic over user info
+- Abort handling fixes
+
+### 1.1.7 (2026-01-16)
+- Non-React services: `createServiceProvider`, `createStorageService`; React wrappers moved to `services/react/`
+- **Breaking:** components created by `getFC` exported without the `FC` suffix (`NavServiceFC` -> `NavService`, `StorageServiceFC` -> `StorageService`)
+
+### 1.1.6 (2026-01-16)
+- Component id fixes
+- **Breaking:** `BaseComponentContext` renamed to `BaseContext`; `useBaseAppContext` removed
+
+### 1.1.5 (2026-01-15)
+- **Breaking:** `$id` / `$key` symbols replaced with plain `$id` / `$key` params
+
+### 1.1.4 (2026-01-15)
+- **Breaking:** `componentModel/componentModel` split into `componentModel/contracts`, `componentModel/core` and `componentModel/react`
+- Component id system: per-type sequential ids via context `getNextId`, `ComponentTreeNode`, `getComponentNameByCaller`; disposing fix
+- `ValueConverter`, `ValidationResult` types; `StorageService` test
+
+### 1.1.2 (2026-01-08)
+- **Breaking:** service adapters refactored: `ToMsgStruct`, `ToMsgChannelPrefix`, `getMsgChannelSelector`, `BaseServiceSuffix` replace `BASE_API_CHANNEL_PREFIX` / `ToApiChannelPrefix`
+
+### 1.1.1 (2026-01-06)
+- Message broker typing fix for `msgScope` provide/subscribe channels
+
+### 1.1.0 (2026-01-06)
+- Component `effects` with `createEffect` / `EffectController` (MobX `autorun` with cleanup)
+- Stricter API typing; `onDestroy` receives the component
+
+### 1.0.7 (2026-01-05)
+- **Breaking:** `Component` renamed to `ComponentDef`, `ComponentModelBase` to `ComponentBase`; `AppBusChannels` to `AppMsgChannels`
+- `registerAdapters` moved to `componentModel/adapters` (takes `MsgProviderAdapter[]` and an abort signal); `ServiceProvider` added
+- `DisposableComponent` implements `Disposable`
+
+### 1.0.5 (2026-01-01)
+- Version bump and VS Code snippet update only; no library changes
+
+### 1.0.4 (2025-12-31)
+- `ComponentContextProvider` / `useComponentContext`; `ComponentMsgFilter`
+- `NavService` and `StorageService` components; `registerAdapters` / `MsgBusAdapterProvider`
+- **Breaking:** `*BusStruct` types renamed to `*MsgStruct` (`BaseAppBusStruct` -> `BaseAppMsgStruct`, ...)
+
+### 1.0.3 (2025-11-14)
+- Component id support; `DynamicContent` / `useDynamicContent`; `globals` (`getGlobalFlags`)
+- **Breaking:** `bindProp` takes a target getter (`bindProp(() => obj, 'prop')`); `$NAV_GET_CONTEXT` value changed, `$NAV_CONTEXT_CHANGED` added
+- Storybook examples
+
+### 1.0.2 (2025-11-10)
+- Dependency updates only; no library changes
+
+### 1.0.0 (2025-11-09)
+- `$NAV_READ_HISTORY` / `NavHistory` added
+- **Breaking:** `DisposableModel` removed
+- pnpm and test tooling
+
+### 0.9.3 (2025-10-06)
+- `net/apiError`: `http-status` default import fix; package updates
+
+### 0.9.0 (2025-07-08)
+- Initial version: `componentModel` (component model, scope), `appDomain` (app contracts, navigation, security provider), `net` (`client`, `request`, `apiError`)
+
+---
+
 ## License
 
-Proprietary / BUSL-1.1. See [LICENSE](LICENSE) for details.
 MIT License. See [LICENSE](LICENSE) for details.
 
 ---
@@ -1225,7 +1398,7 @@ Inside the parent hook-constructor and view:
 
 ## Component Events & Lifecycle (`events` vs. Hooks)
 
-Dynstruct uses explicit lifecycle hooks declared in `def.events`. They replace built-in React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) in typical components, so those are not needed there. Hooks are not banned, though: custom and third-party hooks are allowed as long as they respect the component model (see "Hooks Policy" in the React Integration section).
+Dynstruct uses explicit lifecycle hooks declared in `def.events`. They replace built-in React lifecycle hooks (`useEffect`, `useLayoutEffect`, `useState`, `useReducer`) in typical components, so those are not needed there. Hooks are not banned, though: custom and third-party hooks are allowed as long as they respect the component model (see [Hooks Policy](./topic--04-react-integration.md)).
 
 | Event Hook | Phase | Typical Use Case |
 |---|---|---|
@@ -2026,21 +2199,22 @@ export const Default: StoryObj<typeof Counter> = {
 
 ### Running Unit Tests
 
-Run Vitest unit tests:
+Run all Vitest tests (Node.js suite, then React suite):
 
 ```bash
 pnpm run test
 ```
 
-Watch mode:
+Watch mode (Node.js suite):
 
 ```bash
 pnpm run test:w
 ```
 
-React environment tests:
+Single suite: Node.js (`test:node`) or React environment (`test:react`):
 
 ```bash
+pnpm run test:node
 pnpm run test:react
 ```
 
@@ -2055,7 +2229,6 @@ pnpm run lint
 
 ## License
 
-Proprietary / BUSL-1.1 (Business Source License). See `LICENSE` for details.
 MIT License. See `LICENSE` for details.
 
 ---
@@ -2266,85 +2439,24 @@ Accessible on `c.model.$`:
 
 # License
 
-`@actdim/dynstruct` is distributed under the **Business Source License 1.1 (BUSL-1.1)**, converting to the open-source **MIT License** on the Change Date.
+`@actdim/dynstruct` is distributed under the **MIT License**.
 
 - Repository file: [LICENSE](https://github.com/actdim/dynstruct/blob/main/LICENSE)
 
 ## Summary of Terms
 
-- **Non-Commercial & Evaluation Use**: Free to use, test, copy, modify, and integrate for personal, educational, or internal non-production purposes.
-- **Commercial Use**: Requires a commercial license agreement from the Licensor if used in revenue-generating products or hosted services prior to the Change Date.
-- **Change Date**: Effective 2028-04-01, the software automatically transitions to the standard open-source **MIT License**.
-- **Commercial Contact**: `pavel.borodaev@gmail.com`
+- **Use, modification, distribution**: free for any purpose, including commercial use, modification, redistribution, sublicensing and sale.
+- **Condition**: the copyright notice and the permission notice must be included in all copies or substantial portions of the software.
+- **Warranty**: the software is provided "as is", without warranty of any kind.
 
 ---
 
 ## Full License Text
 
 ```text
-Business Source License 1.1
+MIT License
 
-Licensor:             Pavel Borodaev
-Licensed Work:        @actdim/dynstruct
-                      Copyright (c) 2025-2026 Pavel Borodaev
-Change Date:          2028-04-01
-Change License:       MIT
-
------------------------------------------------------------------------------
-
-TERMS
-
-The Licensor hereby grants you the right to copy, modify, create derivative
-works, redistribute, and make non-production use of the Licensed Work.
-
-The Licensor may make an Additional Use Grant, above, permitting limited
-production use.
-
-Effective on the Change Date, or the fourth anniversary of the first publicly
-available distribution of a specific version of the Licensed Work under this
-License, whichever comes first, the Licensor hereby grants you rights under
-the terms of the Change License, and the rights granted in the paragraph
-above terminate.
-
------------------------------------------------------------------------------
-
-USE LIMITATION
-
-You may not use the Licensed Work for commercial purposes without a separate
-written commercial license from the Licensor.
-
-Commercial purposes include, but are not limited to:
-- Using the Licensed Work in a product or service that generates revenue
-- Offering the Licensed Work as a hosted or managed service
-- Selling access to the Licensed Work or derivative works
-
-For commercial licensing, contact: pavel.borodaev@gmail.com
-
------------------------------------------------------------------------------
-
-COVENANTS OF LICENSOR
-
-In consideration of the right to use this License's text, and having agreed
-to be bound by its terms, the Licensor covenants to all who receive notice
-of this License that:
-
-1. The Licensor will specify as the Change License the MIT License.
-2. The Licensor will not modify the terms of the MIT License as applied
-   to the Licensed Work after the Change Date.
-
------------------------------------------------------------------------------
-
-NOTICE
-
-The Business Source License (this document) is not an Open Source License.
-However, the Licensed Work will eventually be made available under an Open
-Source License (MIT) after the Change Date: 2028-04-01.
-
------------------------------------------------------------------------------
-
-MIT License (effective 2028-04-01)
-
-Copyright (c) 2025-2026 Pavel Borodaev
+Copyright (c) 2025 Pavel Borodaev (@actdim/dynstruct)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -2353,8 +2465,8 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -2392,8 +2504,10 @@ pnpm add @actdim/msgmesh @actdim/utico react react-dom mobx mobx-react-lite mobx
 | Command | Action | Description |
 |---|---|---|
 | `pnpm run build` | `tsc -b tsconfig.json && vite build` | Typechecks and compiles ESM packages with `.d.ts` declaration maps |
-| `pnpm run test` | `npx vitest --config=vitest.node.config.ts --no-cache` | Runs unit test suite under Node.js |
-| `pnpm run test:w` | `npx vitest --config=vitest.node.config.ts --watch` | Runs test watcher in interactive mode |
+| `pnpm run test` | `npm run test:node && npm run test:react` | Runs all tests: the Node.js suite, then the React (happy-dom) suite |
+| `pnpm run test:node` | `npx vitest --config=vitest.node.config.ts --no-cache` | Runs the Node.js unit test suite only |
+| `pnpm run test:react` | `npx vitest --config=vitest.react.config.ts --no-cache` | Runs the React (happy-dom) test suite only |
+| `pnpm run test:w` | `npx vitest --config=vitest.node.config.ts --watch` | Runs the Node.js test watcher in interactive mode |
 | `pnpm run storybook` | `storybook dev -p 6006` | Launches interactive Storybook environment at `http://localhost:6006` |
 | `pnpm run build-storybook` | `storybook build` | Builds static Storybook documentation bundle |
 | `pnpm run typecheck` | `tsc -b tsconfig.json` | Validates TypeScript compiler checks across all source files and stories |
