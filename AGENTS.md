@@ -345,6 +345,8 @@ c = useComponent(def, params) as Component<ImplStruct>;
 Avoid:
 - introducing local `useState`/`useReducer` for state that belongs to component model
 - ad-hoc cross-component mutation without message bus or bindings
+- passing callback props (`onSelect*`, `onNavigate*`, `onOpen*`, `onClose*`, `onChange*`, etc.) across components or features: use typed MsgMesh channels instead
+- treating `def.actions` as event callbacks to pass to children: `actions` are internal model mutators for atomic, transactional local state mutations, NOT cross-component event handlers
 - hidden dependencies not declared in `children` or `msgScope`
 - rendering dynstruct components inline in `view` with props/callbacks (`<Xxx value={m.value} onX={() => ...} />`, including `toReact` exports) - declare them in `children` instead
 - `bind(get, set)` pairs that just read and write one model prop - use `bindProp(() => m, 'prop')`
@@ -427,25 +429,29 @@ For service APIs:
 
 ## Composition and Performance Rules
 
-- **Nested dynstruct components go into `def.children`, never inline in `view`** (priority rule). Declare the child's struct in `children`, instantiate it with its hook-constructor, pass values via bindings (`bindProp` first, see Binding priority) and callbacks as params, and render it as `<c.children.Name />`.
+- **Nested dynstruct components go into `def.children`, never inline in `view`** (priority rule). Declare the child's struct in `children`, instantiate it with its hook-constructor, pass inputs via bindings (`bindProp` first, see Binding priority), and render it as `<c.children.Name />`.
   - Why: the child is created once and its bindings are lazy, so the parent does not track the child's values and only the child re-renders when they change - no `useMemo` / `useCallback` needed.
-  - Inline `<Xxx prop={m.value} onX={() => ...} />` in `view` is kept only for compatibility: the parent tracks `m.value` and re-renders on every change, and each render passes new params/callbacks that are re-synced into the child on every commit.
+  - Communication, selection, and coordination between components MUST go through typed MsgMesh channels (`c.msgBus.send`, `msgBroker.subscribe`), NEVER via callback props (`onSelect*`, `onDismiss*`, `onNavigate*`).
+  - Inline `<Xxx prop={m.value} />` in `view` is kept only for compatibility: the parent tracks `m.value` and re-renders on every change, causing unnecessary overhead.
   - A fragment that needs no model of its own is shortened to a `React.FC` child: `section: () => <div>{m.x}</div>` (see `componentState/StateExample.tsx`).
 
   ```tsx
-  // struct: children: { toast: ToastStruct }
+  // struct: children: { searchBar: SearchBarStruct; userList: UserListStruct }
   children: {
-      toast: useToast({
-          items: bindProp(() => m, 'items'),
-          onDismiss: (id) => {
-              m.items = m.items.filter((item) => item.id !== id);
-          },
-      }),
+      searchBar: useSearchBar({}),
+      userList: useUserList({}),
   },
-  view: () => <c.children.Toast />,
+  // searchBar dispatches: c.msgBus.send({ channel: 'APP.SEARCH.CHANGED', payload: { query } })
+  // userList subscribes in msgBroker: 'APP.SEARCH.CHANGED': { in: { callback: (msg) => { ... } } }
+  view: () => (
+      <div>
+          <c.children.SearchBar />
+          <c.children.UserList />
+      </div>
+  ),
 
-  // Avoid (compatibility only):
-  // view: () => <Toast items={m.items} onDismiss={(id) => { ... }} />,
+  // Strictly avoid callback prop-drilling:
+  // children: { searchBar: useSearchBar({ onSearch: (q) => m.query = q }) } // ANTI-PATTERN
   ```
 - Keep JSX mostly structural; put behavior in `actions/events/effects`.
 - Reuse existing component structures rather than creating parallel incompatible patterns.
