@@ -10,7 +10,7 @@ created: 2026-10-01
 updated: 2026-10-01
 agent: claude-code
 tags: [tests, vitest, ci]
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 blocked_by: []
 related: []
 ---

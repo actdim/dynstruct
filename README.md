@@ -19,10 +19,11 @@
 - **Reactivity Boilerplate**: Tired of manual `makeAutoObservable`, `autorun` cleanup, and useEffect dependencies?
 
 ### The Output You Get
-- ⚡ **Explicit Type-Safe Contracts**: Declare props, actions, child structures, and message channels at the TypeScript level before writing UI code.
-- 🎯 **Decoupled Architecture**: Components interact over typed message channels (`@actdim/msgmesh`) rather than hard-coded callbacks.
-- 🔄 **Automatic Fine-Grained Reactivity**: Mutate `model.prop = value` and UI updates automatically. Zero extra hooks or boilerplate.
-- 🎨 **First-Class UI Adapter Support**: Ready-to-use Material UI adapters via [`@actdim/dynstruct-mui`](https://www.npmjs.com/package/@actdim/dynstruct-mui).
+- Explicit Type-Safe Contracts: Declare props, actions, child structures, and message channels at the TypeScript level before writing UI code.
+- Pure Event-Driven Architecture: Components interact over typed message channels (`@actdim/msgmesh`) rather than callback props (`onSelect*`, `onNavigate*`, etc.).
+- Strict Role Separation: Component `props` are strictly for configuration and inputs; `actions` are internal MobX-style transactions for local state; all cross-component, cross-view, and navigation coordination flows over the message bus.
+- Automatic Fine-Grained Reactivity: Mutate `model.prop = value` and UI updates automatically. Zero extra hooks or boilerplate.
+- First-Class UI Adapter Support: Ready-to-use Material UI adapters via [`@actdim/dynstruct-mui`](https://www.npmjs.com/package/@actdim/dynstruct-mui).
 
 ---
 

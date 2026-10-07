@@ -8,7 +8,7 @@ created: 2026-08-28
 updated: 2026-08-28
 agent: antigravity
 tags: [dynstruct, http-client, kubb, orval, api, adapters]
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 blocked_by: []
 related: []
 ---

@@ -10,7 +10,6 @@ updated: 2026-09-07
 completed: 2026-09-07
 agent: antigravity
 tags: [build, typescript, contracts, tests]
-milestone: v1.3.0-knowledge-base-and-graph
 blocked_by: []
 related: []
 ---

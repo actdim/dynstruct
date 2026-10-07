@@ -11,7 +11,7 @@ agent: claude
 tags: [react, mobx, toReact]
 blocked_by: []
 related: []
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 ---
 
 # Props-to-model sync mutates MobX observables during render

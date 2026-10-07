@@ -12,7 +12,6 @@ tags:
   - testing
   - jest-dom
   - dependencies
-milestone: v1.3.0-knowledge-base-and-graph
 blocked_by: []
 related: []
 ---

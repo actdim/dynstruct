@@ -97,8 +97,16 @@ To connect standard inputs (HTML `<input>` or MUI `<TextField>`) without writing
 <input type="text" {...c.mapToEdit('username')} />
 
 // Fully compatible with MUI / @actdim/dynstruct-mui:
-<TextField label="Email" {...c.mapToEdit('user.email')} />
 ```
+
+### 6. Event Coordination & Component Composition Rules
+
+When integrating Dynstruct components in React applications:
+- **Zero Callback Props**: Strictly avoid passing callback props (`onSelect*`, `onNavigate*`, `onOpen*`, `onClose*`, `onChange*`) between components, features, or pages. Callback prop drilling creates dual sources of truth, timing races, and state desynchronization.
+- **Pure Event-Driven MsgMesh Architecture**: All cross-component, cross-feature, navigation, and domain coordination MUST flow through typed MsgMesh channels (`c.msgBus.send`, `msgBroker.subscribe`).
+- **Role Separation**: `props` are strictly for component configuration and data bindings (`bindProp`); `actions` are internal model mutators (atomic MobX transactions) for component-local state, NOT cross-component callbacks.
+- **Children Declared in `def.children`**: Declare child components in `def.children` and render them as `<c.children.Name />`, rather than inline JSX `<Child onSelect={...} />`.
+- **Persistent DOM Mounting**: Sibling views that listen to the message bus (e.g. Master-Detail panels, Explorer Content vs Media Viewer) should stay mounted in the DOM and toggle via CSS (`hidden` vs `flex` / `block`). Because unmounting triggers `releaseMount()` and drops all `msgBroker` subscriptions, persistent mounting ensures background views never miss messages and preserve scroll/input state. Alternatively, configure the relevant bus channels with `replayBufferSize: 1`.
 
 ---
 

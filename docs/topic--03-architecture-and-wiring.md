@@ -37,18 +37,20 @@ const child = useInput({
 });
 ```
 
-### 2. Direct Model Mutation and `onChangeX` Handlers
+### 2. Model Property Observation via `events.onChange<Prop>`
 
-Child components can trigger parent logic directly via property change handlers:
+Components can react internally to their own property mutations via built-in `onChange<Prop>` lifecycle handlers:
 
 ```typescript
 events: {
     onChangeCounter: (newValue) => {
-        // React to child or property changes
+        // React internally to property changes
         console.log('Counter changed:', newValue);
-    }
+    },
 }
 ```
+
+Note: This is strictly for component-internal reactivity. Cross-component notification must be dispatched via MsgMesh rather than callback prop chains.
 
 ---
 
@@ -131,6 +133,99 @@ const def: ComponentDef<UserCardStruct> = {
 | Calling `c.msgBus.on(...)` manually in `onReady` / `useEffect` | Declare subscriptions in `def.msgBroker.subscribe` | Clear component contracts, automatic lifecycle binding |
 | Calling raw `msgBus` without unwrapping MobX observables | Use `c.msgBus` (automatically applies `normalizePayload`) | Prevents reactive proxy leaks across event subscribers |
 | Manually unsubscribing in `onDestroy` | `c.msgBus` automatically cancels subscriptions on unmount | Zero leak risk via `component.abortSignal` |
+
+---
+
+## Pure Event-Driven Architecture with MsgMesh (No Callback Props)
+
+A core architectural principle of Dynstruct applications is eliminating classical React callback prop drilling in favor of typed message bus channels.
+
+### The Problem: Callback Prop Drilling Anti-Pattern
+
+In classical React applications, state changes and user interactions are coordinated by passing callback functions down through props (`onSelectFolder`, `onSelectFile`, `onNavigate`, `onClose`, `onChange`). In non-trivial applications, this approach leads to severe architectural problems:
+- **Dual Sources of Truth**: Parents and children maintain separate copies of state that must be synchronized through callbacks.
+- **Timing Races and Stale Closures**: Passing inline closures down the component tree leads to stale closures and subtle race conditions during async operations.
+- **Excessive Re-renders**: Whenever a parent passes a new inline callback, children must re-evaluate props and frequently re-render unless wrapped in `useCallback` and `React.memo`.
+- **Tight Coupling**: Reorganizing or moving a component requires rewiring entire callback prop chains across intermediate components that do not care about the event.
+
+### The Dynstruct Architecture: Clear Role Separation
+
+Dynstruct enforces a clean separation of roles:
+1. **Component `props`**: Strictly for component configuration, initial parameters, and reactive bindings (`bindProp(() => m, 'prop')`).
+2. **Component `actions`**: Internal model mutators (atomic MobX transactions) for component-local state. They are NOT cross-component event handlers and MUST NOT be passed down to children as callback props.
+3. **Cross-Component Coordination**: All cross-component, cross-feature, cross-view, and navigation coordination MUST flow through typed MsgMesh channels (`c.msgBus.send`, `msgBroker.subscribe`).
+
+### Composing Children in `def.children`
+
+Nested Dynstruct components are declared in `def.children` using their hook-constructors and rendered as `<c.children.Name />`:
+
+```tsx
+// Anti-pattern: passing callbacks to child components
+children: {
+    sidebar: useSidebar({
+        onSelectFolder: (id) => { m.selectedFolderId = id; }, // FORBIDDEN ANTI-PATTERN
+    }),
+}
+
+// Recommended Dynstruct pattern: zero callback props
+children: {
+    sidebar: useSidebar({}),
+    contentView: useFolderContentView({}),
+},
+// Sidebar dispatches over the bus:
+// c.msgBus.send({ channel: 'APP.VFS.SELECT_FOLDER', payload: { folderId } })
+
+// Sibling or parent subscribes declaratively in msgBroker:
+msgBroker: {
+    subscribe: {
+        'APP.VFS.SELECT_FOLDER': {
+            in: {
+                callback: (msg) => {
+                    m.selectedFolderId = msg.payload.folderId;
+                },
+            },
+        },
+    },
+},
+view: () => (
+    <div className="flex h-full">
+        <c.children.Sidebar />
+        <c.children.ContentView />
+    </div>
+),
+```
+
+### View Lifecycle & Persistent DOM Mounting Pattern
+
+In Dynstruct, when a React component is unmounted from the DOM tree, `useComponent` runs `releaseMount()`. This automatically cancels all subscriptions registered in `def.msgBroker.subscribe`.
+
+If cooperating sibling views (e.g. Master-Detail panels, Explorer Content vs Media Viewer, or Tab panels) are conditionally unmounted in JSX:
+```tsx
+// Flawed approach: unmounting drops bus listeners and resets view state
+{m.selectedFile ? <c.children.MediaViewer /> : <c.children.ContentView />}
+```
+When `MediaViewer` is mounted, `ContentView` is unmounted:
+1. `ContentView` drops its `msgBroker` subscriptions.
+2. If another event fires while `ContentView` is unmounted, it will not receive the message.
+3. When the user returns to `ContentView`, its internal scroll position and UI state are lost.
+
+#### Architectural Solutions:
+1. **Persistent DOM Mounting (Recommended)**: Keep sibling views mounted in the DOM and toggle their visibility via CSS classes (e.g. Tailwind `hidden` vs `flex` / `block`):
+   ```tsx
+   view: () => (
+       <div className="flex-1 relative">
+           <div className={m.selectedFile ? 'hidden' : 'flex flex-col h-full'}>
+               <c.children.ContentView />
+           </div>
+           <div className={m.selectedFile ? 'flex flex-col h-full' : 'hidden'}>
+               <c.children.MediaViewer />
+           </div>
+       </div>
+   )
+   ```
+   Both views stay mounted in the DOM, keep their MsgMesh listeners active, and preserve their scroll and input state.
+
+2. **Replay Buffer Channels**: For channels carrying active domain state (e.g. `APP.VFS.NAVIGATE`, `APP.VFS.SELECT_FILE`), configure `replayBufferSize: 1` when creating the message bus. This guarantees that newly mounted or lazy-loaded components receive the current state immediately upon subscribing, even if the event was published before they mounted.
 
 ---
 

@@ -11,7 +11,7 @@ agent: claude
 tags: [react, strictmode, lifecycle, msgmesh]
 blocked_by: []
 related: [bug--stale-params-events]
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 ---
 
 # Components break under React StrictMode effect re-mount

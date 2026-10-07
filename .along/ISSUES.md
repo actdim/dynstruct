@@ -34,9 +34,9 @@
 - [ ] `(feat)` [www-authenticate-header-support](ISSUES/feat--www-authenticate-header-support.md)
 
 ## Done (recent)
+- [x] `(docs)` [pure-event-driven-msgmesh-integration](ISSUES/done/docs--pure-event-driven-msgmesh-integration.md)
 - [x] `(docs)` [readme-version-history](ISSUES/done/docs--readme-version-history.md)
 - [x] `(docs)` [mit-license-leftovers](ISSUES/done/docs--mit-license-leftovers.md)
 - [x] `(task)` [release-v1-8-0](ISSUES/done/task--release-v1-8-0.md)
 - [x] `(task)` [along-metadata-reconciliation](ISSUES/done/task--along-metadata-reconciliation.md)
-- [x] `(docs)` [child-composition-and-bindprop-priority](ISSUES/done/docs--child-composition-and-bindprop-priority.md)
-<!-- 9 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 10 older completed issue(s) archived in .along/ISSUES/done/ -->

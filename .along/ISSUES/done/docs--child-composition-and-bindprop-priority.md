@@ -11,7 +11,7 @@ agent: claude
 tags: [agents, composition, bindings, performance]
 blocked_by: []
 related: []
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 ---
 
 # Agent guidance: `children` composition and `bindProp` as the default binding

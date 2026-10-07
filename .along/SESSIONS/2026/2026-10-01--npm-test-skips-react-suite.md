@@ -7,7 +7,7 @@ agent: claude-code
 branch: main
 commit: 677235a
 summary: npm test now runs the node and React vitest suites; along test and the commit gate cover all 52 tests.
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 issues_advanced: []
 issues_completed: [bug--npm-test-skips-react-suite]
 decisions: []

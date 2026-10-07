@@ -10,7 +10,7 @@ created: 2026-10-02
 updated: 2026-10-02
 agent: claude-code
 tags: [license, docs, release]
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 blocked_by: []
 related: []
 ---

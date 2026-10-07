@@ -7,7 +7,7 @@ agent: claude-code
 branch: main
 commit: 368c305
 summary: README changelog for 0.9.0 - 1.8.0 (46 versions) from git history and diffs, __pycache__ ignored, Along lifecycle scripts tracked
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 issues_advanced: []
 issues_completed: [docs--readme-version-history]
 decisions: []

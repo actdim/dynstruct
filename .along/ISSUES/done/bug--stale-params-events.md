@@ -11,7 +11,7 @@ agent: claude
 tags: [react, toReact, events]
 blocked_by: []
 related: [bug--render-phase-props-sync]
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 ---
 
 # `params.$events` are frozen at the first render

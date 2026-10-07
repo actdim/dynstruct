@@ -12,7 +12,7 @@ risks_logged: []
 spikes_conducted: []
 branch: main
 commit: unknown
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 ---
 
 # Session Log: Upgrade @testing-library/jest-dom to 7.0.1

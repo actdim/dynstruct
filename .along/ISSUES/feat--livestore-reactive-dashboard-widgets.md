@@ -8,7 +8,7 @@ created: 2026-08-27
 updated: 2026-08-27
 agent: antigravity
 tags: [dashboard]
-milestone: v2.0.0-along-transition
+milestone: v2.0.0
 blocked_by: []
 related: []
 ---
