@@ -34,7 +34,7 @@ export const useAvatarView = (params: ComponentParams<Struct>) => {
         view: () => {
             return (
                 <div>
-                    <img style={{ maxWidth: '320px' }} src={m.avatar.imageUrl} />
+                    <img style={{ maxWidth: '320px' }} src={m.avatar.imageUrl} alt="avatar" />
                 </div>
             );
         },

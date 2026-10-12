@@ -75,6 +75,7 @@ export const useLoginDialog = (params: ComponentParams<Struct>) => {
                         </p>
 
                         <label
+                            htmlFor={`${c.id}-email`}
                             style={{
                                 fontSize: 13,
                                 color: '#888',
@@ -85,6 +86,7 @@ export const useLoginDialog = (params: ComponentParams<Struct>) => {
                             Email
                         </label>
                         <input
+                            id={`${c.id}-email`}
                             type="email"
                             value={m.email}
                             onChange={(e) => {
@@ -104,6 +106,7 @@ export const useLoginDialog = (params: ComponentParams<Struct>) => {
                         />
 
                         <label
+                            htmlFor={`${c.id}-password`}
                             style={{
                                 fontSize: 13,
                                 color: '#888',
@@ -114,6 +117,7 @@ export const useLoginDialog = (params: ComponentParams<Struct>) => {
                             Password
                         </label>
                         <input
+                            id={`${c.id}-password`}
                             type="password"
                             value={m.password}
                             onChange={(e) => {

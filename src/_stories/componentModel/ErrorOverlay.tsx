@@ -12,6 +12,16 @@ import { $ERROR } from '@/appDomain/commonContracts';
 import { AppMsgChannels, AppMsgStruct } from './bootstrap';
 import { detailsStyle } from './styles';
 
+// a <button> rendered like an inline link (anchors without href are not interactive elements)
+const linkButtonStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    fontFamily: 'inherit',
+    fontSize: 'inherit',
+    cursor: 'pointer',
+};
+
 let overlay: HTMLElement | null = null;
 
 function highlight(id: string) {
@@ -85,14 +95,15 @@ export const useErrorOverlay = (params: ComponentParams<Struct>): Component<Stru
                             <span>
                                 {m.errors.length} error{m.errors.length > 1 ? 's' : ''}
                             </span>
-                            <a
-                                style={{ marginLeft: 'auto', fontSize: 11, color: '#888' }}
+                            <button
+                                type="button"
+                                style={{ ...linkButtonStyle, marginLeft: 'auto', fontSize: 11, color: '#888' }}
                                 onClick={() => {
                                     m.errors = [];
                                 }}
                             >
                                 clear
-                            </a>
+                            </button>
                         </summary>
                         {m.errors.map((errInfo, i) => (
                             <pre
@@ -103,10 +114,11 @@ export const useErrorOverlay = (params: ComponentParams<Struct>): Component<Stru
                                     ? errInfo.error.message
                                     : JSON.stringify(errInfo.error, null, 2)}
                                 {errInfo.source?.id && (
-                                    <> from <a
-                                        style={{ cursor: 'pointer', color: '#007bff' }}
+                                    <> from <button
+                                        type="button"
+                                        style={{ ...linkButtonStyle, color: '#007bff' }}
                                         onClick={() => highlight(errInfo.source.id)}
-                                    >{errInfo.source.id}</a></>
+                                    >{errInfo.source.id}</button></>
                                 )}
                             </pre>
                         ))}

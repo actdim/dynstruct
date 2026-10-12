@@ -219,7 +219,7 @@ export const useSecurityServiceExample = (params: ComponentParams<Struct>) => {
                             Security Service
                         </summary>
                         <div style={{ ...row, fontSize: 12, color: '#888', fontStyle: 'italic' }}>
-                            Credentials: email "admin@mail.com", password "admin"
+                            Credentials: email &quot;admin@mail.com&quot;, password &quot;admin&quot;
                         </div>
                         <div style={row}>
                             <span style={labelStyle}>User</span>
