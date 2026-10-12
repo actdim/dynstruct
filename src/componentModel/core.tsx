@@ -1013,6 +1013,12 @@ export function normalizePayload<T>(input: T): T {
         return input.map(normalizePayload) as T;
     }
 
+    // class instances (File, Blob, Date, Map, AbortSignal, ...) are passed as is: copying their own enumerable keys
+    // would turn them into empty objects
+    if (!isPlainObject(input)) {
+        return input;
+    }
+
     const result: any = {};
 
     for (const key of Object.keys(input)) {

@@ -477,7 +477,7 @@ Avoid:
 
 3. **Component Proxy Benefits (`c.msgBus`)**:
    When imperative messaging is needed inside actions or callbacks, use `c.msgBus` (provided automatically on the component instance). The component proxy (`getComponentMsgBus`) wraps the underlying bus with essential conveniences:
-   - **Automatic MobX Observable Unwrapping (`normalizePayload`)**: All payloads sent or requested through `c.msgBus` are automatically deep-unwrapped via structural copying / `toPlain()`. This ensures MobX reactive proxies do not leak into the message bus.
+   - **Automatic MobX Observable Unwrapping (`normalizePayload`)**: All payloads sent or requested through `c.msgBus` are automatically deep-unwrapped via structural copying / `toPlain()`. This ensures MobX reactive proxies do not leak into the message bus. Class instances (`File`, `Blob`, `Date`, `Map`, ...) are passed by reference.
    - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Every subscription (`on`, `once`, `stream`) and in-flight `request()` / `provide()` operation is automatically linked to `component.abortSignal`. When the component unmounts, all active subscriptions and pending requests are automatically cancelled without manual `unsubscribe()` or cleanup routines.
    - **Automatic Source Tracing (`sourceId: component.id`)**: Automatically sets `headers.sourceId` to the component's unique instance ID for message provenance tracking.
    - **Error Boundary & Loading State**: `c.msgBus.request(...)` runs within `component.run()`, automatically routing unhandled rejections to `onCatch` and incrementing/decrementing `component.model.$.pendingRequestCount`.
