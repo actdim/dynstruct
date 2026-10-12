@@ -5,6 +5,7 @@
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
+- [ ] `(debt)` [generic-struct-component-props](ISSUES/debt--generic-struct-component-props.md)
 - [ ] `(debt)` [safe-user-code-execution](ISSUES/debt--safe-user-code-execution.md)
 - [ ] `(feat)` [agent-ready-structured-tracing](ISSUES/feat--agent-ready-structured-tracing.md)
 - [ ] `(feat)` [automatic-children-validation](ISSUES/feat--automatic-children-validation.md)
