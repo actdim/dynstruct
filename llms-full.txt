@@ -700,7 +700,7 @@ Swallowing in these cases would silently return `undefined` to the caller and ca
 
 Inline JSX handlers with logic (`onClick={() => { ... }}`) are not recommended; call an action instead.
 
-A rethrow through nested wrapped calls (action -> action, effect -> action) is reported once; the same error object thrown again in a later call is reported again.
+A rethrow through nested wrapped calls (action -> action, effect -> action, also an async action awaiting another one) is reported once; the same error object thrown again in a later call is reported again.
 
 Manual `try/catch` is needed only for code that is **outside** this boundary - a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
 
@@ -792,7 +792,7 @@ Avoid:
 
 3. **Component Proxy Benefits (`c.msgBus`)**:
    When imperative messaging is needed inside actions or callbacks, use `c.msgBus` (provided automatically on the component instance). The component proxy (`getComponentMsgBus`) wraps the underlying bus with essential conveniences:
-   - **Automatic MobX Observable Unwrapping (`normalizePayload`)**: All payloads sent or requested through `c.msgBus` are automatically deep-unwrapped via structural copying / `toPlain()`. This ensures MobX reactive proxies do not leak into the message bus.
+   - **Automatic MobX Observable Unwrapping (`normalizePayload`)**: All payloads sent or requested through `c.msgBus` are automatically deep-unwrapped via structural copying / `toPlain()`. This ensures MobX reactive proxies do not leak into the message bus. Class instances (`File`, `Blob`, `Date`, `Map`, ...) are passed by reference.
    - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Every subscription (`on`, `once`, `stream`) and in-flight `request()` / `provide()` operation is automatically linked to `component.abortSignal`. When the component unmounts, all active subscriptions and pending requests are automatically cancelled without manual `unsubscribe()` or cleanup routines.
    - **Automatic Source Tracing (`sourceId: component.id`)**: Automatically sets `headers.sourceId` to the component's unique instance ID for message provenance tracking.
    - **Error Boundary & Loading State**: `c.msgBus.request(...)` runs within `component.run()`, automatically routing unhandled rejections to `onCatch` and incrementing/decrementing `component.model.$.pendingRequestCount`.
@@ -1714,7 +1714,7 @@ Components communicate over typed channels provided by `@actdim/msgmesh`. `@actd
 
 3. **Smart Component Proxy (`c.msgBus`)**:
    When sending messages or making requests imperatively inside actions, use `c.msgBus`. It wraps the underlying bus with essential framework conveniences:
-   - **MobX Observable Unwrapping (`normalizePayload`)**: Payloads are automatically converted to plain structural copies before being placed on the bus, preventing reactive MobX proxies from leaking into message bus events.
+   - **MobX Observable Unwrapping (`normalizePayload`)**: Payloads are automatically converted to plain structural copies before being placed on the bus, preventing reactive MobX proxies from leaking into message bus events. Class instances (`File`, `Blob`, `Date`, `Map`, ...) are passed by reference.
    - **Automatic Lifecycle & Cancellation (`AbortSignal`)**: Subscriptions (`on`, `once`, `stream`) and pending `request()` / `provide()` calls are automatically linked to `component.abortSignal` and cleanly disposed of when the component unmounts.
    - **Provenance & Source Tracing**: Automatically populates `headers.sourceId = component.id`.
    - **Error Boundary & Pending State**: `c.msgBus.request(...)` runs within `component.run()`, tracking `component.model.$.pendingRequestCount` and routing unhandled rejections to `onCatch`.
