@@ -1,6 +1,6 @@
 {
     "name": "@actdim/dynstruct",
-    "version": "1.8.1",
+    "version": "1.8.2",
     "description": "Structure-first, type-safe component model for TypeScript and React apps with explicit dependency wiring and message bus communication.",
     "author": "Pavel Borodaev",
     "license": "MIT",
@@ -144,6 +144,7 @@
         "eslint-plugin-storybook": "10.6.0",
         "globals": "^16.5.0",
         "happy-dom": "^20.14.0",
+        "magic-string": "^0.30.21",
         "mermaid": "^11.4.1",
         "mocha": "^11.7.5",
         "npm-check-updates": "^19.1.2",

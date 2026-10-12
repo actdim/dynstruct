@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
 import { resolve } from 'path';
 import config from './packageConfig.ts';
+import { dynstructPlugin } from './src/vite/plugin';
 
 export default defineConfig({
     test: {
@@ -20,6 +21,6 @@ export default defineConfig({
     resolve: {
         alias: config.resolveAliases(),
     },
-    plugins: [react()],
+    plugins: [react(), dynstructPlugin()],
     base: './',
 });

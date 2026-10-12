@@ -127,6 +127,11 @@ Developed with [Along](https://github.com/actdim/along) - a provider-agnostic co
 
 ## Changelog
 
+### 1.8.2 (2026-10-11)
+- Fixed: rendering broke with a debugger attached (VS Code integrated browser, DevTools open) when a React element was passed through params (`<Comp><Outlet /></Comp>`); symptom `Cannot read properties of undefined (reading 'mode')` (`bug--wrap-user-code-react-elements`)
+- React values (elements, portals, `memo` / `forwardRef` / `lazy` types) pass through params and the model untouched and by reference, like React props; new `prop({ reactive: 'ref' })` for React content slots filled after creation (`feat--react-values-opaque-and-ref-props`)
+- **Breaking:** params are applied once: a plain param is an initial value, live input goes only through bindings; the params->model sync is removed. `toReact` props and factory-child JSX props stay live through bindings; `$events` / `$id` / `$key` are not stored in the model; DEV warnings for plain params changed after creation and writes to read-only bound props (`debt--params-initial-value-semantics`)
+
 ### 1.8.0 (2026-10-01)
 - `componentModel/react`: components survive the React StrictMode effect re-mount (`bug--strictmode-lifecycle`)
 - `params.$events` callbacks are no longer frozen at the first render; lifecycle hooks, `onCatch` and model event handlers call the latest ones (`bug--stale-params-events`)
@@ -308,11 +313,105 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ## Document: AGENTS.md (Agent Conventions & Protocol)
 
-<!-- BEGIN ALONG-PROTOCOL ref=../../../AGENTS.md (managed by along-init - do not edit by hand) -->
-This folder belongs to a repository that uses the ALONG structure. The full working
-guidance + agent-context protocol live once in the nearest ancestor `AGENTS.md` (`../../../AGENTS.md`) -
-read it there. This folder keeps its OWN `.along/` state; use the nearest one.
-Only this folder's specifics follow.
+<!-- BEGIN ALONG-PROTOCOL root (managed by along-init - do not edit by hand) -->
+# ALONG-PROTOCOL v4.4.7
+
+This repo carries its own agent context, provider-agnostically. Follow it every session, whatever tool you are.
+
+## Scope, Precedence & Subproject Placement
+- **Nearest Context Boundary**: Any folder may carry its own `AGENTS.md` + `.along/`; use the NEAREST ones for the area you're working in. On conflict, the more specific wins.
+- **Subproject Localization** [gate: subproject-boundary]: In submodules, nested repos or symlinked folders: all entities (issues, sessions, ADRs, history) MUST be created in the NEAREST `.along/`. Agents are STRICTLY FORBIDDEN from dumping subproject changes into the workspace root `.along/`.
+- **Multi-Subproject Work** [gate: subproject-boundary]: A change spanning subprojects needs an issue in each touched `.along/`, or a root umbrella issue whose child issues there carry `parent: <umbrella key>`. Edits under a subproject `.along/` are checked by path.
+- **Subproject Boundary**: only a nested `.git` or a user-run `along init` makes a subproject; never init a manifest folder.
+- **Precedence**: Nearest `.along/` > higher-level `.along/` > global config (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/config/GEMINI.md`).
+
+## At session start - read these yourself (they are NOT auto-loaded)
+Use the NEAREST `.along/` for the area you're working in (fall back to a higher-level one if the folder has none):
+1. `AGENTS.md` (nearest) - conventions to follow.
+2. `.along/ISSUES.md` - active issue board (or query `/along-kb-search`).
+3. `.along/CONSTRAINTS.md` - active architectural constraints (or full log in `.along/DECISIONS.md` / `.along/DECISIONS/`).
+4. Active Issue file `.along/ISSUES/<type>--<slug>.md` for your task.
+Also, when relevant: `.along/VISION.md`, `.along/GLOSSARY.md`. These reflect the state WHEN WRITTEN - verify any named file/API/flag against the real code first.
+
+## Multi-Agent & Multi-Branch Concurrency
+- **Zero-Manual-Merge Rule** [gate: projection-protection]: On merge conflicts in derived projections (`ISSUES.md`, `INDEX.md`, `DECISIONS.md`), accept either side and run `/along-issue-sync`, `/along-kb-sync`, or `/along-decision-sync` to recompile. `along git setup` registers merge drivers that do this automatically; afterwards run `along git sync`.
+- **Append-Only Merge Driver**: `.along/HISTORY.md` and legacy monolithic `.along/DECISIONS.md` are append-only. Configure `.gitattributes` with `merge=union`. Modular ADR files in `.along/DECISIONS/` are isolated per-file to eliminate merge collisions.
+- **Untracked Exports** [gate: untracked-exports]: `.along/dashboard.html`, `.along/DASHBOARD.md` and per-machine `.along/diagnostics/` stay out of Git.
+- **Context Isolation**: Context is localized to the target issue file, session-scoped blackboard (`.along/.session/<slug>/`), and completed session logs.
+- **Parallel Closeout**: `along session list`; on the user's yes `along plan approve --closeout --ready`, then `along session close --ready`.
+
+## Mandatory Issue Anchoring
+- **No Code Without Issue** [gate: require-active-issue]: Before modifying source code, agents MUST identify or create an issue in `.along/ISSUES/<type>--<slug>.md` and set `status: in-progress`.
+- **Session Binding & Plan Approval** [gate: require-plan-approval]: `along start <slug>` binds THIS agent session to the issue; parallel sessions keep their own bindings. Source edits unlock after the user approves the plan (Claude Code: `ExitPlanMode`; elsewhere `along plan approve` only after the user's explicit yes). `along plan status` shows the binding.
+- **Exemptions**: Read-only Q&A and 1-line micro-edits (typo fixes, comments) do not require issues.
+- **Commit Binding** [gate: commit-issue-binding]: Every commit via `/along-commit` MUST bind to the active issue slug.
+- **No AI Co-Authors** [gate: commit-no-ai-coauthor]: Commit messages MUST NOT carry `Co-Authored-By:` trailers naming an AI agent (GitHub lists the vendor as a contributor). `along hook install` turns runtime attribution off; opt out via `.along/config.json` `commits.allow_ai_coauthor: true`.
+
+## Entity Ecosystem
+- **Entity types**: Issues (`feat`, `bug`, `debt`, `task`, `docs`), Decisions (ADRs), Milestones, Risks, Spikes, Checklists, Sessions. Full YAML schemas: `docs/topic--domain-model.md`.
+- **Canonical keys**: `<type>--<slug>` (e.g. `feat--token-refresh`). Reference by key, NEVER by file path.
+- **ADRs**: Modular records in `.along/DECISIONS/ADR-YYYY-MM-DD--<slug>.md` (with legacy fallback to monolithic `DECISIONS.md`). Never edit past entries - mark superseded. Recompile projections (`.along/DECISIONS.md` board and `.along/CONSTRAINTS.md`) via `/along-decision-sync` or `along decision sync`.
+- **Issue lifecycle** [gate: issue-lifecycle]: Close with `along issue done <slug>` (`status: done`, `completed`, moved to `.along/ISSUES/done/`).
+- **Entity references** [gate: entity-reference-integrity]: Never delete an entity other entities reference; use `along issue rename` / `along issue supersede`.
+- **Auto-entity creation**: Agents MUST automatically detect user intent (build/fix/refactor -> Issue, blocked/rate-limit -> Risk, compare/benchmark -> Spike, release/sprint -> Milestone) and create entities without prompting the user.
+
+## Knowledge Base & Documentation
+- **Stable Entry Point** [gate: stable-entry-point]: `README.md` and `docs/` never link into `.along/`; route through `docs/INDEX.md` or `docs/topic--<slug>.md`.
+- **Portable Links** [gate: portable-links]: Relative Markdown links only.
+- **Fact Grounding**: Agents MUST extract facts from actual code, `README.md`, `docs/`, and `package.json`. Generic LLM placeholders are strictly prohibited.
+- **Fast Retrieval** [gate: fast-retrieval]: Agents MUST query `/along-kb-search` before reading whole documentation files.
+- **Doc Blast Radius**: After non-trivial code changes, agents MUST map affected symbols to `docs/topic--*.md` articles and update them before completing the task.
+- **Manual Document Lock** [gate: doc-manual-lock]: Documents marked with `write_policy: manual` (or `locked: true`) are protected from automated agent modification during blast radius sweeps. Modifications require an explicit documentation issue (`docs--<slug>`).
+- **Managed Rule Packs** [gate: rule-pack-protection]: Never edit `.along/rules/**/*.md`; `along rules attach` owns them. Project guidelines go to `docs/topic--<slug>.md` or "Project specifics"; revert with `along rules restore`. `.along/rules/gates.yaml` and `.along/scripts/` stay repo-owned.
+- **Documentation Routing Tree**:
+  - Architectural choice / trade-off -> `.along/DECISIONS/` (ADR)
+  - Public overview / pitch / landing page -> `README.md`
+  - Technical interface contract / CLI spec -> `docs/topic--<slug>.md` (`type: reference`)
+  - Conceptual explanation / comparison / philosophy -> `docs/topic--<slug>.md` (`type: explanation`, `write_policy: manual`)
+  - Procedural walkthrough / runbook -> `docs/topic--<slug>.md` (`type: guide`)
+
+## While working
+- **Decisions**: Create new ADRs via `/along-decision-sync` or `along decision create <slug> --title "..."`. Add terms to `.along/GLOSSARY.md`.
+- **Token hygiene**: Use quiet flags (`pytest -q`, `dotnet test -v q`), filter outputs, inspect targeted line ranges.
+- **Lifecycle hooks first**: Agents MUST use `/along-test`, `/along-build`, `/along-dev` (or `.along/scripts/*.py`) before raw shell commands.
+- **Post-change review**: Agents MUST inspect diffs and evaluate blast radius via `along graph-impact` (or static search fallback). Silent skips are forbidden.
+
+## Stage & Session Completion Checklist
+When a stage or session completes, agents MUST execute in this order:
+1. [ ] **Tests** [gate: test_before_stop]: Run via `/along-test` with quiet flags. Zero failures.
+2. [ ] **File Integrity**: `git status -u` - all new/modified files non-zero size, no empty placeholders.
+3. [ ] **Code Review**: Inspect diff for side effects, verify REQ-N coverage, evaluate blast radius via `along graph-impact` (or static search), verify architectural decision compliance.
+4. [ ] **Entity Reconciliation**: Close issues (`done` + move to `done/`), update milestones, resolve risks, conclude spikes.
+5. [ ] **Doc Blast Radius**: Update affected `docs/topic--*.md`, `README.md` and Project specifics; add new terms to `.along/GLOSSARY.md`; touch `.along/VISION.md` only if scope/roadmap changed; run `/along-kb-sync`.
+6. [ ] **Session Log** [gate: wrap_before_stop]: `along wrap <slug> --decisions <ADR...> | --no-decisions` writes `.along/SESSIONS/<YYYY>/<date>--<slug>.md` with the blackboard record; answer the decisions question explicitly.
+7. [ ] **Projections** [gate: projection_sync_before_stop]: Run `/along-issue-sync` and `/along-decision-sync`.
+8. [ ] **HISTORY**: Append line to `.along/HISTORY.md`.
+9. [ ] **Compaction**: Advise user to run `/compact`.
+
+## Rules
+- **Contract-First Lifecycle**:
+  - Agents MUST execute `.along/scripts/<action>.py` or `/along-test`, `/along-build`, `/along-dev` before raw shell commands.
+  - When `.along/scripts/` is missing, `along test`/`along build` auto-detects and synthesizes hooks.
+  - In submodules, execute the hook from that subproject's own `.along/scripts/`.
+- **Environment Isolation**:
+  - Agents MUST NOT install system-wide or global packages when a script fails. Fix the architecture (missing `bootstrap.ensure_deps()`, incorrect `uv` wrapper), not the environment.
+- **Workspace Containment** [gate: workspace-containment]: Read and write only inside the workspace. Writes elsewhere are limited to the temp dir and runtime artifact dirs. Other repos need `allowed_roots` (`.along/rules/gates.yaml`, issue frontmatter, `along start --allow-root`). Never touch credential stores (`~/.ssh`, `~/.aws`).
+- **Runtimes Without Along Hooks** (Claude Cowork, Cursor, OpenCode, plain shells): gates are advisory there. Agents MUST self-apply every gate-tagged rule and use the `along` CLI for tests, commits, entity changes, and wrap instead of raw tools. `along doctor` reports the enforcement level.
+- **File Modification & Anti-Deletion**:
+  - Never delete, truncate, or overwrite existing documentation, comments, or code unless explicitly instructed.
+  - After batch edits or migrations, agents MUST run `git diff --stat` and inspect unexpected size reductions.
+  - No stubs or skeletons in place of populated code [gate: anti_stub_injection].
+  - Anchor edits on minimal unique chunks. Restore unintended deletions immediately.
+- **Clean ASCII** [gate: typography]: ASCII punctuation only (no typographic dashes, quotes, ellipsis, bullets, NBSP/zero-width chars or BOM); `along sanitize --write` fixes them.
+- **Markdown** [gate: code-fence-language]: Every code fence names a language.
+- **File Content Via Tools Only** [gate: cli_safety]: Create/edit files with the agent's file tools. NEVER carry content in heredocs, `python -c`, or inline shell. Write scripts to a file first.
+- **Verify Written Files**: After writing/patching, confirm parsing (`python -m compileall -q`, `bash -n`, etc.) before moving on.
+- **Hermetic Tests**: Tests MUST target throwaway fixtures (`tempfile.mkdtemp()`), never the live repository. Read-only access to live state is allowed. Keep a meta-test that verifies `git status --porcelain -u` stays clean.
+- **Inquiry Read-Only Invariance (Zero-Mutation Rule on Questions)** [gate: require-plan-approval]: On interrogative prompts ("is X done?", "why did Y fail?"), write/modify tools are STRICTLY PROHIBITED. Return a read-only audit report and ask for confirmation before modifying anything.
+- **Mandatory Adaptive Complexity Escalation & Execution Mode Routing**: When scope touches > 3 files, crosses subsystems, or refactors core engines: single-agent execution is forbidden - route to `along-team`. Plans MUST declare `Execution Mode: Direct` or `Role-Based`. Role-based blackboards (`along scratch init`) are held to the step loop [gate: team-step-active] [gate: team-reviews-before-stop]; dropping it needs `along scratch fallback <slug> --reason "..."`.
+- Windows-safe filenames [gate: windows-safe-filenames]: dates `YYYY-MM-DD`, date first.
+- Keep `ISSUES.md` compact: `along context-budget --check` enforces the limit.
+- Never write secrets into tracked files [gate: no-tracked-secrets].
 <!-- END ALONG-PROTOCOL -->
 
 # Agent Development Guide for `@actdim/dynstruct`
@@ -474,7 +573,8 @@ Use hook-constructors as the primary component format:
 5. Prefer `let c` and `let m` pattern:
 - `c` is component instance
 - `m` is `c.model` reactive model - **actions are blended into the model**, so call `m.actionName(...)` not `c.actions.actionName(...)`. `Component` has no `.actions` property.
-6. Export `toReact(useXxx)` only when React component interoperability is needed. A `toReact` export is for plain React code and backward compatibility - inside another dynstruct component use the hook in `children` instead.
+6. Exporting `toReact(useXxx)` next to the hook is fine. **Rendering** a `toReact` component in JSX is the exception: only at the boundary with plain React code (router `element`, root layout / service hosts). Inside another dynstruct component use the hook in `children` instead.
+7. Never read `params.x` inside the hook-constructor - pass `params` whole to `useComponent` (see Params Semantics).
 
 ## Component Identity (`id`, `regType`, `$key`)
 
@@ -489,7 +589,7 @@ view: () => <div id={c.id}>...</div>
 2. `$key` param provided → `toHtmlId(regType) + '#' + key`
 3. Neither → `toHtmlId(regType) + '#' + N` (sequential per `regType` within the context)
 
-**`regType`** - set in `def.regType` (shared across all instances). If omitted, auto-detected from source file path via stack inspection.
+**`regType`** - resolution order: explicit `def.regType` (shared across all instances) > the name injected at build time by the dynstruct Vite plugin > fallback. The plugin (`import { dynstructPlugin } from '@actdim/dynstruct/vite/plugin'`, add to `plugins` in `vite.config` / storybook `viteFinal` / vitest config) derives the name from the hook-constructor: `useStorageCard` -> `'StorageCard'`, a PascalCase function as is, otherwise the module file name. Without the plugin: in DEV a best-effort label from the call stack (debug only, never throws), in production `'component'`. You normally do not write `regType` by hand.
 
 **`$id` / `$key`** - instance-level, passed via `ComponentParams` in JSX, in the hook-constructor call, or via binding:
 
@@ -544,6 +644,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
 - Use `prop({ reactive: ... })` to control how a prop is tracked. Default is fully reactive. Options:
   - `reactive: false` - completely non-reactive; reads and writes are invisible to the reactivity system
   - `reactive: 'shallow'` - array container is reactive (push/pop tracked), but item properties are not
+  - `reactive: 'ref'` - reassignment is tracked, the value is stored by reference and never converted or proxied
 
   Works for top-level and nested paths alike. Can be used without `initialValue` as a pure annotation:
 
@@ -551,8 +652,10 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
   props: {
     config: prop({ initialValue: { debug: false }, reactive: false }),
     'user.tags': prop({ reactive: 'shallow' }),  // tags is declared elsewhere
+    footer: prop({ reactive: 'ref' }),           // React content slot, assigned later
   }
   ```
+- **React values only in ref props.** A React object (element, portal, `memo` / `forwardRef` / `lazy` type, context) stored in the model must be in a prop declared `prop({ reactive: 'ref' })` (anywhere inside it is fine; also `reactive: false` and the items of a `'shallow'` container). Storing one in a deep-reactive prop - default in `def.props`, plain param, `m.x = <El />`, nested `{ icon: <I /> }` - throws in DEV: `[dynstruct] Prop 'x' of '...' holds a React value ... declare prop({ reactive: 'ref' })`. There is no auto-detection; production does not check. Values read through bindings are not stored and not checked: `toReact` props (incl. `children` of `<Comp>...</Comp>`), JSX props of factory children, `bind` / `bindProp`.
 
 - Use bindings for value flow between parent and child. **Never pass `m` directly** to a child - `def.children` is evaluated before `m = c.model`, so `m` is `undefined` at that point. Always use a lazy getter: `bindProp(() => m, 'prop')` or `bind(() => m...)`.
 - **Binding priority** (pick the first that fits):
@@ -589,6 +692,14 @@ These have no caller waiting for a return value, so swallowing after `onCatch` i
 - MsgBus provider/subscriber callbacks - provider must return a response; subscriber may be awaited
 
 Swallowing in these cases would silently return `undefined` to the caller and cause hard-to-diagnose bugs.
+
+**Two patterns for component functions:**
+- functions declared in `def.actions` are wrapped automatically (error routing + transaction batching) - the default;
+- helper closures declared next to `def` (plain functions that capture `m`) are not wrapped: wrap their body in `c.run(...)` yourself, or move them into `def.actions`.
+
+Inline JSX handlers with logic (`onClick={() => { ... }}`) are not recommended; call an action instead.
+
+A rethrow through nested wrapped calls (action -> action, effect -> action) is reported once; the same error object thrown again in a later call is reported again.
 
 Manual `try/catch` is needed only for code that is **outside** this boundary - a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
 
@@ -737,6 +848,94 @@ For service APIs:
 - Use `@actdim/msgmesh/adapters` (`ToMsgChannelPrefix`, `ToMsgStruct`, `getMsgChannelSelector`, `registerAdapters`) to transform service methods into typed channels.
 - Provide adapters through `ServiceProvider` wrappers.
 
+## Params Semantics
+
+`params` describe a component's input **once, at creation**:
+
+- plain value -> **initial value**, applied once on top of the `def.props` default;
+- binding (`bindProp` / `bind`) -> **live channel**, the model reads (and with a setter writes) through it;
+- `$events` (refreshed every commit), `$id`, `$key` -> service keys, never stored in the model.
+
+Rules:
+
+- `def.props` holds defaults only. A hook-constructor never reads `params.x` (no `props: { value: params.value ?? '' }`, no `useChild({ open: params.open })`).
+- Live input for children comes from `m`: `bindProp(() => m, 'prop')` / `bind(() => m...)`.
+- A plain param changed on a later render is not applied to an existing instance (DEV warning). Use a binding, or a new `$key` to recreate the instance.
+- React boundary (`toReact` props, JSX props of a factory child) is converted to bindings by the framework: such props stay live and are owned by the React parent (controlled; two-way via `$events.onChangeX`). A write to a controlled prop is not stored, but `onChangeX` fires (like a controlled React input); without a change handler it is a bug (DEV warning). `undefined` = not controlled: the default applies and the component owns the prop. Factory child props are read-only and must not be passed whole as plain params (`useCard(p)` is an initial snapshot - bind each value).
+
+```tsx
+// BAD
+props: { value: params.value ?? '' },                      // snapshot, redundant; stores a Binding object as default
+children: { drawer: useDrawer({ open: params.open }) },    // initial value only - the drawer never follows
+children: { card: (p) => useCard({ item: p.item }) },      // factory child: initial value only
+
+// GOOD
+props: { value: '', open: false },
+children: { drawer: useDrawer({ open: bindProp(() => m, 'open') }) },
+children: { card: (p) => useCard({ item: bind(() => p.item) }) },
+```
+
+## Anti-patterns
+
+Each item: what goes wrong, how it shows up, the fix.
+
+**1. Eager model read while building `def`.** `m` (and `c`) are assigned after `useComponent` returns; any read that runs while `def` is built reads `undefined`. Shows up immediately on the first render: `TypeError: Cannot read properties of undefined (reading 'isOpen')`, pointing at the line in `def`.
+
+```tsx
+// BAD
+children: { dialog: useDialog({ open: Boolean(m.isOpen) }) },
+// GOOD - lazy: runs after creation
+children: { dialog: useDialog({ open: bind(() => Boolean(m.isOpen)) }) },
+```
+
+**2. React hooks in the hook-constructor body reading the model.** The body runs in the host's render; the host is not an observer, so it does not re-render when `m.x` changes and the hook never re-runs.
+
+```tsx
+// BAD - never re-runs when m.open changes (e.g. a back-button handler that never registers)
+useEffect(() => { if (m.open) { register(); } }, [m.open]);
+// GOOD - auto-tracked
+effects: { backHandler: () => { if (m.open) { register(); } } },
+```
+
+**3. Rendering a dynstruct component as a JSX tag inside `view`** (including `toReact` exports and `@actdim/dynstruct-mui` wrappers). The parent tracks every prop expression and re-renders; props/callbacks drift into JSX.
+
+```tsx
+// BAD
+view: () => <Button label={m.title} onClick={() => m.save()} />,
+// GOOD
+children: { save: useButton({ label: bind(() => m.title), onClick: () => m.save() }) },
+view: () => <c.children.Save />,
+```
+
+`toReact` exports are rendered in JSX only at the boundary with plain React code (router `element`, root layout / service hosts).
+
+**4. Callback props between components** (`onSelect*`, `onNavigate*`, `onOpen*`, `onClose*`, `onChange*`). Dual sources of truth and timing races. Use typed MsgMesh channels (`c.msgBus.send`, `msgBroker.subscribe`). `on*` props are fine only on primitive wrappers over DOM events (button click, input change).
+
+**5. Reading `params.x` in a hook-constructor.** A snapshot that looks live. See Params Semantics.
+
+```tsx
+// BAD
+props: { value: params.value ?? '' },
+// GOOD
+props: { value: '' },
+```
+
+**6. React values in a deep-reactive prop.** Throws in DEV (`... holds a React value ...`). Declare the prop `prop({ reactive: 'ref' })` (item arrays: `prop({ initialValue: [], reactive: 'ref' })`, replace the array to update) or move the content into a child component.
+
+**7. Helper closures without `c.run`.** A plain function next to `def` that throws bypasses `onCatch`.
+
+```tsx
+// BAD
+const reload = async () => { m.items = await fetchItems(); };
+// GOOD
+const reload = () => c.run(async () => { m.items = await fetchItems(); });
+// or declare it in def.actions
+```
+
+**8. One view rendered twice.** `<c.children.X />` in two places at once shares id, registry entry, effects and the abort controller (DEV warning: `mounted more than once`). Create another instance for a second place.
+
+**9. Hand-written `regType`.** Not needed: the dynstruct Vite plugin derives it from the hook-constructor name; keep `def.regType` only for an intentionally different name.
+
 ## Composition and Performance Rules
 
 - **Nested dynstruct components go into `def.children`, never inline in `view`** (priority rule). Declare the child's struct in `children`, instantiate it with its hook-constructor, pass inputs via bindings (`bindProp` first, see Binding priority), and render it as `<c.children.Name />`.
@@ -837,7 +1036,7 @@ const useMy = (params: ComponentParams<MyStruct>) => {
   let m: ComponentModel<MyStruct>;
 
   const def: ComponentDef<MyStruct> = {
-    props: { value: params.value ?? '' },
+    props: { value: '' }, // defaults only - params are applied on top by the framework, never read params.x here
     actions: {
       setValue: (v) => { m.value = v; },
     },
@@ -1071,14 +1270,16 @@ type InternalState = {
 type Struct = ComponentStructExt<DriveTreeStruct, InternalState>;
 ```
 
-### Granular Reactivity Control (`reactive: 'shallow' | false`)
+### Granular Reactivity Control (`reactive: 'shallow' | 'ref' | false`)
 
 By default, Dynstruct properties are deeply reactive - the internal proxy recursively tracks all nested objects and array elements. For large collections, deep trees (like file system nodes), or heavy read-only payloads, deep proxying introduces unnecessary memory and CPU overhead.
 
-Configure reactivity per property using `ComponentProp<T>`:
+Configure reactivity per property with `prop(...)` (a `ComponentProp<T>`; a plain object literal is treated as the
+prop value itself, not as a prop definition):
 
 ```typescript
 import { type ComponentDef } from '@actdim/dynstruct/componentModel/contracts';
+import { prop } from '@actdim/dynstruct/componentModel/core';
 
 const def: ComponentDef<Struct> = {
     props: {
@@ -1087,19 +1288,22 @@ const def: ComponentDef<Struct> = {
 
         // 'shallow': container mutations (push, pop, filter) are tracked,
         // but items within nodesCache are NOT proxied deeply
-        nodesCache: {
-            initialValue: {},
-            reactive: 'shallow',
-        },
+        nodesCache: prop({ initialValue: {}, reactive: 'shallow' }),
 
         // false: completely disable reactivity tracking for static configurations
-        staticConfig: {
-            initialValue: { bufferSize: 1024 },
-            reactive: false,
-        },
+        staticConfig: prop({ initialValue: { bufferSize: 1024 }, reactive: false }),
+
+        // 'ref': reassignment is tracked, the value is stored by reference
+        // (React content slots, component types, third-party objects)
+        footer: prop({ reactive: 'ref' }),
     },
 };
 ```
+
+React values (elements, portals, `memo` / `forwardRef` / `lazy` types, contexts) are stored in the model only in
+props declared `reactive: 'ref'` (anywhere inside them); storing one in a deep-reactive prop throws in DEV. Values
+read through bindings (`toReact` props, `bind` / `bindProp`) are not stored and need no declaration. See
+[React Values in Props](./topic--04-react-integration.md#7-react-values-in-props-children-slots-component-types).
 
 ### Data Binding Primitives (`bind`, `bindProp`, `ValueConverter`)
 
@@ -1326,7 +1530,7 @@ view: () => (
 
 | Param | Description |
 |---|---|
-| `regType` | Static component type identifier (e.g. `'UserCard'`). Auto-detected if omitted. |
+| `regType` | Static component type identifier (e.g. `'UserCard'`). Usually omitted: derived at build time by the dynstruct Vite plugin from the hook-constructor name (see [Vite Plugin](./topic--04-react-integration.md#9-vite-plugin-regtype-from-the-source)); fallback `'component'`. |
 | `$id` | Fully explicit ID override passed in `ComponentParams`. |
 | `$key` | Domain key override (e.g. `$key="123"` produces ID `UserCard#123`). |
 
@@ -1917,8 +2121,14 @@ import { toReact } from '@actdim/dynstruct/componentModel/react';
 export const Counter = toReact(useCounter);
 
 // Now usable anywhere in standard React:
-// <Counter counter={5} />
+// <Counter />                       - counter is internal state (default 0)
+// <Counter counter={n} $events={{ onChangeCounter: setN }} /> - counter is controlled by the React parent
 ```
+
+Props passed to a `toReact` component stay live: they are read through bindings, not copied into the model
+(see [Params: Initial Values vs Live Bindings](#8-params-initial-values-vs-live-bindings)). Use `toReact` exports at
+the boundary with plain React code (router elements, root layout); inside a dynstruct component take the child via
+its hook-constructor in `def.children`.
 
 ### 4. Hooks Policy (Dynstruct-First, Not a Ban)
 
@@ -1958,6 +2168,126 @@ When integrating Dynstruct components in React applications:
 - **Role Separation**: `props` are strictly for component configuration and data bindings (`bindProp`); `actions` are internal model mutators (atomic MobX transactions) for component-local state, NOT cross-component callbacks.
 - **Children Declared in `def.children`**: Declare child components in `def.children` and render them as `<c.children.Name />`, rather than inline JSX `<Child onSelect={...} />`.
 - **Persistent DOM Mounting**: Sibling views that listen to the message bus (e.g. Master-Detail panels, Explorer Content vs Media Viewer) should stay mounted in the DOM and toggle via CSS (`hidden` vs `flex` / `block`). Because unmounting triggers `releaseMount()` and drops all `msgBroker` subscriptions, persistent mounting ensures background views never miss messages and preserve scroll/input state. Alternatively, configure the relevant bus channels with `replayBufferSize: 1`.
+
+### 7. React Values in Props (`children`, Slots, Component Types)
+
+A dynstruct prop may hold React content, exactly like a React prop: an element (`icon={<SaveIcon />}`), a
+`ReactNode` slot, a component type (`icon={SaveIcon}`, including `memo` / `forwardRef` types) or `children`.
+For a `toReact` component, nested JSX is just the `children` prop, so `<AppShell><Outlet /></AppShell>` passes
+`<Outlet />` to a `children` prop declared in the struct.
+
+Rule: **React values are stored only in ref props.** A React object (a value with a `$$typeof` symbol: elements,
+portals, `memo` / `forwardRef` / `lazy` types, contexts) must never be converted to an observable or proxied, so the
+model keeps it only where values are stored as is:
+
+- a prop declared `prop({ reactive: 'ref' })` - anywhere inside its value (objects, arrays) is fine;
+- also `reactive: false` props and the items of a `reactive: 'shallow'` container.
+
+Storing a React value anywhere else (a `def.props` default, a plain param, `m.x = <El />`, a nested `{ icon: <I /> }`
+in a deep-reactive prop) throws in DEV: `[dynstruct] Prop 'x' of '...' holds a React value ... declare
+prop({ reactive: 'ref' })`. There is no auto-detection; production builds do not check.
+
+Values read through bindings are not stored in the model and need no declaration: props of a `toReact` component
+(including `children` of `<Comp>...</Comp>`), JSX props of factory children, `bind` / `bindProp` values. React
+objects are also never wrapped by the error-routing layer.
+
+```tsx
+import { prop } from '@actdim/dynstruct/componentModel/core';
+
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+        title: string;
+        children?: React.ReactNode;
+        footer?: React.ReactNode;
+    };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: {
+        title: '',
+        children: prop({ reactive: 'ref' }),
+        footer: prop({ reactive: 'ref' }),
+    },
+    view: () => (
+        <section>
+            <h2>{m.title}</h2>
+            {m.children}
+            <footer>{m.footer}</footer>
+        </section>
+    ),
+};
+```
+
+Item arrays with React content (e.g. `items: [{ label, icon: <Icon /> }]`): declare the container prop
+`prop({ initialValue: [], reactive: 'ref' })` - the whole value is stored by reference (replace the array or
+object to update it; in-place mutations are not tracked).
+
+Why the rule exists: a converted or proxied React value breaks rendering only when a debugger is attached
+(VS Code integrated browser, DevTools open) with `Cannot read properties of undefined (reading 'mode')` in react-dom
+`handleThrow`; the first, swallowed exception is `'run' called with illegal receiver` from the element's DEV-only
+`_debugTask`. The DEV error makes the mistake visible immediately instead.
+
+### 9. Vite Plugin: `regType` From the Source
+
+`regType` (the component type used for ids and the registry) is derived at build time by the dynstruct Vite plugin
+from the hook-constructor name - no hand-written `def.regType` needed:
+
+```ts
+// vite.config.ts (also storybook viteFinal, vitest config)
+import { dynstructPlugin } from '@actdim/dynstruct/vite/plugin';
+
+export default defineConfig({ plugins: [react(), dynstructPlugin()] });
+```
+
+`useStorageCard` -> `'StorageCard'`; a PascalCase function name is used as is; otherwise the module file name.
+An explicit `def.regType` wins. Without the plugin: in DEV a best-effort label from the call stack (never throws),
+in production `'component'`.
+
+### 8. Params: Initial Values vs Live Bindings
+
+`params` describe the input of a component **once, at creation**. The kind of value decides its semantics:
+
+| Value in `params` | Semantics |
+|---|---|
+| plain value (`title: 'x'`, `open: false`) | **initial value**: applied to the model once, on top of the `def.props` default |
+| binding (`bindProp(...)`, `bind(...)`) | **live channel**: the model reads (and, with a setter, writes) through it |
+| `$events`, `$id`, `$key` | service keys: handlers (refreshed on every commit), identity, reset via a new `$key` |
+
+Rules:
+
+- A hook-constructor never reads `params.x`. It passes `params` whole to `useComponent(def, params)`; `def.props`
+  holds defaults only and the framework applies params on top.
+- Live input for a child comes from the model: `bindProp(() => m, 'prop')` or `bind(() => m...)`. The parent's own
+  input is already in `m` (read through the parent's binding when it was given one).
+- A plain param changed on a later render is **not** applied to an existing instance (DEV builds warn about it).
+  Use a binding for live input, or a new `$key` to recreate the instance with new initial values.
+- React boundary: props of a `toReact` component and JSX props of a factory child arrive on every React render, so
+  dynstruct turns them into bindings - they stay live without being copied into the model. Such a prop is owned by
+  the React parent (controlled): the component reads it, and a two-way flow goes through `$events.onChangeX`. A write
+  to a controlled prop is not stored but fires `onChangeX`, like a controlled React input; `undefined` means "not
+  controlled" - the `def.props` default applies and the component owns the prop.
+- Factory child props are read-only. Passing them whole (`(p) => useCard(p)`) makes every value an initial value -
+  bind each one instead.
+
+```tsx
+// BAD: a snapshot of this render's params, looks live but is not
+props: { value: params.value ?? '' },
+children: { drawer: useDrawer({ open: params.open }) },
+
+// GOOD: defaults in def.props, live input from the model
+props: { value: '', open: false },
+children: { drawer: useDrawer({ open: bindProp(() => m, 'open') }) },
+```
+
+Factory child rendered with JSX props: read its params through a binding, an eager read is an initial value.
+
+```tsx
+// children: { card: (p: { item: Item }) => CardStruct }
+card: (p) => useCard({
+    item: bind(() => p.item), // GOOD: follows <c.children.Card item={x} />
+    // item: p.item,          // BAD: initial value only
+}),
+```
 
 ---
 
@@ -2162,10 +2492,17 @@ type ComponentProp<T = any> = {
      * - `true` (default): fully reactive, proxy tracks all depths
      * - `false`: not reactive at all (zero proxy overhead)
      * - `'shallow'`: container is reactive (array mutations tracked), items are not proxied
+     * - `'ref'`: reassignment is tracked, the value is stored by reference and never converted or proxied
      */
-    readonly reactive?: true | false | 'shallow';
+    readonly reactive?: true | false | 'shallow' | 'ref';
 };
 ```
+
+Declare it with `prop(...)` (`import { prop } from '@actdim/dynstruct/componentModel/core'`); a plain object literal
+in `def.props` is treated as the prop value, not as a `ComponentProp`. `'ref'` is meant for React content slots
+(`ReactNode`, component types) and third-party objects; a top-level `'ref'` prop without `initialValue` starts as
+`undefined`. React objects present at creation are stored by reference even without it (see
+[React Integration](./topic--04-react-integration.md)).
 
 ### Data Binding Primitives: `bind`, `bindProp`, `ValueConverter`
 
@@ -2256,7 +2593,7 @@ Instance interface returned by `useComponent`:
   - `c.msgBus`: Lifecycle-scoped message bus wrapper (auto-unwraps MobX observables, manages `abortSignal`, sets `headers.sourceId`).
   - `c.msgBroker`: Message broker configuration.
   - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount. It is per-mount: a new signal is created each time the view mounts (including the React StrictMode simulated re-mount), and it is `null` before the first mount.
-- **Params**: `$events` passed via `ComponentParams` (e.g. through `toReact`) are refreshed on every commit - handlers supplied or replaced on later renders are used, including `onPropChanging` / `onPropChange` / `onGetX`.
+- **Params**: applied once, at creation - a plain value is an initial value, a binding is a live channel; `$events` / `$id` / `$key` are service keys and are not stored in the model (see [Params: Initial Values vs Live Bindings](./topic--04-react-integration.md#8-params-initial-values-vs-live-bindings)). `$events` passed via `ComponentParams` (e.g. through `toReact`) are refreshed on every commit - handlers supplied or replaced on later renders are used, including `onPropChanging` / `onPropChange` / `onGetX`.
   - `c.effects`: Effect controllers with `.pause()`, `.resume()`, and `.stop()`.
 - **Rendering & Forms**:
   - `c.View`: React component view slot (`<c.View />`).

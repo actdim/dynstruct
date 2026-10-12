@@ -4,7 +4,7 @@ slug: 04-react-integration
 title: React Integration & Service Patterns
 type: topic
 created: 2026-08-31
-updated: 2026-09-10
+updated: 2026-10-10
 tags: [04-react-integration]
 ---
 
@@ -66,8 +66,14 @@ import { toReact } from '@actdim/dynstruct/componentModel/react';
 export const Counter = toReact(useCounter);
 
 // Now usable anywhere in standard React:
-// <Counter counter={5} />
+// <Counter />                       - counter is internal state (default 0)
+// <Counter counter={n} $events={{ onChangeCounter: setN }} /> - counter is controlled by the React parent
 ```
+
+Props passed to a `toReact` component stay live: they are read through bindings, not copied into the model
+(see [Params: Initial Values vs Live Bindings](#8-params-initial-values-vs-live-bindings)). Use `toReact` exports at
+the boundary with plain React code (router elements, root layout); inside a dynstruct component take the child via
+its hook-constructor in `def.children`.
 
 ### 4. Hooks Policy (Dynstruct-First, Not a Ban)
 
@@ -107,6 +113,126 @@ When integrating Dynstruct components in React applications:
 - **Role Separation**: `props` are strictly for component configuration and data bindings (`bindProp`); `actions` are internal model mutators (atomic MobX transactions) for component-local state, NOT cross-component callbacks.
 - **Children Declared in `def.children`**: Declare child components in `def.children` and render them as `<c.children.Name />`, rather than inline JSX `<Child onSelect={...} />`.
 - **Persistent DOM Mounting**: Sibling views that listen to the message bus (e.g. Master-Detail panels, Explorer Content vs Media Viewer) should stay mounted in the DOM and toggle via CSS (`hidden` vs `flex` / `block`). Because unmounting triggers `releaseMount()` and drops all `msgBroker` subscriptions, persistent mounting ensures background views never miss messages and preserve scroll/input state. Alternatively, configure the relevant bus channels with `replayBufferSize: 1`.
+
+### 7. React Values in Props (`children`, Slots, Component Types)
+
+A dynstruct prop may hold React content, exactly like a React prop: an element (`icon={<SaveIcon />}`), a
+`ReactNode` slot, a component type (`icon={SaveIcon}`, including `memo` / `forwardRef` types) or `children`.
+For a `toReact` component, nested JSX is just the `children` prop, so `<AppShell><Outlet /></AppShell>` passes
+`<Outlet />` to a `children` prop declared in the struct.
+
+Rule: **React values are stored only in ref props.** A React object (a value with a `$$typeof` symbol: elements,
+portals, `memo` / `forwardRef` / `lazy` types, contexts) must never be converted to an observable or proxied, so the
+model keeps it only where values are stored as is:
+
+- a prop declared `prop({ reactive: 'ref' })` - anywhere inside its value (objects, arrays) is fine;
+- also `reactive: false` props and the items of a `reactive: 'shallow'` container.
+
+Storing a React value anywhere else (a `def.props` default, a plain param, `m.x = <El />`, a nested `{ icon: <I /> }`
+in a deep-reactive prop) throws in DEV: `[dynstruct] Prop 'x' of '...' holds a React value ... declare
+prop({ reactive: 'ref' })`. There is no auto-detection; production builds do not check.
+
+Values read through bindings are not stored in the model and need no declaration: props of a `toReact` component
+(including `children` of `<Comp>...</Comp>`), JSX props of factory children, `bind` / `bindProp` values. React
+objects are also never wrapped by the error-routing layer.
+
+```tsx
+import { prop } from '@actdim/dynstruct/componentModel/core';
+
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: {
+        title: string;
+        children?: React.ReactNode;
+        footer?: React.ReactNode;
+    };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: {
+        title: '',
+        children: prop({ reactive: 'ref' }),
+        footer: prop({ reactive: 'ref' }),
+    },
+    view: () => (
+        <section>
+            <h2>{m.title}</h2>
+            {m.children}
+            <footer>{m.footer}</footer>
+        </section>
+    ),
+};
+```
+
+Item arrays with React content (e.g. `items: [{ label, icon: <Icon /> }]`): declare the container prop
+`prop({ initialValue: [], reactive: 'ref' })` - the whole value is stored by reference (replace the array or
+object to update it; in-place mutations are not tracked).
+
+Why the rule exists: a converted or proxied React value breaks rendering only when a debugger is attached
+(VS Code integrated browser, DevTools open) with `Cannot read properties of undefined (reading 'mode')` in react-dom
+`handleThrow`; the first, swallowed exception is `'run' called with illegal receiver` from the element's DEV-only
+`_debugTask`. The DEV error makes the mistake visible immediately instead.
+
+### 9. Vite Plugin: `regType` From the Source
+
+`regType` (the component type used for ids and the registry) is derived at build time by the dynstruct Vite plugin
+from the hook-constructor name - no hand-written `def.regType` needed:
+
+```ts
+// vite.config.ts (also storybook viteFinal, vitest config)
+import { dynstructPlugin } from '@actdim/dynstruct/vite/plugin';
+
+export default defineConfig({ plugins: [react(), dynstructPlugin()] });
+```
+
+`useStorageCard` -> `'StorageCard'`; a PascalCase function name is used as is; otherwise the module file name.
+An explicit `def.regType` wins. Without the plugin: in DEV a best-effort label from the call stack (never throws),
+in production `'component'`.
+
+### 8. Params: Initial Values vs Live Bindings
+
+`params` describe the input of a component **once, at creation**. The kind of value decides its semantics:
+
+| Value in `params` | Semantics |
+|---|---|
+| plain value (`title: 'x'`, `open: false`) | **initial value**: applied to the model once, on top of the `def.props` default |
+| binding (`bindProp(...)`, `bind(...)`) | **live channel**: the model reads (and, with a setter, writes) through it |
+| `$events`, `$id`, `$key` | service keys: handlers (refreshed on every commit), identity, reset via a new `$key` |
+
+Rules:
+
+- A hook-constructor never reads `params.x`. It passes `params` whole to `useComponent(def, params)`; `def.props`
+  holds defaults only and the framework applies params on top.
+- Live input for a child comes from the model: `bindProp(() => m, 'prop')` or `bind(() => m...)`. The parent's own
+  input is already in `m` (read through the parent's binding when it was given one).
+- A plain param changed on a later render is **not** applied to an existing instance (DEV builds warn about it).
+  Use a binding for live input, or a new `$key` to recreate the instance with new initial values.
+- React boundary: props of a `toReact` component and JSX props of a factory child arrive on every React render, so
+  dynstruct turns them into bindings - they stay live without being copied into the model. Such a prop is owned by
+  the React parent (controlled): the component reads it, and a two-way flow goes through `$events.onChangeX`. A write
+  to a controlled prop is not stored but fires `onChangeX`, like a controlled React input; `undefined` means "not
+  controlled" - the `def.props` default applies and the component owns the prop.
+- Factory child props are read-only. Passing them whole (`(p) => useCard(p)`) makes every value an initial value -
+  bind each one instead.
+
+```tsx
+// BAD: a snapshot of this render's params, looks live but is not
+props: { value: params.value ?? '' },
+children: { drawer: useDrawer({ open: params.open }) },
+
+// GOOD: defaults in def.props, live input from the model
+props: { value: '', open: false },
+children: { drawer: useDrawer({ open: bindProp(() => m, 'open') }) },
+```
+
+Factory child rendered with JSX props: read its params through a binding, an eager read is an initial value.
+
+```tsx
+// children: { card: (p: { item: Item }) => CardStruct }
+card: (p) => useCard({
+    item: bind(() => p.item), // GOOD: follows <c.children.Card item={x} />
+    // item: p.item,          // BAD: initial value only
+}),
+```
 
 ---
 

@@ -23,12 +23,14 @@ def find_repo_root(start_dir=None):
 
 def main():
     repo_root = find_repo_root(os.path.dirname(__file__))
-    base_cmd = ['npm', 'test', '--', '--silent']
+    base_cmd = ['npm', 'test']
     full_cmd = list(base_cmd) + sys.argv[1:]
     print(f"-> Running: {' '.join(full_cmd)}")
     target = shutil.which(full_cmd[0]) if (os.name == "nt" and full_cmd) else full_cmd[0]
     exec_cmd = [target or full_cmd[0]] + full_cmd[1:]
-    res = subprocess.run(exec_cmd, cwd=repo_root)
+    # Plain output: along counts executed tests from the runner summary, ANSI colors break that parsing.
+    env = {**os.environ, "NO_COLOR": "1", "FORCE_COLOR": "0"}
+    res = subprocess.run(exec_cmd, cwd=repo_root, env=env)
     sys.exit(res.returncode)
 
 if __name__ == "__main__":

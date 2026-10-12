@@ -439,10 +439,12 @@ export type CommonAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes, TTypeRe
         };
         [$NAV_GOTO]: {
             in: {
-                path: string | number;
+                path?: string | number;
+                url?: string;
+                replace?: boolean;
                 params?: any; // NavRouteParams
             };
-            ex: NavRouteStruct<TNavRoutes>;
+            ex: NavRouteStruct<TNavRoutes> & { replace?: boolean };
             out: void;
         };
         [$NAV_CONTEXT_GET]: {

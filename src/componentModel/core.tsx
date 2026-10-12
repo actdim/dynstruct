@@ -8,6 +8,7 @@ import {
     action,
     computed,
     isObservable,
+    untracked,
 } from 'mobx';
 import type {
     BaseComponentModel,
@@ -55,7 +56,7 @@ import {
     Mutable,
     setByKeyPath,
 } from '@actdim/utico/typeCore';
-import { capitalize } from './util';
+import { capitalize, isReactObject } from './util';
 import { isPlainObject } from '@actdim/utico/typeUtils';
 
 // onReactionError((err, derivation) => {
@@ -63,6 +64,57 @@ import { isPlainObject } from '@actdim/utico/typeUtils';
 // });
 
 const blankView = () => null;
+
+// Internal: marks a binding created for a React prop at the React boundary (toReact). Like a React prop,
+// it is controlled by the parent while its value is defined; `undefined` falls back to the model value
+// (the `def.props` default, or what the component itself wrote).
+export const $reactProp = Symbol('reactProp');
+
+// Service params: never stored in the model; always taken from the latest render.
+export const SERVICE_PARAM_KEYS: ReadonlySet<string> = new Set(['$events', '$id', '$key']);
+
+/**
+ * Path of the first React object (element, portal, memo/forwardRef type, context) inside `value`, or `null`.
+ * Descends into plain objects and arrays, skipping paths for which `isOpaque(path)` is true.
+ *
+ * React objects must never be converted to observables or proxied: their DEV internals (e.g. `_debugTask.run`, a
+ * native method that requires its receiver) break behind a proxy, which surfaces whenever a debugger is attached.
+ * They are allowed only where the model stores values as is: `prop({ reactive: 'ref' })` (also `false` and
+ * `'shallow'` item content) - there is no auto-detection.
+ */
+function findReactValuePath(
+    value: unknown,
+    path: string,
+    isOpaque: (path: string) => boolean,
+    seen = new WeakSet<object>(),
+): string | null {
+    if (isReactObject(value)) {
+        return path;
+    }
+    if (!Array.isArray(value) && !isPlainObject(value)) {
+        return null;
+    }
+    if (seen.has(value as object)) {
+        return null;
+    }
+    seen.add(value as object);
+    for (const [key, item] of Object.entries(value as object)) {
+        const itemPath = `${path}.${key}`;
+        if (isOpaque(itemPath)) {
+            continue;
+        }
+        const found = findReactValuePath(item, itemPath, isOpaque, seen);
+        if (found) {
+            return found;
+        }
+    }
+
+    return null;
+}
+
+function isProxyableValue(value: unknown): value is object {
+    return isPlainObject(value) || Array.isArray(value);
+}
 
 export function toPlain<T>(value: T) {
     return toJS(value) as T;
@@ -325,6 +377,36 @@ export function createModel<
 
     type TPropPath = KeyPath<TStruct['props'], boolean>;
 
+    // DEV: a write to a prop bound without a setter is invisible to readers (they read through the binding).
+    const reportedReadOnlyWrites = new Set<string>();
+    function hasChangeHandler(path: string) {
+        const key = `${$ON_CHANGE}${capitalize(path)}`;
+        const events = [params.$events, def.events] as Array<Record<string, unknown> | undefined>;
+
+        return events.some((e) => !!e?.[key] || !!e?.onPropChange);
+    }
+    function reportReadOnlyWrite(path: string, binding: Binding) {
+        if (reportedReadOnlyWrites.has(path)) {
+            return;
+        }
+        const isReactProp = Boolean(Reflect.get(binding, $reactProp));
+        if (isReactProp && binding.get() === undefined) {
+            // uncontrolled: the parent passes no value, the component owns the prop
+            return;
+        }
+        if (isReactProp && hasChangeHandler(path)) {
+            // controlled with a change handler: the parent decides
+            return;
+        }
+        reportedReadOnlyWrites.add(path);
+        console.warn(
+            `[dynstruct] Prop '${path}' of '${component.regType}' (${component.id}) is bound read-only ` +
+            (isReactProp ? '(a React prop controlled by the parent)' : '(bind() without a setter)') +
+            `; the write is not visible to readers. Use bindProp / bind(get, set)` +
+            (isReactProp ? `, or let the parent update it via $events.onChange${capitalize(path)}.` : '.'),
+        );
+    }
+
     const annotationMap: Record<PropertyKey, any> = {};
     if (def.props) {
         for (const key of Object.getOwnPropertyNames(def.props)) {
@@ -342,9 +424,14 @@ export function createModel<
                 // record reactive annotation before potential continue
                 if (prop.reactive === false) annotationMap[key] = false;
                 else if (prop.reactive === 'shallow') annotationMap[key] = observable.shallow;
+                else if (prop.reactive === 'ref') annotationMap[key] = observable.ref;
                 // keyOf<ComponentProp>('initialValue')
                 if (prop.hasOwnProperty('initialValue' satisfies keyof ComponentProp)) {
                     value = prop.initialValue;
+                } else if (prop.reactive === 'ref' && !key.includes('.')) {
+                    // MobX applies annotations to existing keys only: a key added later would get the
+                    // default deep enhancer, so a top-level ref prop must exist from the start
+                    value = undefined;
                 } else {
                     continue;
                 }
@@ -369,6 +456,20 @@ export function createModel<
     }
 
     for (const [key, val] of Object.entries(params)) {
+        if (SERVICE_PARAM_KEYS.has(key)) {
+            continue;
+        }
+        // a computed (getter-only) prop cannot take a value: ignore the param instead of failing the creation
+        const propDescriptor = def.props ? Object.getOwnPropertyDescriptor(def.props, key) : undefined;
+        if (propDescriptor && typeof propDescriptor.get === 'function' && !propDescriptor.set) {
+            if (import.meta.env.DEV) {
+                console.warn(
+                    `[dynstruct] Param for the computed prop '${key}' of '${component.regType}' is ignored: ` +
+                    `computed props are derived from the model and cannot be set.`,
+                );
+            }
+            continue;
+        }
         if (isBinding(val)) {
             state.bindings[key] = val;
         } else {
@@ -383,6 +484,52 @@ export function createModel<
     }
 
     annotationMap['$' satisfies keyof BaseComponentModel] = observable.deep;
+
+    // Paths whose values the model stores as is (never converted or proxied): `ref`, `false`, and the items of a
+    // `'shallow'` container. React values are allowed only there.
+    function isOpaquePath(path: string): boolean {
+        const parts = path.split('.');
+        for (let i = parts.length; i > 0; i--) {
+            const annotation = annotationMap[parts.slice(0, i).join('.')];
+            if (annotation === observable.ref || annotation === false) {
+                return true;
+            }
+            if (annotation === observable.shallow && i < parts.length) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // DEV: a React value in a deep-reactive prop is a hard error (no auto-detection, no silent ref conversion).
+    function assertNoReactValue(path: string, value: unknown) {
+        // observable values are already in a model and were checked when they were stored there
+        if (!import.meta.env.DEV || isOpaquePath(path) || isObservable(value)) {
+            return;
+        }
+        // untracked: the scan must not subscribe a running effect / reaction to the scanned data
+        const found = untracked(() => findReactValuePath(value, path, isOpaquePath));
+        if (found) {
+            const root = path.split('.')[0];
+            throw new Error(
+                `[dynstruct] Prop '${found}' of '${component.regType}' holds a React value (element, component type, ` +
+                `portal). React values are allowed only in props declared with prop({ reactive: 'ref' }): declare ` +
+                `'${root}' as a ref prop, or move the content into a child component.`,
+            );
+        }
+    }
+
+    for (const key of Object.keys(model)) {
+        if (key === '$' || def.actions?.[key]) {
+            continue;
+        }
+        // read data descriptors only: getters (computed props) must not run before the model exists
+        const descriptor = Object.getOwnPropertyDescriptor(model, key);
+        if (descriptor && 'value' in descriptor) {
+            assertNoReactValue(key, descriptor.value);
+        }
+    }
 
     function getNestedAnnotations(basePath: string): Record<string, any> | undefined {
         const prefix = basePath + '.';
@@ -490,7 +637,7 @@ export function createModel<
     }
 
     function createDeepProxy<T extends object>(obj: T, basePath = ''): T {
-        if (!isPlainObject(obj) && !Array.isArray(obj)) return obj;
+        if (!isProxyableValue(obj)) return obj;
         let pathMap = deepProxyCache.get(obj);
         if (!pathMap) {
             pathMap = new Map();
@@ -505,7 +652,7 @@ export function createModel<
                 get(target, key, receiver) {
                     if (key === 'toJSON') return () => toPlain(target);
                     const val = Reflect.get(target, key, receiver);
-                    if (isNumericKey(key) && (isPlainObject(val) || Array.isArray(val))) {
+                    if (isNumericKey(key) && isProxyableValue(val)) {
                         const childPath = basePath ? `${basePath}.${key}` : key;
                         return createDeepProxy(val as object, childPath);
                     }
@@ -516,6 +663,7 @@ export function createModel<
                 set(target, key, val, receiver) {
                     if (isNumericKey(key)) {
                         const fullPath = basePath ? `${basePath}.${key}` : key;
+                        assertNoReactValue(fullPath, val);
                         if (
                             isPlainObject(val) &&
                             !isObservable(val) &&
@@ -541,16 +689,18 @@ export function createModel<
                         return binding.converter ? binding.converter.convert(raw) : raw;
                     }
                     const val = Reflect.get(target, key, receiver);
-                    if (isPlainObject(val) || Array.isArray(val)) {
+                    if (isProxyableValue(val)) {
                         const annotation = annotationMap[childPath];
                         if (annotation === false) return val;
                         if (annotation === observable.shallow) return val;
+                        if (annotation === observable.ref) return val;
                         return createDeepProxy(val as object, childPath);
                     }
                     return val;
                 },
                 set(target, key, val, receiver) {
                     const fullPath = basePath ? `${basePath}.${String(key)}` : String(key);
+                    assertNoReactValue(fullPath, val);
                     if (
                         isPlainObject(val) &&
                         !isObservable(val) &&
@@ -566,6 +716,8 @@ export function createModel<
                     if (binding?.set) {
                         const outVal = binding.converter ? binding.converter.convertBack(val) : val;
                         binding.set(outVal);
+                    } else if (import.meta.env.DEV && binding) {
+                        reportReadOnlyWrite(fullPath, binding);
                     }
                     handlers.onPropChange?.(fullPath, val);
                     const prop = def.props?.[fullPath];
@@ -597,13 +749,16 @@ export function createModel<
             const val = Reflect.get(obj, key, receiver);
             if (binding?.get) {
                 const raw = binding.get();
-                return binding.converter ? binding.converter.convert(raw) : raw;
+                if (!(raw === undefined && Reflect.get(binding, $reactProp))) {
+                    return binding.converter ? binding.converter.convert(raw) : raw;
+                }
             }
 
             if (val && typeof val === 'object') {
                 const annotation = annotationMap[key];
                 if (annotation === false) return val;
                 if (annotation === observable.shallow) return val;
+                if (annotation === observable.ref) return val;
                 return createDeepProxy(val, String(key));
             }
 
@@ -623,6 +778,17 @@ export function createModel<
                 return true;
             }
 
+            // bindings
+            const binding = state.bindings[key as TPropPath];
+            // A React boundary prop with a defined value is controlled by the parent: like a controlled React
+            // input, the write is not stored, change handlers still fire (the parent updates it via onChangeX).
+            const isControlled =
+                !!binding && !binding.set && !!Reflect.get(binding, $reactProp) && binding.get() !== undefined;
+
+            if (!isControlled && typeof key === 'string' && key !== '$') {
+                assertNoReactValue(key, val);
+            }
+
             if (isPlainObject(val) && !isObservable(val) && isObservable(oldVal)) {
                 const nestedAnnotations = getNestedAnnotations(String(key));
                 val = nestedAnnotations
@@ -630,15 +796,17 @@ export function createModel<
                     : observable(val);
             }
 
-            const result = runInAction(() => {
-                return Reflect.set(obj, key, val, receiver);
-            });
+            const result = isControlled
+                ? true
+                : runInAction(() => {
+                    return Reflect.set(obj, key, val, receiver);
+                });
 
-            // bindings
-            const binding = state.bindings[key as TPropPath];
             if (binding?.set) {
                 const outVal = binding.converter ? binding.converter.convertBack(val) : val;
                 binding.set(outVal);
+            } else if (import.meta.env.DEV && binding) {
+                reportReadOnlyWrite(String(key), binding);
             }
 
             // after-change hooks
@@ -682,23 +850,44 @@ export function toHtmlId(url: string): string {
     return id;
 }
 
-export function getComponentSourceByCaller(depth = 2): string | null {
-    const err = new Error();
-    const stack = err.stack?.split('\n');
-    if (!stack || stack.length <= depth) {
+/**
+ * Source location (`url:line:col`, query string removed) of a stack frame line, or `null`.
+ * Supports V8 (`at fn (url:1:2)`, `at url:1:2`) and Firefox/Safari (`fn@url:1:2`, `@url:1:2`) formats.
+ */
+export function parseStackFrameLocation(line: string): string | null {
+    const frame = line.trim();
+    let location: string | undefined;
+    const inParens = frame.match(/\(([^()]+)\)\s*$/);
+    if (inParens) {
+        location = inParens[1];
+    } else if (frame.startsWith('at ')) {
+        location = frame.slice(3).trim();
+    } else {
+        const at = frame.lastIndexOf('@');
+        location = at >= 0 ? frame.slice(at + 1) : undefined;
+    }
+    if (!location || !/:\d+(:\d+)?$/.test(location)) {
         return null;
     }
-    const match = stack[depth].match(/\(([^)]+)\)/);
-    const result = match?.[1];
-    if (result) {
-        if (
-            document.querySelector('script[type="module"][src*="/@vite/"]') &&
-            globalThis['CONFIG_TYPE'] === 'DEVELOPMENT'
-        ) {
-            return result.replace(/\?[^:]+/, '');
-        }
+
+    return location.replace(/\?[^:]*/, '');
+}
+
+/**
+ * Best-effort source location of the frame `depth` (V8 numbering: 1 = this function, 2 = its caller, ...).
+ * Debug use only: never throws, returns `null` when the stack is unavailable or unrecognized.
+ */
+export function getComponentSourceByCaller(depth = 2): string | null {
+    try {
+        const lines = new Error().stack?.split('\n') ?? [];
+        // V8 starts with the "Error" header line, Firefox/Safari start with the first frame
+        const frames = lines.length > 0 && parseStackFrameLocation(lines[0]) === null ? lines.slice(1) : lines;
+        const line = frames[depth - 1];
+
+        return line ? parseStackFrameLocation(line) : null;
+    } catch {
+        return null;
     }
-    return result;
 }
 
 export function getComponentNameByCaller(depth = 2): string | null {

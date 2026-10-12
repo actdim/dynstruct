@@ -1,12 +1,12 @@
-# Decisions (ADR - append-only)
+<!-- Generated projection from .along/DECISIONS/*.md. Do not edit by hand. Run: along decision sync -->
+# Decisions (ADR Projection Board)
 
-_One dated entry per architectural decision. Never edit past entries; mark a replaced one "Superseded by #N"._
+Compiled index of Architectural Decision Records stored in `.along/DECISIONS/`.
 
-<!-- Template:
-## #001 - <title>
-- Date: YYYY-MM-DD
-- Status: accepted            (or: superseded by #NNN)
-- Context: <why this came up>
-- Decision: <what was decided>
-- Consequences: <trade-offs / follow-ups>
--->
+## Active Decisions (2)
+
+- [Params semantics: plain params are initial values, live input only via bindings](DECISIONS/ADR-2026-10-11--params-initial-value-semantics.md)
+- [React values are stored only in ref props; no auto-detection, DEV error otherwise](DECISIONS/ADR-2026-10-11--react-values-in-ref-props.md)
+
+## Superseded & Retired Decisions (0)
+

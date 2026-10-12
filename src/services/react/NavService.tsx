@@ -60,18 +60,22 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                 'APP.NAV.GOTO': {
                     in: {
                         callback: async (msg) => {
-                            if (typeof msg.payload.path == 'number') {
+                            const replace = Boolean(msg.payload?.replace);
+                            if (typeof msg.payload.path === 'number') {
                                 navigate(msg.payload.path);
-                            } else {
+                            } else if (msg.payload.url) {
+                                navigate(msg.payload.url, { replace });
+                            } else if (typeof msg.payload.path === 'string') {
                                 const toUrl = getUrlBuilder(msg.payload.path);
-                                navigate(toUrl(msg.payload.params));
+                                navigate(toUrl(msg.payload.params), { replace });
                             }
                         },
                     },
                     ex: {
                         callback: async (msg) => {
                             const route = msg.payload.route;
-                            navigate(m.routes[route].url(msg.payload.params));
+                            const replace = Boolean(msg.payload?.replace);
+                            navigate(m.routes[route].url(msg.payload.params), { replace });
                         },
                     },
                 },

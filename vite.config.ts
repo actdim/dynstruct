@@ -4,11 +4,14 @@ import config from "./packageConfig";
 import dts from "vite-plugin-dts";
 // import eslint from 'vite-plugin-eslint';
 import tsConfigPaths from "vite-tsconfig-paths";
+import MagicString from "magic-string";
 import * as packageJson from "./package.json";
 
 const packageName = packageJson.name.split("/").reverse()[0];
 
-export default defineConfig({
+const DEV_FLAG = "import.meta.env.DEV";
+
+export default defineConfig(({ command }) => ({
     resolve: {
         alias: config.resolveAliases()
     },
@@ -49,6 +52,21 @@ export default defineConfig({
         }
     },
     plugins: [
+        // Library build: Vite freezes import.meta.env.DEV to false, which would compile every DEV check out of dist.
+        // Emit the standard library form instead - the consumer's bundler replaces process.env.NODE_ENV.
+        command === "build" && {
+            name: "dynstruct:keep-dev-checks",
+            enforce: "pre" as const,
+            transform(code: string, id: string) {
+                if (!code.includes(DEV_FLAG) || !/[\\/]src[\\/].*\.[cm]?[jt]sx?$/.test(id.split("?")[0])) {
+                    return null;
+                }
+                const s = new MagicString(code);
+                s.replaceAll(DEV_FLAG, '(process.env.NODE_ENV !== "production")');
+
+                return { code: s.toString(), map: s.generateMap({ hires: "boundary" }) };
+            }
+        },
         // eslint({
         //     cache: false,
         //     failOnError: true,
@@ -82,4 +100,4 @@ export default defineConfig({
             }
         }
     ]
-});
+}));

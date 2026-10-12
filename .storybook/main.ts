@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite';
+import { dynstructPlugin } from '../src/vite/plugin';
 
 const config: StorybookConfig = {
   "stories": [
@@ -15,6 +16,7 @@ const config: StorybookConfig = {
   },
   async viteFinal(config) {
     config.plugins ??= [];
+    config.plugins.push(dynstructPlugin());
     config.plugins.push({
       name: 'strip-node-modules-sourcemap',
       transform(code, id) {

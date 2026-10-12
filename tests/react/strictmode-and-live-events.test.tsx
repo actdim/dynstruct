@@ -128,25 +128,32 @@ describe('Live params.$events', () => {
         const onGetValue = vi.fn(() => 'from-getter');
         const onDestroy1 = vi.fn();
         const onDestroy2 = vi.fn();
+        let instance: Component<ValueStruct> | undefined;
+        const onInit = (c: Component<ValueStruct>) => {
+            instance = c;
+        };
 
+        // `value` is not passed by the parent: the component owns it and changes it itself
         const { rerender, unmount, container } = render(
-            tree({ value: 'a', $events: { onChangeValue: onChangeValue1, onDestroy: onDestroy1 } }),
+            tree({ $events: { onInit, onChangeValue: onChangeValue1, onDestroy: onDestroy1 } }),
         );
 
         // onPropChange appears only on the second render
         rerender(
             tree({
-                value: 'b',
                 $events: { onChangeValue: onChangeValue2, onPropChange, onDestroy: onDestroy2 },
             }),
         );
+        act(() => {
+            instance!.model.value = 'b';
+        });
         expect(onChangeValue1).not.toHaveBeenCalled();
         expect(onChangeValue2).toHaveBeenCalledWith('b');
         expect(onPropChange).toHaveBeenCalledWith('value', 'b');
 
         // onGetX appears later too
-        rerender(tree({ value: 'b', $events: { onGetValue, onDestroy: onDestroy2 } }));
-        rerender(tree({ value: 'c', $events: { onGetValue, onDestroy: onDestroy2 } }));
+        rerender(tree({ $events: { onGetValue, onDestroy: onDestroy2 } }));
+        rerender(tree({ $events: { onGetValue, onDestroy: onDestroy2 } }));
         expect(container).toHaveTextContent('from-getter');
 
         // re-renders must not restart the lifecycle

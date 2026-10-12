@@ -116,14 +116,16 @@ type InternalState = {
 type Struct = ComponentStructExt<DriveTreeStruct, InternalState>;
 ```
 
-### Granular Reactivity Control (`reactive: 'shallow' | false`)
+### Granular Reactivity Control (`reactive: 'shallow' | 'ref' | false`)
 
 By default, Dynstruct properties are deeply reactive - the internal proxy recursively tracks all nested objects and array elements. For large collections, deep trees (like file system nodes), or heavy read-only payloads, deep proxying introduces unnecessary memory and CPU overhead.
 
-Configure reactivity per property using `ComponentProp<T>`:
+Configure reactivity per property with `prop(...)` (a `ComponentProp<T>`; a plain object literal is treated as the
+prop value itself, not as a prop definition):
 
 ```typescript
 import { type ComponentDef } from '@actdim/dynstruct/componentModel/contracts';
+import { prop } from '@actdim/dynstruct/componentModel/core';
 
 const def: ComponentDef<Struct> = {
     props: {
@@ -132,19 +134,22 @@ const def: ComponentDef<Struct> = {
 
         // 'shallow': container mutations (push, pop, filter) are tracked,
         // but items within nodesCache are NOT proxied deeply
-        nodesCache: {
-            initialValue: {},
-            reactive: 'shallow',
-        },
+        nodesCache: prop({ initialValue: {}, reactive: 'shallow' }),
 
         // false: completely disable reactivity tracking for static configurations
-        staticConfig: {
-            initialValue: { bufferSize: 1024 },
-            reactive: false,
-        },
+        staticConfig: prop({ initialValue: { bufferSize: 1024 }, reactive: false }),
+
+        // 'ref': reassignment is tracked, the value is stored by reference
+        // (React content slots, component types, third-party objects)
+        footer: prop({ reactive: 'ref' }),
     },
 };
 ```
+
+React values (elements, portals, `memo` / `forwardRef` / `lazy` types, contexts) are stored in the model only in
+props declared `reactive: 'ref'` (anywhere inside them); storing one in a deep-reactive prop throws in DEV. Values
+read through bindings (`toReact` props, `bind` / `bindProp`) are not stored and need no declaration. See
+[React Values in Props](./topic--04-react-integration.md#7-react-values-in-props-children-slots-component-types).
 
 ### Data Binding Primitives (`bind`, `bindProp`, `ValueConverter`)
 
@@ -371,7 +376,7 @@ view: () => (
 
 | Param | Description |
 |---|---|
-| `regType` | Static component type identifier (e.g. `'UserCard'`). Auto-detected if omitted. |
+| `regType` | Static component type identifier (e.g. `'UserCard'`). Usually omitted: derived at build time by the dynstruct Vite plugin from the hook-constructor name (see [Vite Plugin](./topic--04-react-integration.md#9-vite-plugin-regtype-from-the-source)); fallback `'component'`. |
 | `$id` | Fully explicit ID override passed in `ComponentParams`. |
 | `$key` | Domain key override (e.g. `$key="123"` produces ID `UserCard#123`). |
 

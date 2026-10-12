@@ -32,11 +32,12 @@
 - [ ] `(feat)` [visibility-interaction-states](ISSUES/feat--visibility-interaction-states.md)
 - [ ] `(feat)` [websocket-transport-support](ISSUES/feat--websocket-transport-support.md)
 - [ ] `(feat)` [www-authenticate-header-support](ISSUES/feat--www-authenticate-header-support.md)
+- [ ] `(task)` [release-v1-8-2](ISSUES/task--release-v1-8-2.md)
 
 ## Done (recent)
-- [x] `(docs)` [pure-event-driven-msgmesh-integration](ISSUES/done/docs--pure-event-driven-msgmesh-integration.md)
-- [x] `(docs)` [readme-version-history](ISSUES/done/docs--readme-version-history.md)
-- [x] `(docs)` [mit-license-leftovers](ISSUES/done/docs--mit-license-leftovers.md)
-- [x] `(task)` [release-v1-8-0](ISSUES/done/task--release-v1-8-0.md)
-- [x] `(task)` [along-metadata-reconciliation](ISSUES/done/task--along-metadata-reconciliation.md)
-<!-- 10 older completed issue(s) archived in .along/ISSUES/done/ -->
+- [x] `(task)` [dynstruct-tooling-repair](ISSUES/done/task--dynstruct-tooling-repair.md)
+- [x] `(feat)` [regtype-vite-plugin](ISSUES/done/feat--regtype-vite-plugin.md)
+- [x] `(feat)` [react-values-in-ref-props](ISSUES/done/feat--react-values-in-ref-props.md)
+- [x] `(docs)` [dynstruct-anti-patterns](ISSUES/done/docs--dynstruct-anti-patterns.md)
+- [x] `(debt)` [params-initial-value-semantics](ISSUES/done/debt--params-initial-value-semantics.md)
+<!-- 22 older completed issue(s) archived in .along/ISSUES/done/ -->

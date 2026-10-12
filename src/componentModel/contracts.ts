@@ -247,8 +247,10 @@ export type ComponentProp<T = any> = {
      *  - `true` (default) — fully reactive, proxy tracks all depths
      *  - `false` — not reactive at all
      *  - `'shallow'` — container is reactive (array mutations tracked), items are not proxied
+     *  - `'ref'` - reassignment is tracked, the value is stored by reference and never converted or proxied
+     *    (use for React content slots: `ReactNode`, component types, third-party objects)
      */
-    readonly reactive?: true | false | 'shallow';
+    readonly reactive?: true | false | 'shallow' | 'ref';
     // form support
     // readonly label?: string;
     // readonly inputType?: 'text' | 'number' | 'email' | 'date' | 'checkbox' | 'select';
@@ -432,8 +434,14 @@ export type ComponentParams<TStruct extends ComponentStruct<any> = ComponentStru
         $key?: string;
     }; // & PropsWithChildren?
 
+// Build-time metadata of a component, injected into useComponent by the dynstruct Vite plugin
+// (`@actdim/dynstruct/vite/plugin`). Not meant to be passed by hand: use `def.regType` for an explicit value.
+export type ComponentMeta = {
+    regType?: string;
+};
+
 // ComponentRenderFn
-export type ComponentViewFn = (props: ComponentViewProps) => any; // ReactNode for example
+export type ComponentViewFn =(props: ComponentViewProps) => any; // ReactNode for example
 
 export const $isComponent = Symbol('isComponent'); // brand
 

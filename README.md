@@ -119,6 +119,11 @@ Developed with [Along](https://github.com/actdim/along) - a provider-agnostic co
 
 ## Changelog
 
+### 1.8.2 (2026-10-11)
+- Fixed: rendering broke with a debugger attached (VS Code integrated browser, DevTools open) when a React element was passed through params (`<Comp><Outlet /></Comp>`); symptom `Cannot read properties of undefined (reading 'mode')` (`bug--wrap-user-code-react-elements`)
+- React values (elements, portals, `memo` / `forwardRef` / `lazy` types) pass through params and the model untouched and by reference, like React props; new `prop({ reactive: 'ref' })` for React content slots filled after creation (`feat--react-values-opaque-and-ref-props`)
+- **Breaking:** params are applied once: a plain param is an initial value, live input goes only through bindings; the params->model sync is removed. `toReact` props and factory-child JSX props stay live through bindings; `$events` / `$id` / `$key` are not stored in the model; DEV warnings for plain params changed after creation and writes to read-only bound props (`debt--params-initial-value-semantics`)
+
 ### 1.8.0 (2026-10-01)
 - `componentModel/react`: components survive the React StrictMode effect re-mount (`bug--strictmode-lifecycle`)
 - `params.$events` callbacks are no longer frozen at the first render; lifecycle hooks, `onCatch` and model event handlers call the latest ones (`bug--stale-params-events`)

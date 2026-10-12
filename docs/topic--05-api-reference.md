@@ -4,7 +4,7 @@ slug: 05-api-reference
 title: API Reference & Development Guide
 type: topic
 created: 2026-08-31
-updated: 2026-09-27
+updated: 2026-10-10
 tags: [05-api-reference, api, contracts]
 ---
 
@@ -96,10 +96,17 @@ type ComponentProp<T = any> = {
      * - `true` (default): fully reactive, proxy tracks all depths
      * - `false`: not reactive at all (zero proxy overhead)
      * - `'shallow'`: container is reactive (array mutations tracked), items are not proxied
+     * - `'ref'`: reassignment is tracked, the value is stored by reference and never converted or proxied
      */
-    readonly reactive?: true | false | 'shallow';
+    readonly reactive?: true | false | 'shallow' | 'ref';
 };
 ```
+
+Declare it with `prop(...)` (`import { prop } from '@actdim/dynstruct/componentModel/core'`); a plain object literal
+in `def.props` is treated as the prop value, not as a `ComponentProp`. `'ref'` is meant for React content slots
+(`ReactNode`, component types) and third-party objects; a top-level `'ref'` prop without `initialValue` starts as
+`undefined`. React objects present at creation are stored by reference even without it (see
+[React Integration](./topic--04-react-integration.md)).
 
 ### Data Binding Primitives: `bind`, `bindProp`, `ValueConverter`
 
@@ -190,7 +197,7 @@ Instance interface returned by `useComponent`:
   - `c.msgBus`: Lifecycle-scoped message bus wrapper (auto-unwraps MobX observables, manages `abortSignal`, sets `headers.sourceId`).
   - `c.msgBroker`: Message broker configuration.
   - `c.abortSignal`: Lifecycle `AbortSignal` triggered on unmount. It is per-mount: a new signal is created each time the view mounts (including the React StrictMode simulated re-mount), and it is `null` before the first mount.
-- **Params**: `$events` passed via `ComponentParams` (e.g. through `toReact`) are refreshed on every commit - handlers supplied or replaced on later renders are used, including `onPropChanging` / `onPropChange` / `onGetX`.
+- **Params**: applied once, at creation - a plain value is an initial value, a binding is a live channel; `$events` / `$id` / `$key` are service keys and are not stored in the model (see [Params: Initial Values vs Live Bindings](./topic--04-react-integration.md#8-params-initial-values-vs-live-bindings)). `$events` passed via `ComponentParams` (e.g. through `toReact`) are refreshed on every commit - handlers supplied or replaced on later renders are used, including `onPropChanging` / `onPropChange` / `onGetX`.
   - `c.effects`: Effect controllers with `.pause()`, `.resume()`, and `.stop()`.
 - **Rendering & Forms**:
   - `c.View`: React component view slot (`<c.View />`).
