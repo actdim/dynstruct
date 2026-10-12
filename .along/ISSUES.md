@@ -18,6 +18,7 @@
 - [ ] `(feat)` [graphql-integration](ISSUES/feat--graphql-integration.md)
 - [ ] `(feat)` [http-adapters-kubb-orval](ISSUES/feat--http-adapters-kubb-orval.md)
 - [ ] `(feat)` [http-request-cancellation](ISSUES/feat--http-request-cancellation.md)
+- [ ] `(feat)` [lazy-children](ISSUES/feat--lazy-children.md)
 - [ ] `(feat)` [livestore-reactive-dashboard-widgets](ISSUES/feat--livestore-reactive-dashboard-widgets.md)
 - [ ] `(feat)` [nav-service-dependencies](ISSUES/feat--nav-service-dependencies.md)
 - [ ] `(feat)` [problem-details-http-errors](ISSUES/feat--problem-details-http-errors.md)
