@@ -15,7 +15,13 @@ const msgBus = createMsgBus<TestMsgStruct>();
 
 type S = ComponentStruct<TestMsgStruct, {
     props: { x: string };
-    actions: { fail: () => void; outer: () => void };
+    actions: {
+        fail: () => void;
+        outer: () => void;
+        failAsync: () => Promise<void>;
+        outerAsync: () => Promise<void>;
+        touch: () => void;
+    };
 }>;
 
 const SINGLETON = new Error('singleton failure');
@@ -35,6 +41,23 @@ function setup() {
                 },
                 outer: () => {
                     m.fail();
+                },
+                failAsync: async () => {
+                    await Promise.resolve();
+                    throw SINGLETON;
+                },
+                // the inner call runs after an await (run depth is back to 0), and another run (touch) happens
+                // between the inner report and the outer rejection
+                outerAsync: async () => {
+                    await Promise.resolve();
+                    try {
+                        await m.failAsync();
+                    } finally {
+                        m.touch();
+                    }
+                },
+                touch: () => {
+                    m.x = 'touched';
                 },
             },
             events: { onCatch },
@@ -72,5 +95,27 @@ describe('run() error dedup', () => {
         const { onCatch, instance } = setup();
         expect(() => instance.model.outer()).toThrow(SINGLETON);
         expect(onCatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports an async nested rethrow once', async () => {
+        const { onCatch, instance } = setup();
+        await expect(instance.model.outerAsync()).rejects.toBe(SINGLETON);
+        expect(onCatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports concurrent async calls failing with the same error object', async () => {
+        const { onCatch, instance } = setup();
+        const first = instance.model.failAsync();
+        const second = instance.model.failAsync();
+        await expect(first).rejects.toBe(SINGLETON);
+        await expect(second).rejects.toBe(SINGLETON);
+        expect(onCatch).toHaveBeenCalledTimes(2);
+    });
+
+    it('reports the same async error again in a later call', async () => {
+        const { onCatch, instance } = setup();
+        await expect(instance.model.failAsync()).rejects.toBe(SINGLETON);
+        await expect(instance.model.failAsync()).rejects.toBe(SINGLETON);
+        expect(onCatch).toHaveBeenCalledTimes(2);
     });
 });

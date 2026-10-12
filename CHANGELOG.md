@@ -2,6 +2,13 @@
 
 All notable changes to `@actdim/dynstruct` are documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- An async action awaiting another action (after an `await`) no longer reports the same error twice when another wrapped call runs in between: an async rejection with an error already reported by a run started after it (the awaited nested run) is not reported again; concurrent calls failing with the same error object are each reported (`debt--dynstruct-review-followups`).
+- A prop declared through a getter that returns a `ComponentProp` (`get x() { return prop(...) }`) takes its param (plain value or binding) again; only true computed props ignore params (`debt--dynstruct-review-followups`).
+- `magic-string` (used by `@actdim/dynstruct/vite/plugin`) is a runtime `dependency` and external in the build; it was a devDependency bundled into `dist/node_modules` (`debt--dynstruct-review-followups`).
+
 ## [1.8.2] - 2026-10-11
 
 ### Fixed

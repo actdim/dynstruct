@@ -54,6 +54,28 @@ import { isPlainObject } from '@actdim/utico/typeUtils';
 // Error dedup within one propagation chain (see run): the last reported error and the current run nesting depth.
 let _lastDispatchedError: unknown;
 let _runDepth = 0;
+// Async dedup: every run gets an increasing id; a reported error object remembers the id of the run that reported
+// it. An async run that rejects with an error reported by a run started after it (a nested run it awaited) rethrows
+// an already reported failure. The run depth cannot tell: it is back to 0 after the first await, and any run in
+// between resets _lastDispatchedError. A run started earlier (an unrelated concurrent call failing with the same
+// error object) does not suppress the report. Thrown primitives cannot be tracked (WeakMap keys) and are not deduped
+// on the async path.
+let _runSeq = 0;
+const _reportedByRun = new WeakMap<object, number>();
+
+function isWeakKey(value: unknown): value is object {
+    return (typeof value === 'object' && value !== null) || typeof value === 'function';
+}
+
+function markReported(err: unknown, runId: number) {
+    if (isWeakKey(err)) {
+        _reportedByRun.set(err, runId);
+    }
+}
+
+function reportedByLaterRun(err: unknown, runId: number) {
+    return isWeakKey(err) && (_reportedByRun.get(err) ?? 0) > runId;
+}
 
 // Internal: replaces params.$events of a created component with the latest ones.
 const _eventsUpdaters = new WeakMap<Component<any, any>, (events: unknown) => void>();
@@ -240,14 +262,17 @@ function createComponent<
 
         // A run entered at depth 0 starts a new propagation chain: forget the previously reported error, so the same
         // error object thrown again later (singleton error, cached rejection) is reported again. Nested runs
-        // (action -> action, effect -> action) rethrow the same error and report it once.
+        // (action -> action, effect -> action) rethrow the same error and report it once. An async run (awaiting a
+        // nested run after an await) skips an error reported by a run started after it (see reportedByLaterRun).
         if (_runDepth === 0) {
             _lastDispatchedError = undefined;
         }
 
-        const handleError = (err: unknown) => {
-            if (err !== _lastDispatchedError) {
+        const runId = ++_runSeq;
+        const handleError = (err: unknown, async = false) => {
+            if (err !== _lastDispatchedError && !(async && reportedByLaterRun(err, runId))) {
                 _lastDispatchedError = err;
+                markReported(err, runId);
                 onError(err);
             }
             if (silent) {
@@ -268,7 +293,7 @@ function createComponent<
         }
 
         if (result instanceof Promise) {
-            return result.catch(handleError) as TResult;
+            return result.catch((err: unknown) => handleError(err, true)) as TResult;
         }
 
         return result;

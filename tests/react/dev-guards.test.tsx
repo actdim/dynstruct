@@ -3,6 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { ComponentContextProvider } from '@/componentModel/react/componentContext';
 import { useComponent } from '@/componentModel/react/hooks';
+import { bind, prop } from '@/componentModel/core';
 import type { Component, ComponentDef, ComponentModel, ComponentParams, ComponentStruct } from '@/componentModel/contracts';
 import { createMsgBus } from '@actdim/msgmesh/core';
 import { type BaseAppMsgStruct } from '@/appDomain/appContracts';
@@ -55,6 +56,63 @@ describe('plain param targeting a computed prop', () => {
         );
         expect(model!.full).toBe('a!');
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("computed prop 'full'"));
+    });
+});
+
+describe('param targeting a prop declared through a getter', () => {
+    type S = ComponentStruct<TestMsgStruct, {
+        props: { label: string; title: string };
+    }>;
+
+    function create(params: ComponentParams<S>) {
+        let model: ComponentModel<S> | undefined;
+        const useLabeled = (p: ComponentParams<S>) => {
+            let c: Component<S>;
+            let m: ComponentModel<S>;
+            const def: ComponentDef<S> = {
+                regType: 'Labeled',
+                props: {
+                    // a getter returning a ComponentProp is a regular prop, not a computed one
+                    get label() {
+                        return prop({ initialValue: 'default', reactive: 'ref' });
+                    },
+                    get title() {
+                        return prop({ initialValue: 'default' });
+                    },
+                },
+                view: () => <span>{m.label}</span>,
+            };
+            c = useComponent(def, p);
+            m = c.model;
+            model = m;
+
+            return c;
+        };
+        const Host = () => {
+            const c = useLabeled(params);
+
+            return <c.View />;
+        };
+        render(
+            <ComponentContextProvider value={{ msgBus }}>
+                <Host />
+            </ComponentContextProvider>,
+        );
+
+        return model!;
+    }
+
+    it('takes a plain param without the computed-prop warning', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const model = create({ label: 'from param', title: 'title param' });
+        expect(model.label).toBe('from param');
+        expect(model.title).toBe('title param');
+        expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('computed prop'));
+    });
+
+    it('takes a binding param', () => {
+        const model = create({ label: bind(() => 'bound'), title: 'x' });
+        expect(model.label).toBe('bound');
     });
 });
 

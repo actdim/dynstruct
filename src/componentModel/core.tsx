@@ -459,9 +459,10 @@ export function createModel<
         if (SERVICE_PARAM_KEYS.has(key)) {
             continue;
         }
-        // a computed (getter-only) prop cannot take a value: ignore the param instead of failing the creation
-        const propDescriptor = def.props ? Object.getOwnPropertyDescriptor(def.props, key) : undefined;
-        if (propDescriptor && typeof propDescriptor.get === 'function' && !propDescriptor.set) {
+        // a computed (getter-only) prop cannot take a value: ignore the param instead of failing the creation.
+        // Uses the classification above: a getter returning a ComponentProp (`get x() { return prop(...) }`) is a
+        // regular prop and takes its param.
+        if (annotationMap[key] === computed) {
             if (import.meta.env.DEV) {
                 console.warn(
                     `[dynstruct] Param for the computed prop '${key}' of '${component.regType}' is ignored: ` +

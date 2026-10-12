@@ -27,8 +27,9 @@ function getSrcFiles(dir: string): string[] {
     });
 }
 
+// externals: runtime dependencies (installed with the package, e.g. magic-string for the vite plugin) and peers
 const packages = [
-    // ...Object.keys(packageJson["dependencies"] || {}),
+    ...Object.keys(packageJson["dependencies"] || {}),
     ...Object.keys(packageJson["peerDependencies"] || {})
 ];
 

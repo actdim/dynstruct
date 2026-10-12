@@ -5,7 +5,6 @@
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
-- [ ] `(debt)` [dynstruct-review-followups](ISSUES/debt--dynstruct-review-followups.md)
 - [ ] `(debt)` [safe-user-code-execution](ISSUES/debt--safe-user-code-execution.md)
 - [ ] `(feat)` [agent-ready-structured-tracing](ISSUES/feat--agent-ready-structured-tracing.md)
 - [ ] `(feat)` [automatic-children-validation](ISSUES/feat--automatic-children-validation.md)
@@ -37,8 +36,8 @@
 
 ## Done (recent)
 - [x] `(debt)` [stories-lint](ISSUES/done/debt--stories-lint.md)
+- [x] `(debt)` [dynstruct-review-followups](ISSUES/done/debt--dynstruct-review-followups.md)
 - [x] `(task)` [dynstruct-tooling-repair](ISSUES/done/task--dynstruct-tooling-repair.md)
 - [x] `(feat)` [regtype-vite-plugin](ISSUES/done/feat--regtype-vite-plugin.md)
 - [x] `(feat)` [react-values-in-ref-props](ISSUES/done/feat--react-values-in-ref-props.md)
-- [x] `(docs)` [dynstruct-anti-patterns](ISSUES/done/docs--dynstruct-anti-patterns.md)
-<!-- 23 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 24 older completed issue(s) archived in .along/ISSUES/done/ -->

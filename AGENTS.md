@@ -385,7 +385,7 @@ Swallowing in these cases would silently return `undefined` to the caller and ca
 
 Inline JSX handlers with logic (`onClick={() => { ... }}`) are not recommended; call an action instead.
 
-A rethrow through nested wrapped calls (action -> action, effect -> action) is reported once; the same error object thrown again in a later call is reported again.
+A rethrow through nested wrapped calls (action -> action, effect -> action, also an async action awaiting another one) is reported once; the same error object thrown again in a later call is reported again.
 
 Manual `try/catch` is needed only for code that is **outside** this boundary - a plain function in an `onClick` that does not call any dynstruct API. Use a shared `handleError` function so both paths call the same logic:
 
