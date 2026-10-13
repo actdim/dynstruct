@@ -2,7 +2,7 @@
 
 All notable changes to `@actdim/dynstruct` are documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.8.3] - 2026-10-13
 
 ### Fixed
 - An async action awaiting another action (after an `await`) no longer reports the same error twice when another wrapped call runs in between: an async rejection with an error already reported by a run started after it (the awaited nested run) is not reported again; concurrent calls failing with the same error object are each reported (`debt--dynstruct-review-followups`).
