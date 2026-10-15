@@ -37,9 +37,9 @@
 - [ ] `(task)` [release-v1-8-2](ISSUES/task--release-v1-8-2.md)
 
 ## Done (recent)
+- [x] `(bug)` [pages-deploy-peer-deps](ISSUES/done/bug--pages-deploy-peer-deps.md)
 - [x] `(debt)` [stories-lint](ISSUES/done/debt--stories-lint.md)
 - [x] `(debt)` [dynstruct-review-followups](ISSUES/done/debt--dynstruct-review-followups.md)
 - [x] `(bug)` [normalize-payload-class-instances](ISSUES/done/bug--normalize-payload-class-instances.md)
 - [x] `(task)` [dynstruct-tooling-repair](ISSUES/done/task--dynstruct-tooling-repair.md)
-- [x] `(feat)` [regtype-vite-plugin](ISSUES/done/feat--regtype-vite-plugin.md)
-<!-- 25 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 26 older completed issue(s) archived in .along/ISSUES/done/ -->
