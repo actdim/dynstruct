@@ -6,6 +6,8 @@ const GITHUB_REPO = 'https://github.com/actdim/dynstruct';
 export default withMermaid(
   defineConfig({
     base: '/dynstruct/',
+    outDir: '../.dist-docs',
+    cacheDir: '../node_modules/.cache/vitepress',
     title: 'Dynstruct',
     description: 'Type-safe component model and architectural framework for scalable TypeScript & React applications',
     cleanUrls: true,

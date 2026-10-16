@@ -35,6 +35,7 @@
     "files": [
         "dist",
         "docs",
+        "!docs/.vitepress",
         "README.md",
         "LICENSE",
         "AGENTS.md",

@@ -139,6 +139,7 @@ storybook-static
 *.private
 
 # VitePress
+.dist-docs/
 docs/.vitepress/dist
 docs/.vitepress/cache
 
