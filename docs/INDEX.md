@@ -29,7 +29,7 @@ flowchart TD
     INDEX --> T_05_API_REFERENCE
     T_ARCHITECTURE["01 Architecture"]
     INDEX --> T_ARCHITECTURE
-    T_DEPENDENCIES["Dependencies & AI Documentation for @actdim/dynstruct"]
+    T_DEPENDENCIES["Dependencies & Submodules AI Documentation and Rules"]
     INDEX --> T_DEPENDENCIES
     T_DOMAIN_MODEL["02 Domain Model"]
     INDEX --> T_DOMAIN_MODEL
@@ -80,7 +80,7 @@ flowchart TD
 - **[React Integration & Service Patterns](./topic--04-react-integration.md)** (topic) `04-react-integration`
 - **[API Reference & Development Guide](./topic--05-api-reference.md)** (topic) `05-api-reference`, `api`, `contracts`
 - **[01 Architecture](./topic--architecture.md)** (topic) `architecture`
-- **[Dependencies & AI Documentation for @actdim/dynstruct](./topic--dependencies.md)** (topic) `dependencies`, `subproject`, `ai-context`, `rules`
+- **[Dependencies & Submodules AI Documentation and Rules](./topic--dependencies.md)** (topic) `dependencies`, `ai-context`, `submodules`, `vendor`, `rules`
 - **[02 Domain Model](./topic--domain-model.md)** (topic) `domain-model`
 - **[License](./topic--license.md)** (license) `license`, `mit`
 - **[03 Setup And Workflow](./topic--setup-and-workflow.md)** (topic) `setup-and-workflow`
