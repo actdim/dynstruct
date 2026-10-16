@@ -34,6 +34,7 @@
 - [ ] `(feat)` [visibility-interaction-states](ISSUES/feat--visibility-interaction-states.md)
 - [ ] `(feat)` [websocket-transport-support](ISSUES/feat--websocket-transport-support.md)
 - [ ] `(feat)` [www-authenticate-header-support](ISSUES/feat--www-authenticate-header-support.md)
+- [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
 - [x] `(task)` [separate-docs-and-vitepress-build](ISSUES/done/task--separate-docs-and-vitepress-build.md)
