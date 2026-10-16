@@ -23,7 +23,7 @@ pnpm install
 
 ### Peer Dependencies
 ```bash
-pnpm add @actdim/msgmesh @actdim/utico react react-dom mobx mobx-react-lite mobx-utils react-router react-router-dom rxjs uuid path-to-regexp jwt-decode
+pnpm add @actdim/msgmesh @actdim/utico react react-dom mobx mobx-react-lite react-router react-router-dom rxjs uuid path-to-regexp jwt-decode
 ```
 
 ## 2. Scripts & Workflows

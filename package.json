@@ -99,7 +99,6 @@
         "jwt-decode": ">=4.0.0",
         "mobx": ">=6.15.0",
         "mobx-react-lite": ">=4.1.1",
-        "mobx-utils": ">=6.1.1",
         "path-to-regexp": ">=8.3.0",
         "react": ">=19.2.0",
         "react-dom": ">=19.2.0",
