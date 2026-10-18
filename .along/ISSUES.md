@@ -37,9 +37,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(task)` [standardize-lockfile](ISSUES/done/task--standardize-lockfile.md)
 - [x] `(task)` [separate-docs-and-vitepress-build](ISSUES/done/task--separate-docs-and-vitepress-build.md)
 - [x] `(task)` [remediate-all-stub-issues](ISSUES/done/task--remediate-all-stub-issues.md)
 - [x] `(debt)` [remove-unused-peerdeps](ISSUES/done/debt--remove-unused-peerdeps.md)
 - [x] `(bug)` [pages-deploy-peer-deps](ISSUES/done/bug--pages-deploy-peer-deps.md)
-- [x] `(debt)` [stories-lint](ISSUES/done/debt--stories-lint.md)
-<!-- 30 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 31 older completed issue(s) archived in .along/ISSUES/done/ -->
