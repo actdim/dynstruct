@@ -79,3 +79,52 @@ describe("HttpNetworkError and isNetworkFailure", () => {
         expect(netErr.message).toContain("Could not connect to server");
     });
 });
+
+describe("HttpClient response status handling", () => {
+    const mockContext = {
+        msgBus: {
+            on: () => {
+                return () => {};
+            },
+            request: async () => {}
+        }
+    } as any;
+
+    const jsonFetcher = (status: number, body: unknown): IFetcher => ({
+        fetch: async () =>
+            new Response(JSON.stringify(body), {
+                status,
+                headers: { "Content-Type": "application/json" }
+            })
+    });
+
+    it("returns the parsed result for 201 Created", async () => {
+        const client = new HttpClient(mockContext, jsonFetcher(201, { id: "item-1" }));
+
+        const result = await client.fetch<{ id: string }>({
+            url: "http://localhost:5000/api/v1/intake",
+            method: "POST",
+            body: JSON.stringify({ text: "x" })
+        });
+
+        expect(result).toEqual({ id: "item-1" });
+    });
+
+    it("rejects with an HttpClientError (not a Promise) for 4xx", async () => {
+        const client = new HttpClient(mockContext, jsonFetcher(404, { error: "Missing item" }));
+
+        let caught: unknown = null;
+        try {
+            await client.fetch({
+                url: "http://localhost:5000/api/v1/intake/x",
+                method: "GET"
+            });
+        } catch (err) {
+            caught = err;
+        }
+
+        expect(caught).toBeInstanceOf(HttpClientError);
+        expect((caught as HttpClientError).status).toBe(404);
+        expect((caught as HttpClientError).message).toContain("Missing item");
+    });
+});

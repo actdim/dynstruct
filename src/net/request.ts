@@ -1,6 +1,5 @@
 // Transport
 
-import httpStatus from "http-status";
 import { AwaitedReturnType, Func } from "@actdim/utico/typeCore";
 import { HttpClientError } from "./httpClientError";
 
@@ -162,10 +161,8 @@ export async function getResponseResult(response: IResponseState, request: IRequ
             // throw new Error(`Unsupported content type: ${contentType}`);
         }
     }
-    if (!(response.status === httpStatus.OK || response.status === httpStatus.NO_CONTENT)) {
-        // JSON.stringify(resolved)
-        throw HttpClientError.create(response, request);
-    }
+    // Any 2xx (200, 201 Created, 202, 204) is a success; create() is async, so it must be awaited
+    await HttpClientError.assert(response, request);
 
     request.result = result;
     return result;
