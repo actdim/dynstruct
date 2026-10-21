@@ -24,3 +24,4 @@ _`<YYYY-MM-DD> - <slug> - <agent> - <summary> - <relative link>`_
 2026-10-12 - normalize-payload-class-instances - claude-code - c.msgBus payload keeps class instances (File, Blob, Date, Map) by reference - [.along/SESSIONS/2026/2026-10-12--normalize-payload-class-instances.md](./SESSIONS/2026/2026-10-12--normalize-payload-class-instances.md)
 2026-10-15 - pages-deploy-peer-deps - antigravity - Fix GitHub Pages deploy failure by disabling auto-install-peers for docs - [Session Log](./SESSIONS/2026/2026-10-15--pages-deploy-peer-deps.md)
 2026-10-16 - remove-unused-peerdeps - antigravity - Remove unused mobx-utils from peerDependencies - [Session Log](./SESSIONS/2026/2026-10-16--remove-unused-peerdeps.md)
+2026-10-21 - http-client-error-drops-body - antigravity - Expose errorCode, params, and details on HttpClientError - [Session Log](./SESSIONS/2026/2026-10-21--http-client-error-drops-body.md)

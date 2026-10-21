@@ -497,6 +497,20 @@ export class MyApiClient extends HttpClient {
 
 See `src/_stories/componentModel/securityService/SecureApiClient.ts` for a working example.
 
+### HttpClientError and Error Localization
+
+`HttpClientError<TDetails>` is thrown by `HttpClient.fetch` on HTTP error statuses (4xx/5xx):
+
+- `status?: number` - HTTP status code (e.g. `400`, `404`, `500`).
+- `name: string` - Identifier name (e.g. `HTTP_STATUS_400`, `API_ERROR_INTERNAL_ERROR`, `CONTENT_TYPE_MISMATCH`).
+- `message: string` - Diagnostic error text intended for logs/debugging, not for UI presentation.
+- `details?: TDetails` - The full parsed response body (JSON object or raw text string).
+- `code?: string` - Machine error code extracted from `details.errorCode` when available (e.g. `VALIDATION_FAILED`, `NOT_FOUND`).
+- `params?: Readonly<Record<string, string | number>>` - Structured interpolation parameters from `details.params`.
+- `cause?: TDetails` - Error cause set to `details`.
+
+**UI Localization Rule**: UI user-facing error text must always be derived from `code` (and formatted using `params`), never from `message`. `message` contains server English text and HTTP status diagnostic details.
+
 ### Auth schemes, credentials, and `AuthInfo`
 
 SecurityService is scheme-aware. The scheme is a discriminant on both the sign-in request and the auth state:
@@ -2605,6 +2619,31 @@ Instance interface returned by `useComponent`:
   - `c.mapToEdit(propPath?, exclude?)`: Generate two-way form input bindings (`value`, `onChange`, `onBlur`).
   - `c.run(handler, silent)`: Executes async handlers within component error and pending request tracking.
   - `c[Symbol.dispose]()`: Manual disposal cleanup.
+
+---
+
+## Networking and API Clients
+
+### `HttpClient`
+
+`HttpClient` is the base class for typed API service clients:
+- `fetch<T>(options: IRequestOptions): Promise<T>`: Performs HTTP request with error handling and optional auth.
+- Injects auth headers when `useAuth: true`.
+- Automatically disposes pending requests on unmount.
+
+### `HttpClientError<TDetails>`
+
+Error thrown on HTTP failure statuses (4xx/5xx):
+- `status?: number`: HTTP status code.
+- `name: string`: Identifier name (e.g. `HTTP_STATUS_400`).
+- `message: string`: Diagnostic message for logging and debugging.
+- `details?: TDetails`: Parsed response body (object or string).
+- `code?: string`: Server machine error code (`details.errorCode`).
+- `params?: Readonly<Record<string, string | number>>`: Structured interpolation parameters from `details.params`.
+- `cause?: TDetails`: Populated with response details.
+
+> [!IMPORTANT]
+> **UI Error Localization Rule**: Client user-facing error text must always be derived from `code` (and formatted using `params`), never from `message`. `message` contains server English diagnostic text.
 
 ---
 
