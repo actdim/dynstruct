@@ -1,4 +1,4 @@
-import { IRequestState, IResponseState, getResponseResult } from "@/net/request";
+import type { IRequestState, IResponseState } from "@/net/request";
 import HttpStatus from "http-status";
 
 // UNKNOWN/UNRECOGNIZED
@@ -10,8 +10,11 @@ export interface IApiErrorOptions<TDetails = any> extends ErrorOptions {
     // type/code
     name?: string;
     status?: number;
-    request: IRequestState;
+    request?: IRequestState;
     response?: Partial<IResponseState>;
+    details?: TDetails;
+    code?: string;
+    params?: Readonly<Record<string, string | number>>;
 }
 
 export class HttpClientError<TDetails = any> extends Error {
@@ -21,20 +24,33 @@ export class HttpClientError<TDetails = any> extends Error {
 
     readonly message: string;
 
-    readonly request: IRequestState;
+    readonly request?: IRequestState;
 
-    readonly response: Partial<IResponseState>;
+    readonly response?: Partial<IResponseState>;
 
-    readonly status: number; // code/type
+    readonly status?: number; // code/type
+
+    readonly details?: TDetails;
+
+    readonly code?: string;
+
+    readonly params?: Readonly<Record<string, string | number>>;
 
     public constructor(message: string, options?: IApiErrorOptions<TDetails>) {
-        // status: number, request: IRequestState, response?: Partial<IResponseState>, name?: string
-        super(message);
-        this.status = options.status;
-        this.message = message || options.name; // message ?? options.name
-        this.request = options.request;
-        this.response = options.response;
-        this.name = options.name || API_ERROR_INTERNAL_ERROR;
+        super(message, { cause: options?.cause ?? options?.details });
+        this.status = options?.status;
+        this.message = message || options?.name;
+        this.request = options?.request;
+        this.response = options?.response;
+        this.name = options?.name || API_ERROR_INTERNAL_ERROR;
+        this.details = options?.details ?? (options?.cause as TDetails | undefined);
+
+        const detailsObj = typeof this.details === "object" && this.details !== null ? (this.details as Record<string, unknown>) : undefined;
+        this.code = options?.code ?? (typeof detailsObj?.errorCode === "string" ? detailsObj.errorCode : undefined);
+        this.params = options?.params ?? (detailsObj?.params && typeof detailsObj.params === "object" && !Array.isArray(detailsObj.params)
+            ? (detailsObj.params as Readonly<Record<string, string | number>>)
+            : undefined);
+
         Object.setPrototypeOf(this, HttpClientError.prototype);
     }
 
@@ -54,6 +70,8 @@ export class HttpClientError<TDetails = any> extends Error {
         let msg = (typeof status === "number" && HttpStatus[`${status}_MESSAGE`] as string) || "An unexpected server error occurred.";
         const name = typeof status === "number" ? `HTTP_STATUS_${status}` : API_ERROR_INTERNAL_ERROR;
         let details: unknown = undefined;
+        let code: string | undefined = undefined;
+        let params: Readonly<Record<string, string | number>> | undefined = undefined;
 
         if (response && typeof (response as Response).clone === "function") {
             try {
@@ -63,6 +81,14 @@ export class HttpClientError<TDetails = any> extends Error {
                     try {
                         const json = JSON.parse(text);
                         details = json;
+                        if (json && typeof json === "object") {
+                            if (typeof json.errorCode === "string") {
+                                code = json.errorCode;
+                            }
+                            if (json.params && typeof json.params === "object" && !Array.isArray(json.params)) {
+                                params = json.params as Readonly<Record<string, string | number>>;
+                            }
+                        }
                         const serverDetail = json.detail || json.message || json.error;
                         if (typeof serverDetail === "string" && serverDetail.trim()) {
                             msg = `${serverDetail.trim()} (${name})`;
@@ -85,7 +111,11 @@ export class HttpClientError<TDetails = any> extends Error {
             response,
             name,
             cause: details,
+            details,
+            code,
+            params,
         });
+
         return error;
     }
 

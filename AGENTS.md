@@ -182,6 +182,20 @@ export class MyApiClient extends HttpClient {
 
 See `src/_stories/componentModel/securityService/SecureApiClient.ts` for a working example.
 
+### HttpClientError and Error Localization
+
+`HttpClientError<TDetails>` is thrown by `HttpClient.fetch` on HTTP error statuses (4xx/5xx):
+
+- `status?: number` - HTTP status code (e.g. `400`, `404`, `500`).
+- `name: string` - Identifier name (e.g. `HTTP_STATUS_400`, `API_ERROR_INTERNAL_ERROR`, `CONTENT_TYPE_MISMATCH`).
+- `message: string` - Diagnostic error text intended for logs/debugging, not for UI presentation.
+- `details?: TDetails` - The full parsed response body (JSON object or raw text string).
+- `code?: string` - Machine error code extracted from `details.errorCode` when available (e.g. `VALIDATION_FAILED`, `NOT_FOUND`).
+- `params?: Readonly<Record<string, string | number>>` - Structured interpolation parameters from `details.params`.
+- `cause?: TDetails` - Error cause set to `details`.
+
+**UI Localization Rule**: UI user-facing error text must always be derived from `code` (and formatted using `params`), never from `message`. `message` contains server English text and HTTP status diagnostic details.
+
 ### Auth schemes, credentials, and `AuthInfo`
 
 SecurityService is scheme-aware. The scheme is a discriminant on both the sign-in request and the auth state:

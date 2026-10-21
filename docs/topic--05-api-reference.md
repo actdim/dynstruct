@@ -209,6 +209,31 @@ Instance interface returned by `useComponent`:
 
 ---
 
+## Networking and API Clients
+
+### `HttpClient`
+
+`HttpClient` is the base class for typed API service clients:
+- `fetch<T>(options: IRequestOptions): Promise<T>`: Performs HTTP request with error handling and optional auth.
+- Injects auth headers when `useAuth: true`.
+- Automatically disposes pending requests on unmount.
+
+### `HttpClientError<TDetails>`
+
+Error thrown on HTTP failure statuses (4xx/5xx):
+- `status?: number`: HTTP status code.
+- `name: string`: Identifier name (e.g. `HTTP_STATUS_400`).
+- `message: string`: Diagnostic message for logging and debugging.
+- `details?: TDetails`: Parsed response body (object or string).
+- `code?: string`: Server machine error code (`details.errorCode`).
+- `params?: Readonly<Record<string, string | number>>`: Structured interpolation parameters from `details.params`.
+- `cause?: TDetails`: Populated with response details.
+
+> [!IMPORTANT]
+> **UI Error Localization Rule**: Client user-facing error text must always be derived from `code` (and formatted using `params`), never from `message`. `message` contains server English diagnostic text.
+
+---
+
 ## Storybook Integration
 
 `dynstruct` components can be documented and tested visually using Storybook.
