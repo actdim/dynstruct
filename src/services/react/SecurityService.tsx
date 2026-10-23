@@ -72,6 +72,7 @@ import { toReact, useComponent } from '@/componentModel/react/hooks';
 import { AsyncLock } from '@actdim/utico/asyncLock';
 import { HttpClient } from '@/net/httpClient';
 import { useComponentContext } from '@/componentModel/react/componentContext';
+import { resolveSignInCallbackUrl } from '@/appDomain/navigation';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -217,8 +218,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             payload: {
                 path: m.domainConfig.routes.authSignInPage,
                 params: {
-                    callbackUrl:
-                        window.location.pathname + window.location.search + window.location.hash,
+                    callbackUrl: resolveSignInCallbackUrl(m.domainConfig.routes.authSignInPage, window.location),
                 },
             },
         });

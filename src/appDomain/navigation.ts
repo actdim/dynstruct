@@ -84,3 +84,29 @@ export function getUrlMatcher(pattern: string) {
         };
     }
 }
+
+function trimSlashes(path: string) {
+    return path.replace(/^\/+|\/+$/g, '');
+}
+
+/**
+ * Resolves the callbackUrl for a redirect to the sign-in page. When the current location already is the
+ * sign-in page (another request asked for auth meanwhile), its own callbackUrl is kept instead of nesting
+ * the sign-in URL into itself; already nested sign-in callbacks are unwrapped.
+ */
+export function resolveSignInCallbackUrl(
+    signInPath: string,
+    location: { pathname: string; search: string; hash: string }
+): string {
+    const signIn = trimSlashes(signInPath);
+    let callbackUrl = location.pathname + location.search + location.hash;
+    // bounded: a malformed chain must not loop forever
+    for (let depth = 0; depth < 16; depth++) {
+        const url = new URL(callbackUrl, 'http://callback.local');
+        if (trimSlashes(url.pathname) !== signIn) {
+            return callbackUrl;
+        }
+        callbackUrl = url.searchParams.get('callbackUrl') || '/';
+    }
+    return '/';
+}
