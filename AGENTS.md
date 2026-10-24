@@ -226,7 +226,7 @@ dynstruct declares typed bus channels (`@actdim/msgmesh`) used by its subsystems
 | `APP.CONFIG.GET` | `void` | `BaseAppDomainConfig` |
 | `APP.CONFIG.SET` | `BaseAppDomainConfig` | `void` |
 | `APP.CONFIG.CHANGED` | `BaseAppDomainConfig` | `void` (event) |
-| `APP.NAV.GOTO` | `{ path: string \| number; params: any }` | `void` |
+| `APP.NAV.GOTO` | `{ path?: string \| number; url?; params?; replace?; state? }` | `void` |
 | `APP.NAV.CONTEXT.GET` | `void` | `NavContext` |
 | `APP.NAV.CONTEXT.CHANGED` | `NavContext` | `void` (event) |
 | `APP.NAV.HISTORY.READ` | `number` | `NavContext` |

@@ -46,6 +46,10 @@ export function getUrlBuilder(pattern: string) {
         const queryParams: Record<string, any> = {};
 
         for (const [key, value] of Object.entries(params)) {
+            // an absent optional param is omitted, never serialized as "undefined" / "null"
+            if (value === undefined || value === null) {
+                continue;
+            }
             if (keys.includes(key)) {
                 pathParams[key] = value;
             } else {
@@ -58,6 +62,15 @@ export function getUrlBuilder(pattern: string) {
 
         return query ? `${path}?${query}` : path;
     };
+}
+
+/**
+ * Absolute URL (leading `/`) of a route for the given params, usable as a link `href` and as `APP.NAV.GOTO` `url`.
+ * Route patterns are relative (`explorer`), so a bare `route.url()` would resolve against the current location.
+ */
+export function toRouteHref<TParams extends NavRouteParams>(route: NavRoute<TParams>, params?: TParams): string {
+    const url = route.url(params ?? ({} as TParams));
+    return url.startsWith('/') ? url : `/${url}`;
 }
 
 export function getUrlMatcher(pattern: string) {

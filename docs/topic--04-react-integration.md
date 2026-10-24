@@ -337,6 +337,20 @@ c.msgBus.send({
 });
 ```
 
+`NavService` (`services/react/NavService`) is mounted once inside the router (root layout) and provides the
+navigation channels:
+
+- `APP.NAV.GOTO` - `in`: `{ url }`, `{ path, params }` (pattern + params) or `{ path: -1 }` (history back);
+  `replace` and `state` (`location.state` of the new entry) are optional. `ex`: `{ route, params }` resolved through the
+  `routes` passed to `NavService` (`toRouteHref`, leading `/`).
+- `APP.NAV.CONTEXT.CHANGED` - published on every location change with the live `NavContext` (`location`,
+  `searchParams`, `params`, `navType` PUSH / REPLACE / POP), including browser Back/Forward and navigations made by
+  the router directly; once per change (StrictMode-safe).
+- `APP.NAV.CONTEXT.GET` / `APP.NAV.HISTORY.READ` - the current / an earlier context (last 100 kept).
+
+Pages that map the URL to state subscribe to `APP.NAV.CONTEXT.CHANGED` (and read `APP.NAV.CONTEXT.GET` on ready,
+because they mount after the first publish). `getUrlBuilder` omits `undefined` / `null` params.
+
 ### Auth & Security Provider (`AuthInfo`)
 
 Security status and user credentials flow through standardized security channels, providing automatic token refresh and permission checks across all connected components.

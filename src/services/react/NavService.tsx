@@ -15,9 +15,9 @@ import type {
     ComponentStruct,
 } from '@/componentModel/contracts';
 import { toReact, useComponent } from '@/componentModel/react/hooks';
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useEffect, useRef } from 'react';
 import { NavContext, NavRoutes } from '@/appDomain/commonContracts';
-import { getUrlBuilder } from '@/appDomain/navigation';
+import { getUrlBuilder, toRouteHref } from '@/appDomain/navigation';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -39,15 +39,20 @@ type Struct = ComponentStruct<
 
 // const store = new PersistentStore('history');
 
+const MAX_HISTORY = 100;
+
 export const useNavService = (params: ComponentParams<Struct>) => {
     let c: Component<Struct>;
     let m: ComponentModel<Struct>;
 
-    const navigate = useNavigate();
+    // def closures are created once: they must call the live navigate, not the first-render one
+    const liveNavigate = useNavigate();
+    const navigateRef = useRef(liveNavigate);
+    navigateRef.current = liveNavigate;
 
     const location = useLocation();
     const navType = useNavigationType();
-    const nvaParams = useParams();
+    const navParams = useParams();
     const [searchParams] = useSearchParams();
 
     const def: ComponentDef<Struct> = {
@@ -60,22 +65,23 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                 'APP.NAV.GOTO': {
                     in: {
                         callback: async (msg) => {
-                            const replace = Boolean(msg.payload?.replace);
+                            const navigate = navigateRef.current;
+                            const options = { replace: Boolean(msg.payload?.replace), state: msg.payload?.state };
                             if (typeof msg.payload.path === 'number') {
-                                navigate(msg.payload.path);
+                                await navigate(msg.payload.path);
                             } else if (msg.payload.url) {
-                                navigate(msg.payload.url, { replace });
+                                await navigate(msg.payload.url, options);
                             } else if (typeof msg.payload.path === 'string') {
                                 const toUrl = getUrlBuilder(msg.payload.path);
-                                navigate(toUrl(msg.payload.params), { replace });
+                                await navigate(toUrl(msg.payload.params), options);
                             }
                         },
                     },
                     ex: {
                         callback: async (msg) => {
                             const route = msg.payload.route;
-                            const replace = Boolean(msg.payload?.replace);
-                            navigate(m.routes[route].url(msg.payload.params), { replace });
+                            const options = { replace: Boolean(msg.payload?.replace), state: msg.payload?.state };
+                            await navigateRef.current(toRouteHref(m.routes[route], msg.payload.params), options);
                         },
                     },
                 },
@@ -100,25 +106,6 @@ export const useNavService = (params: ComponentParams<Struct>) => {
                 'APP.NAV.CONTEXT.CHANGED': {},
             },
         },
-        events: {
-            onLayoutReady: (c) => {
-                const history = m.history;
-                if (history) {
-                    const ctx = {
-                        location: location,
-                        searchParams: searchParams,
-                        params: nvaParams,
-                        navType: navType,
-                    };
-                    history.push(ctx);
-                    c.msgBus.send({
-                        channel: 'APP.NAV.CONTEXT.CHANGED',
-                        group: 'in',
-                        payload: ctx,
-                    });
-                }
-            },
-        },
         view: () => {
             return null;
         },
@@ -126,6 +113,30 @@ export const useNavService = (params: ComponentParams<Struct>) => {
 
     c = useComponent(def, params);
     m = c.model;
+
+    // Publish every location change (push, replace, pop) with the live location. Runs after the component's
+    // layout effects (bus wired); the key guard keeps StrictMode double effects to one publish per change.
+    useEffect(() => {
+        const history = m.history;
+        if (history[history.length - 1]?.location?.key === location.key) {
+            return;
+        }
+        const ctx = {
+            location: location,
+            searchParams: searchParams,
+            params: navParams,
+            navType: navType,
+        };
+        history.push(ctx);
+        if (history.length > MAX_HISTORY) {
+            history.splice(0, history.length - MAX_HISTORY);
+        }
+        c.msgBus.send({
+            channel: 'APP.NAV.CONTEXT.CHANGED',
+            group: 'in',
+            payload: ctx,
+        });
+    }, [location.key]);
 
     return c;
 };

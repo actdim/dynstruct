@@ -443,8 +443,10 @@ export type CommonAppMsgStruct<TNavRoutes extends NavRoutes = NavRoutes, TTypeRe
                 url?: string;
                 replace?: boolean;
                 params?: any; // NavRouteParams
+                /** History state of the new entry (`location.state`) */
+                state?: unknown;
             };
-            ex: NavRouteStruct<TNavRoutes> & { replace?: boolean };
+            ex: NavRouteStruct<TNavRoutes> & { replace?: boolean; state?: unknown };
             out: void;
         };
         [$NAV_CONTEXT_GET]: {

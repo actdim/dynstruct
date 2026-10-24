@@ -37,9 +37,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(bug)` [nav-service-location-sync](ISSUES/done/bug--nav-service-location-sync.md)
 - [x] `(bug)` [signin-callback-recursion](ISSUES/done/bug--signin-callback-recursion.md)
 - [x] `(bug)` [http-client-error-drops-body](ISSUES/done/bug--http-client-error-drops-body.md)
 - [x] `(bug)` [http-2xx-response-promise-throw](ISSUES/done/bug--http-2xx-response-promise-throw.md)
 - [x] `(task)` [standardize-lockfile](ISSUES/done/task--standardize-lockfile.md)
-- [x] `(task)` [separate-docs-and-vitepress-build](ISSUES/done/task--separate-docs-and-vitepress-build.md)
-<!-- 34 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 35 older completed issue(s) archived in .along/ISSUES/done/ -->
