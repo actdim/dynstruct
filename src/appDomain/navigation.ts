@@ -73,6 +73,37 @@ export function toRouteHref<TParams extends NavRouteParams>(route: NavRoute<TPar
     return url.startsWith('/') ? url : `/${url}`;
 }
 
+/** Mouse event fields read by `isPlainLeftClick` (React and DOM events both fit). */
+export type LinkClickEvent = {
+    button: number;
+    metaKey: boolean;
+    ctrlKey: boolean;
+    shiftKey: boolean;
+    altKey: boolean;
+    defaultPrevented: boolean;
+};
+
+/**
+ * A plain primary click: the app navigates in place. Middle, Ctrl/Cmd, Shift and Alt clicks (new tab, new window,
+ * download) and `target` other than `_self` belong to the browser.
+ */
+export function isPlainLeftClick(e: LinkClickEvent, target?: string): boolean {
+    return (
+        e.button === 0 &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.shiftKey &&
+        !e.altKey &&
+        !e.defaultPrevented &&
+        (!target || target === '_self')
+    );
+}
+
+/** An in-app href (`/path`), as opposed to an external, protocol-relative or `mailto:` link. */
+export function isAppHref(href: string | undefined | null): href is string {
+    return typeof href === 'string' && href.startsWith('/') && !href.startsWith('//');
+}
+
 export function getUrlMatcher(pattern: string) {
     const [pathTemplate, _] = pattern.split('?')
 
