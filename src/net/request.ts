@@ -105,6 +105,12 @@ export const getBaseContentType = (contentType?: string | null): string => {
 
 // https://stackoverflow.com/questions/64781995/how-to-get-mime-type-of-an-array-buffer-object
 export async function getResponseResult(response: IResponseState, request: IRequestState): Promise<any> {
+    // no body (204 No Content, 205, 304, Content-Length: 0): nothing to read, and no content type to compare
+    const contentLength = response.headers ? getHeaderValue(response.headers, "content-length") : undefined;
+    if (response.status === 204 || response.status === 205 || response.status === 304 || contentLength === "0") {
+        return undefined;
+    }
+
     const requestContentType = request.contentType || getHeaderValue(request.headers, "content-type");
     let responseContentType: string | undefined = undefined;
     if (response.headers) {
