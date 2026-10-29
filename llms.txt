@@ -11,6 +11,7 @@
 - [docs/topic--03-architecture-and-wiring.md](docs/topic--03-architecture-and-wiring.md): Architecture & Wiring.
 - [docs/topic--04-react-integration.md](docs/topic--04-react-integration.md): React Integration & Service Patterns.
 - [docs/topic--05-api-reference.md](docs/topic--05-api-reference.md): API Reference & Development Guide.
+- [docs/topic--along-protocol.md](docs/topic--along-protocol.md): Along Protocol Reference.
 - [docs/topic--architecture.md](docs/topic--architecture.md): 01 Architecture.
 - [docs/topic--dependencies.md](docs/topic--dependencies.md): Dependencies & Submodules AI Documentation and Rules.
 - [docs/topic--domain-model.md](docs/topic--domain-model.md): 02 Domain Model.

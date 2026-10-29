@@ -131,6 +131,33 @@ type ValueConverter<TTo, TFrom> = {
 };
 ```
 
+### External State Tracking: `fromExternalStore`
+
+```typescript
+function fromExternalStore<T>(
+    subscribe: (onChange: () => void) => () => void,
+    getSnapshot: () => T,
+    name?: string,
+): () => T;
+```
+
+Makes external (non-model) state trackable without importing MobX: calling the returned reader inside an observer view, binding getter, computed prop, or effect re-runs it when the store calls `onChange`. Same contract as React `useSyncExternalStore`. Subscribes only while observed (0 listeners when unmounted or outside reactions).
+
+Example with a module-level service:
+```typescript
+import { fromExternalStore } from '@actdim/dynstruct/componentModel/core';
+import { authService } from './authService';
+
+const readCurrentUser = fromExternalStore(
+    authService.subscribe,
+    authService.getCurrentUser,
+    'currentUser',
+);
+
+// In a dynstruct view or binding:
+view: () => <div>Hello, {readCurrentUser()?.name}</div>
+```
+
 ### Declarative Routing: `createNavigationRoute`
 
 ```typescript

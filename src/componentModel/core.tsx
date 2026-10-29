@@ -9,6 +9,7 @@ import {
     computed,
     isObservable,
     untracked,
+    createAtom,
 } from 'mobx';
 import type {
     BaseComponentModel,
@@ -161,6 +162,37 @@ export function bindProp<T extends object, P extends KeyPath<T, boolean>>(
 //         [$isBinding]: true,
 //     };
 // }
+
+/**
+ * Makes external (non-model) state trackable: calling the returned reader inside a view, binding getter,
+ * computed prop or effect re-runs it when the store calls onChange. Same contract as useSyncExternalStore.
+ * Subscribes only while observed.
+ */
+export function fromExternalStore<T>(
+    subscribe: (onChange: () => void) => () => void,
+    getSnapshot: () => T,
+    name = 'externalStore',
+): () => T {
+    let unsubscribe: (() => void) | null = null;
+    const atom = createAtom(
+        name,
+        () => {
+            unsubscribe = subscribe(() => {
+                runInAction(() => {
+                    atom.reportChanged();
+                });
+            });
+        },
+        () => {
+            unsubscribe?.();
+            unsubscribe = null;
+        },
+    );
+    return () => {
+        atom.reportObserved();
+        return getSnapshot();
+    };
+}
 
 export function prop<T = any>(prop: Partial<ComponentProp<T>>) {
     prop = {

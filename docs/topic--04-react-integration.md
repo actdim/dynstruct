@@ -234,6 +234,31 @@ card: (p) => useCard({
 }),
 ```
 
+### 10. External State in Views (`fromExternalStore`)
+
+When a view, binding, or computed property needs to react to state that lives outside the component model (for example, an i18next runtime, theme store, or module-level service) without importing MobX into application code:
+
+```typescript
+import { fromExternalStore } from '@actdim/dynstruct/componentModel/core';
+
+// Create a reactive reader for the external store
+const readTheme = fromExternalStore(
+    themeService.subscribe,
+    themeService.getSnapshot,
+    'theme',
+);
+
+// In a dynstruct component:
+const useMyComponent = (params?: ComponentParams<MyStruct>) => {
+    const def: ComponentDef<MyStruct> = {
+        view: () => <div className={readTheme()}>Content</div>,
+    };
+    return useComponent(def, params);
+};
+```
+
+Calling `readTheme()` inside an observer `view`, `bind(...)` getter, computed prop, or effect registers a dependency and triggers re-renders whenever the store notifies change. When unmounted or evaluated outside a reaction, it returns `getSnapshot()` without subscribing.
+
 ---
 
 ## Service Integration & Adapters
