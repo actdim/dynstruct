@@ -631,6 +631,7 @@ Use `$id` for fully explicit ids (testing, anchors). Use `$key` to form predicta
 - Use `fallbackView` in `ComponentDef` together with `useErrorBoundary: true` to render an error fallback UI instead of `view` when the component catches a render-time error.
 - Use `ComponentStructExt<Struct, {...}>` **inside** a hook-constructor to declare private reactive props, internal children (often `React.FC` sections), and effects. The extended type is invisible to callers; return `Component<Struct>` from the hook to preserve the public API. See `componentState/StateExample.tsx`.
 - Use `ComponentImpl<Struct, Internals>` when you need non-reactive, per-instance data (e.g., a cache or lock). Pass initial internals as the third argument to `useComponent`; access via `c._`. Return `Component<Struct>` to hide internals from callers. See `services/react/StorageService.tsx`.
+- **External state is read through `fromExternalStore`, never via direct MobX.** App and library code must not import MobX directly. To make non-model external state (e.g. an i18next runtime, theme store, or module-level service) trackable inside an observer `view`, binding getter, computed prop, or effect, create a reader with `fromExternalStore(subscribe, getSnapshot, name?)` (`@actdim/dynstruct/componentModel/core`).
 
 ### Error handling pattern
 
@@ -2246,6 +2247,31 @@ card: (p) => useCard({
 }),
 ```
 
+### 10. External State in Views (`fromExternalStore`)
+
+When a view, binding, or computed property needs to react to state that lives outside the component model (for example, an i18next runtime, theme store, or module-level service) without importing MobX into application code:
+
+```typescript
+import { fromExternalStore } from '@actdim/dynstruct/componentModel/core';
+
+// Create a reactive reader for the external store
+const readTheme = fromExternalStore(
+    themeService.subscribe,
+    themeService.getSnapshot,
+    'theme',
+);
+
+// In a dynstruct component:
+const useMyComponent = (params?: ComponentParams<MyStruct>) => {
+    const def: ComponentDef<MyStruct> = {
+        view: () => <div className={readTheme()}>Content</div>,
+    };
+    return useComponent(def, params);
+};
+```
+
+Calling `readTheme()` inside an observer `view`, `bind(...)` getter, computed prop, or effect registers a dependency and triggers re-renders whenever the store notifies change. When unmounted or evaluated outside a reaction, it returns `getSnapshot()` without subscribing.
+
 ---
 
 ## Service Integration & Adapters
@@ -2496,6 +2522,33 @@ type ValueConverter<TTo, TFrom> = {
     convert: (value: TFrom) => TTo;
     convertBack: (value: TTo) => TFrom;
 };
+```
+
+### External State Tracking: `fromExternalStore`
+
+```typescript
+function fromExternalStore<T>(
+    subscribe: (onChange: () => void) => () => void,
+    getSnapshot: () => T,
+    name?: string,
+): () => T;
+```
+
+Makes external (non-model) state trackable without importing MobX: calling the returned reader inside an observer view, binding getter, computed prop, or effect re-runs it when the store calls `onChange`. Same contract as React `useSyncExternalStore`. Subscribes only while observed (0 listeners when unmounted or outside reactions).
+
+Example with a module-level service:
+```typescript
+import { fromExternalStore } from '@actdim/dynstruct/componentModel/core';
+import { authService } from './authService';
+
+const readCurrentUser = fromExternalStore(
+    authService.subscribe,
+    authService.getCurrentUser,
+    'currentUser',
+);
+
+// In a dynstruct view or binding:
+view: () => <div>Hello, {readCurrentUser()?.name}</div>
 ```
 
 ### Declarative Routing: `createNavigationRoute`

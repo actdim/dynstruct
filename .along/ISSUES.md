@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-- [ ] `(feat)` [external-store-reader](ISSUES/feat--external-store-reader.md) - plan ready
+<!-- No active issues -->
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
@@ -37,9 +37,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(feat)` [external-store-reader](ISSUES/done/feat--external-store-reader.md)
 - [x] `(feat)` [nav-link](ISSUES/done/feat--nav-link.md)
 - [x] `(bug)` [nav-service-location-sync](ISSUES/done/bug--nav-service-location-sync.md)
 - [x] `(bug)` [empty-response-body](ISSUES/done/bug--empty-response-body.md)
 - [x] `(bug)` [signin-callback-recursion](ISSUES/done/bug--signin-callback-recursion.md)
-- [x] `(bug)` [http-client-error-drops-body](ISSUES/done/bug--http-client-error-drops-body.md)
-<!-- 37 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 38 older completed issue(s) archived in .along/ISSUES/done/ -->

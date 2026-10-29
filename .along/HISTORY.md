@@ -26,3 +26,4 @@ _`<YYYY-MM-DD> - <slug> - <agent> - <summary> - <relative link>`_
 2026-10-16 - remove-unused-peerdeps - antigravity - Remove unused mobx-utils from peerDependencies - [Session Log](./SESSIONS/2026/2026-10-16--remove-unused-peerdeps.md)
 2026-10-21 - http-client-error-drops-body - antigravity - Expose errorCode, params, and details on HttpClientError - [Session Log](./SESSIONS/2026/2026-10-21--http-client-error-drops-body.md)
 2026-10-23 - signin-callback-recursion - claude-code - ensureAuth keeps or unwraps the sign-in callbackUrl instead of nesting it - [Session Log](./SESSIONS/2026/2026-10-23--signin-callback-recursion.md)
+2026-10-29 - external-store-reader - antigravity - Implement fromExternalStore in componentModel/core - [Session Log](./SESSIONS/2026/2026-10-29--external-store-reader.md)

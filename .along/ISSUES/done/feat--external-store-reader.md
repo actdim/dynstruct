@@ -3,7 +3,8 @@ protocol: along
 protocol_version: "4.5.4"
 slug: external-store-reader
 type: feat
-status: in-progress
+status: done
+completed: 2026-10-29
 priority: high
 created: 2026-10-28
 updated: 2026-10-29
@@ -41,8 +42,8 @@ have no supported way to make such state trackable. The webapp locale switch (um
 - REQ-5: Public API and agent docs MUST describe it as the supported way to read external state in views.
 
 ## Acceptance Criteria
-- [ ] `fromExternalStore` exported from `componentModel/core` with JSDoc
-- [ ] Tests: view re-renders on store change; `bind(() => read())` child prop updates; listener removed on unmount; no subscription outside a reaction
-- [ ] `docs/topic--05-api-reference.md`, `docs/topic--04-react-integration.md` and the AGENTS.md dev guide updated
-- [ ] Package version bumped (minor) and synced via `pnpm run version:sync`
-- [ ] Automated tests passing
+- [x] `fromExternalStore` exported from `componentModel/core` with JSDoc
+- [x] Tests: view re-renders on store change; `bind(() => read())` child prop updates; listener removed on unmount; no subscription outside a reaction
+- [x] `docs/topic--05-api-reference.md`, `docs/topic--04-react-integration.md` and the AGENTS.md dev guide updated
+- [x] Package version bumped (minor) and synced via `pnpm run version:sync`
+- [x] Automated tests passing
