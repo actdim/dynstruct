@@ -58,7 +58,7 @@ export class HttpClient {
 
     constructor(context: BaseAppContext, fetcher?: IFetcher, apiSuffixes = API_SUFFIXES) {
         this.apiSuffixes = apiSuffixes;
-        this.fetcher = fetcher || window;
+        this.fetcher = fetcher || (typeof window !== 'undefined' ? window : (globalThis as unknown as IFetcher));
         this.requestStateMap = new Map<string, IRequestState>();
         this.msgBus = context.msgBus;
         this.abortController = new AbortController();
@@ -145,7 +145,8 @@ export class HttpClient {
                 }
             }
             if (options.query) {
-                const url = new URL(request.url, window.location.origin);
+                const origin = typeof window !== 'undefined' && window.location ? window.location.origin : (this.baseUrl || 'http://localhost');
+                const url = new URL(request.url, origin);
                 for (const [key, val] of Object.entries(options.query)) {
                     if (val != null) url.searchParams.append(key, String(val));
                 }

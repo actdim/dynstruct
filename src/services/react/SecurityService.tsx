@@ -218,7 +218,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             payload: {
                 path: m.domainConfig.routes.authSignInPage,
                 params: {
-                    callbackUrl: resolveSignInCallbackUrl(m.domainConfig.routes.authSignInPage, window.location),
+                    callbackUrl: resolveSignInCallbackUrl(m.domainConfig.routes.authSignInPage, typeof window !== 'undefined' ? window.location : { pathname: '/', search: '', hash: '' }),
                 },
             },
         });
@@ -607,7 +607,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
         events: {
             onReady: () => {
                 const httpClient = new HttpClient(context);
-                httpClient.baseUrl = window.location.origin;
+                httpClient.baseUrl = typeof window !== 'undefined' && window.location ? window.location.origin : '';
                 c._.httpСlient = httpClient;
             },
         },

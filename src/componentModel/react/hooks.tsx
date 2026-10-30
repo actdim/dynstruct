@@ -1,8 +1,21 @@
 import { useEffect, useLayoutEffect, useMemo, ReactNode } from 'react';
 import React from 'react';
 import { Mutable } from '@actdim/utico/typeCore';
-import { observer } from 'mobx-react-lite';
+import { enableStaticRendering, observer } from 'mobx-react-lite';
 import { observable, runInAction } from 'mobx';
+
+export { enableStaticRendering } from 'mobx-react-lite';
+
+const isBrowser =
+    typeof window !== 'undefined' &&
+    typeof window.document !== 'undefined' &&
+    typeof window.document.createElement !== 'undefined';
+
+export const useIsomorphicLayoutEffect = isBrowser ? useLayoutEffect : useEffect;
+
+if (typeof window === 'undefined') {
+    enableStaticRendering(true);
+}
 import { useLazyRef } from '@/reactHooks';
 import { getGlobalFlags } from '@/globals';
 import {
@@ -170,7 +183,7 @@ function useReactPropsBox(props: Record<string, unknown>) {
 
         return { map, read, view };
     }).current;
-    useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
         runInAction(() => {
             for (const [key, val] of Object.entries(props)) {
                 if (box.map.get(key) !== val) {
@@ -404,7 +417,7 @@ function createComponent<
             component.id = id;
         }
 
-        useLayoutEffect(() => {
+        useIsomorphicLayoutEffect(() => {
             // One instance has one view: a second simultaneous mount shares the id, registry entry, effects and the
             // abort controller, and the first unmount tears them down for both.
             mountedViews++;
@@ -629,7 +642,7 @@ export function useComponent<
     // Later renders only refresh $events. Live React props (toReact, factory children) arrive as bindings.
     // A snapshot, not the params object: a factory child may pass the same live props object on every render.
     const prevParams = useLazyRef(() => ({ value: { ...params } as Record<string, unknown> }));
-    useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
         if (!c || !params) {
             return;
         }
@@ -641,7 +654,7 @@ export function useComponent<
         prevParams.current.value = snapshot;
     });
 
-    useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
         return () => {
             // Keep the instance: under StrictMode this cleanup is followed by a re-mount
             // of the same component, which starts a new mount lifecycle (see OrigView).

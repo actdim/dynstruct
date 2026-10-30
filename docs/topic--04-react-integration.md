@@ -349,6 +349,36 @@ const useApiCallExample = (params: ComponentParams<Struct>) => {
 
 ---
 
+## Server-Side Rendering (SSR) and Isomorphic Runtime Support
+
+`@actdim/dynstruct` provides out-of-the-box support for isomorphic Node.js SSR environments (such as Astro, Next.js, and raw `react-dom/server` via `renderToString`).
+
+### 1. Isomorphic Layout Effect
+
+During server-side rendering, React does not execute layout effects and emits runtime warnings if `useLayoutEffect` is invoked. Dynstruct uses `useIsomorphicLayoutEffect` internally:
+- In browser environments, it resolves to `useLayoutEffect` (synchronous layout updates).
+- In Node.js / non-browser environments, it resolves to `useEffect` (dormant during `renderToString`), eliminating server warnings.
+
+### 2. MobX Static Rendering
+
+To prevent memory leaks across concurrent HTTP requests in Node.js, `enableStaticRendering(true)` from `mobx-react-lite` is automatically activated when `typeof window === 'undefined'`. Observer components render plain HTML without registering reactive tracking subscriptions.
+
+`enableStaticRendering` is also exported from `@actdim/dynstruct/componentModel/react` for explicit test harness control.
+
+### 3. Synchronous SSR State Contract
+
+Server rendering via `renderToString` executes only the synchronous component constructor and render function. Mount effects (`onReady`, `onLayoutReady`), background effects (`effects`), and message bus subscriptions do not run on the server:
+- Components intended for SSR must accept their initial server data synchronously through initial `params` (e.g. `<ArticleList items={serverLoadedItems} />`).
+- Asynchronous data fetching inside `effects` or `onReady` remains dormant during SSR and activates only after client-side hydration.
+
+### 4. Deterministic Component IDs and Hydration Safety
+
+Sequential component IDs (`context.getNextId`) increment per component type. If conditional rendering diverges between server and client trees, sequential indices can shift, causing React Hydration Mismatch warnings:
+- Provide explicit `$id` or `$key` params on SSR-rendered components (e.g. `<UserCard $key="profile-header" />`) for deterministic IDs across server and client.
+- Alternatively, supply a custom deterministic generator via `<ComponentContextProvider value={{ getNextId: (type) => ... }}>`.
+
+---
+
 ## Navigation & Security Contracts
 
 ### Built-in Navigation (`AppNavStruct`)

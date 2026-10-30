@@ -191,7 +191,7 @@ export function ComponentContextProvider(
         getChainDown,
         getHierarchyPath,
         getNodeMap,
-        getNextId,
+        getNextId: (props.value as Partial<ComponentRegistryContext>)?.getNextId ?? getNextId,
     });
 
     return (
