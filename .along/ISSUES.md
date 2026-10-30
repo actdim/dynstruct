@@ -37,9 +37,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(feat)` [ssr-isomorphic-support](ISSUES/done/feat--ssr-isomorphic-support.md)
 - [x] `(feat)` [external-store-reader](ISSUES/done/feat--external-store-reader.md)
 - [x] `(feat)` [nav-link](ISSUES/done/feat--nav-link.md)
 - [x] `(bug)` [nav-service-location-sync](ISSUES/done/bug--nav-service-location-sync.md)
 - [x] `(bug)` [empty-response-body](ISSUES/done/bug--empty-response-body.md)
-- [x] `(bug)` [signin-callback-recursion](ISSUES/done/bug--signin-callback-recursion.md)
-<!-- 38 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 39 older completed issue(s) archived in .along/ISSUES/done/ -->
