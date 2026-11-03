@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-- [ ] `(task)` [demo-docs-into-lib](ISSUES/task--demo-docs-into-lib.md)
+<!-- No active issues -->
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
@@ -38,9 +38,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(task)` [move-into-lib](ISSUES/done/task--move-into-lib.md)
 - [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
+- [x] `(task)` [demo-docs-into-lib](ISSUES/done/task--demo-docs-into-lib.md)
+- [x] `(docs)` [along-kb-setup](ISSUES/done/docs--along-kb-setup.md)
 - [x] `(feat)` [ssr-isomorphic-support](ISSUES/done/feat--ssr-isomorphic-support.md)
-- [x] `(feat)` [external-store-reader](ISSUES/done/feat--external-store-reader.md)
-- [x] `(feat)` [nav-link](ISSUES/done/feat--nav-link.md)
-- [x] `(bug)` [nav-service-location-sync](ISSUES/done/bug--nav-service-location-sync.md)
-<!-- 40 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 43 older completed issue(s) archived in .along/ISSUES/done/ -->
