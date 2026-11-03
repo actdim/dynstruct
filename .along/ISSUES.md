@@ -41,6 +41,6 @@
 - [x] `(task)` [move-into-lib](ISSUES/done/task--move-into-lib.md)
 - [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
 - [x] `(task)` [demo-docs-into-lib](ISSUES/done/task--demo-docs-into-lib.md)
+- [x] `(bug)` [demo-monorepo-vite-fs-allow](ISSUES/done/bug--demo-monorepo-vite-fs-allow.md)
 - [x] `(docs)` [along-kb-setup](ISSUES/done/docs--along-kb-setup.md)
-- [x] `(feat)` [ssr-isomorphic-support](ISSUES/done/feat--ssr-isomorphic-support.md)
-<!-- 43 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 44 older completed issue(s) archived in .along/ISSUES/done/ -->
