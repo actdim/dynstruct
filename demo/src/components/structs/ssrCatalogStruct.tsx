@@ -7,9 +7,9 @@ import {
   type ComponentModel,
 } from '@actdim/dynstruct/componentModel/contracts';
 import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react/hooks';
-import { prop } from '@actdim/dynstruct/componentModel/core';
-import { TextField } from '@actdim/dynstruct-mui/TextField';
-import { Button } from '@actdim/dynstruct-mui/Button';
+import { prop, bind, bindProp } from '@actdim/dynstruct/componentModel/core';
+import { useTextField, type TextFieldStruct } from '@actdim/dynstruct-mui/TextField';
+import { useButton, type ButtonStruct } from '@actdim/dynstruct-mui/Button';
 import {
   Card,
   CardContent,
@@ -39,6 +39,10 @@ export type SsrCatalogStruct = ComponentStruct<
     actions: {
       setFilterQuery: (q: string) => void;
       toggleSort: () => void;
+    };
+    children: {
+      filterInput: TextFieldStruct;
+      sortBtn: ButtonStruct;
     };
   }
 >;
@@ -71,6 +75,23 @@ export const useSsrCatalog = (params: ComponentParams<SsrCatalogStruct>): Compon
       toggleSort: () => {
         m.sortBy = m.sortBy === 'rating' ? 'title' : 'rating';
       },
+    },
+    children: {
+      filterInput: useTextField({
+        label: 'Client Search (Live Filtering After Hydration)',
+        value: bindProp(() => m, 'filterQuery'),
+        onChange: (q) => m.setFilterQuery(q),
+        placeholder: 'Filter pre-rendered catalog items...',
+        size: 'small',
+        fullWidth: true,
+      }),
+      sortBtn: useButton({
+        variant: 'outlined',
+        color: 'primary',
+        label: bind(() => `Sort by: ${m.sortBy.toUpperCase()}`),
+        onClick: () => m.toggleSort(),
+        sx: { textTransform: 'none', height: 40 },
+      }),
     },
     view: () => {
       const query = m.filterQuery.toLowerCase().trim();
@@ -139,22 +160,9 @@ export const useSsrCatalog = (params: ComponentParams<SsrCatalogStruct>): Compon
             {/* Interactive Filtering Controls (Active after hydration) */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
               <Box sx={{ flex: 1, minWidth: 240 }}>
-                <TextField
-                  label="Client Search (Live Filtering After Hydration)"
-                  value={m.filterQuery}
-                  onChange={m.setFilterQuery}
-                  placeholder="Filter pre-rendered catalog items..."
-                  size="small"
-                  fullWidth
-                />
+                <c.children.FilterInput />
               </Box>
-              <Button
-                variant="outlined"
-                color="primary"
-                label={`Sort by: ${m.sortBy.toUpperCase()}`}
-                onClick={m.toggleSort}
-                sx={{ textTransform: 'none', height: 40 }}
-              />
+              <c.children.SortBtn />
             </Box>
 
             {/* Pre-Rendered Crawlable Table */}

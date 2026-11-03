@@ -7,7 +7,8 @@ import {
   type ComponentModel,
 } from '@actdim/dynstruct/componentModel/contracts';
 import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react/hooks';
-import { Button } from '@actdim/dynstruct-mui/Button';
+import { bind } from '@actdim/dynstruct/componentModel/core';
+import { useButton, type ButtonStruct } from '@actdim/dynstruct-mui/Button';
 import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
 import { type DemoMsgStruct } from '../../bus/portalMsgStruct';
 
@@ -24,6 +25,11 @@ export type CounterStruct = ComponentStruct<
       increment: () => void;
       decrement: () => void;
       reset: () => void;
+    };
+    children: {
+      decrementBtn: ButtonStruct;
+      resetBtn: ButtonStruct;
+      incrementBtn: ButtonStruct;
     };
   }
 >;
@@ -56,9 +62,31 @@ export const useCounter = (params: ComponentParams<CounterStruct>): Component<Co
         m.count = 0;
       },
     },
+    children: {
+      decrementBtn: useButton({
+        label: 'Decrement',
+        variant: 'outlined',
+        color: 'secondary',
+        disabled: bind(() => m.count <= 0),
+        onClick: () => m.decrement(),
+      }),
+      resetBtn: useButton({
+        label: 'Reset',
+        variant: 'text',
+        color: 'inherit',
+        disabled: bind(() => m.count <= 0),
+        onClick: () => m.reset(),
+      }),
+      incrementBtn: useButton({
+        label: 'Increment',
+        variant: 'contained',
+        color: 'primary',
+        disabled: bind(() => m.count >= m.max),
+        onClick: () => m.increment(),
+      }),
+    },
     view: () => {
       const isMax = m.count >= m.max;
-      const isMin = m.count <= 0;
 
       return (
         <Card variant="outlined" sx={{ bgcolor: 'background.paper', borderColor: 'divider' }}>
@@ -85,27 +113,9 @@ export const useCounter = (params: ComponentParams<CounterStruct>): Component<Co
             </Box>
 
             <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center' }}>
-              <Button
-                label="Decrement"
-                variant="outlined"
-                color="secondary"
-                disabled={isMin}
-                onClick={m.decrement}
-              />
-              <Button
-                label="Reset"
-                variant="text"
-                color="inherit"
-                disabled={isMin}
-                onClick={m.reset}
-              />
-              <Button
-                label="Increment"
-                variant="contained"
-                color="primary"
-                disabled={isMax}
-                onClick={m.increment}
-              />
+              <c.children.DecrementBtn />
+              <c.children.ResetBtn />
+              <c.children.IncrementBtn />
             </Box>
           </CardContent>
         </Card>

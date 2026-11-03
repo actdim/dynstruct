@@ -7,11 +7,11 @@ import {
   type ComponentModel,
 } from '@actdim/dynstruct/componentModel/contracts';
 import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react/hooks';
-import { FormDemo } from './formDemoStruct';
-import { Counter } from './counterStruct';
-import { DialogToastDemo } from './dialogToastStruct';
-import { ReactivityDemo } from './reactivityStruct';
-import { AsyncSearchDemo } from './asyncSearchStruct';
+import { useFormDemo, type FormDemoStruct } from './formDemoStruct';
+import { useCounter, type CounterStruct } from './counterStruct';
+import { useDialogToast, type DialogToastStruct } from './dialogToastStruct';
+import { useReactivity, type ReactivityStruct } from './reactivityStruct';
+import { useAsyncSearch, type AsyncSearchStruct } from './asyncSearchStruct';
 import { PLAYGROUND_SCENARIOS, type PlaygroundScenario } from '../../data/codeSnippets';
 import { type DemoMsgStruct } from '../../bus/portalMsgStruct';
 
@@ -27,6 +27,13 @@ export type PlaygroundStruct = ComponentStruct<
       selectScenario: (id: string) => void;
       setCodeTab: (tab: 'contract' | 'model' | 'integration') => void;
       copyCode: () => void;
+    };
+    children: {
+      formDemo: () => FormDemoStruct;
+      counterDemo: () => CounterStruct;
+      dialogToastDemo: () => DialogToastStruct;
+      reactivityDemo: () => ReactivityStruct;
+      asyncSearchDemo: () => AsyncSearchStruct;
     };
   }
 >;
@@ -69,6 +76,13 @@ export const usePlayground = (params: ComponentParams<PlaygroundStruct>): Compon
         }, 1500);
       },
     },
+    children: {
+      formDemo: () => useFormDemo({}),
+      counterDemo: () => useCounter({}),
+      dialogToastDemo: () => useDialogToast({}),
+      reactivityDemo: () => useReactivity({}),
+      asyncSearchDemo: () => useAsyncSearch({}),
+    },
     view: () => {
       const scenario: PlaygroundScenario =
         PLAYGROUND_SCENARIOS.find((s) => s.id === m.selectedScenarioId) ?? PLAYGROUND_SCENARIOS[0];
@@ -98,10 +112,10 @@ export const usePlayground = (params: ComponentParams<PlaygroundStruct>): Compon
                 >
                   <span>{s.title}</span>
                   <span
-                    className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
+                    className={`rounded px-1.5 py-0.5 text-xs ${
                       isSelected
-                        ? 'bg-sky-700/60 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-sky-600 dark:text-sky-400'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                     }`}
                   >
                     {s.badge}
@@ -112,9 +126,14 @@ export const usePlayground = (params: ComponentParams<PlaygroundStruct>): Compon
           </div>
 
           {/* Scenario Description Banner */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/60 p-4">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">{scenario.title}</h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{scenario.description}</p>
+          <div className="flex items-start justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/50 p-4 backdrop-blur-sm shadow-sm">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{scenario.title}</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{scenario.description}</p>
+            </div>
+            <span className="rounded-full bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-600 dark:text-sky-400 border border-sky-500/20">
+              {scenario.badge}
+            </span>
           </div>
 
           {/* Split-Screen 2-Column Layout */}
@@ -164,9 +183,11 @@ export const usePlayground = (params: ComponentParams<PlaygroundStruct>): Compon
                 </button>
               </div>
 
-              {/* Syntax Code Display */}
-              <div className="p-4 overflow-x-auto flex-1 font-mono text-xs leading-relaxed text-slate-800 dark:text-slate-200">
-                <pre className="text-sky-700 dark:text-sky-300/90">{currentCode}</pre>
+              {/* Code Display Area */}
+              <div className="flex-1 overflow-x-auto p-4 font-mono text-xs leading-relaxed text-slate-800 dark:text-slate-200">
+                <pre>
+                  <code>{currentCode}</code>
+                </pre>
               </div>
             </div>
 
@@ -183,11 +204,11 @@ export const usePlayground = (params: ComponentParams<PlaygroundStruct>): Compon
               </div>
 
               <div className="flex-1">
-                {m.selectedScenarioId === 'form' && <FormDemo />}
-                {m.selectedScenarioId === 'counter' && <Counter />}
-                {m.selectedScenarioId === 'overlays' && <DialogToastDemo />}
-                {m.selectedScenarioId === 'reactivity' && <ReactivityDemo />}
-                {m.selectedScenarioId === 'async' && <AsyncSearchDemo />}
+                {m.selectedScenarioId === 'form' && <c.children.FormDemo />}
+                {m.selectedScenarioId === 'counter' && <c.children.CounterDemo />}
+                {m.selectedScenarioId === 'overlays' && <c.children.DialogToastDemo />}
+                {m.selectedScenarioId === 'reactivity' && <c.children.ReactivityDemo />}
+                {m.selectedScenarioId === 'async' && <c.children.AsyncSearchDemo />}
               </div>
             </div>
           </div>

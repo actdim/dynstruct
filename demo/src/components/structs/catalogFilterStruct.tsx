@@ -7,10 +7,11 @@ import {
   type ComponentModel,
 } from '@actdim/dynstruct/componentModel/contracts';
 import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react/hooks';
-import { TextField } from '@actdim/dynstruct-mui/TextField';
-import { Select, type SelectOption } from '@actdim/dynstruct-mui/Select';
-import { Slider } from '@actdim/dynstruct-mui/Slider';
-import { Button } from '@actdim/dynstruct-mui/Button';
+import { bindProp } from '@actdim/dynstruct/componentModel/core';
+import { useTextField, type TextFieldStruct } from '@actdim/dynstruct-mui/TextField';
+import { useSelect, type SelectStruct, type SelectOption } from '@actdim/dynstruct-mui/Select';
+import { useSlider, type SliderStruct } from '@actdim/dynstruct-mui/Slider';
+import { useButton, type ButtonStruct } from '@actdim/dynstruct-mui/Button';
 import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
 import { type DemoMsgStruct, DEFAULT_FILTER } from '../../bus/portalMsgStruct';
 
@@ -37,6 +38,12 @@ export type CatalogFilterStruct = ComponentStruct<
       setCategory: (c: string) => void;
       setMinRating: (r: number) => void;
       reset: () => void;
+    };
+    children: {
+      queryInput: TextFieldStruct;
+      categorySelect: SelectStruct;
+      ratingSlider: SliderStruct;
+      resetBtn: ButtonStruct;
     };
     msgScope: {
       publish: 'CATALOG.FILTER';
@@ -91,6 +98,38 @@ export const useCatalogFilter = (params: ComponentParams<CatalogFilterStruct>): 
         publishCurrentFilter(nextQuery, nextCat, nextRating);
       },
     },
+    children: {
+      queryInput: useTextField({
+        label: 'Search Titles or Descriptions',
+        value: bindProp(() => m, 'query'),
+        onChange: (q) => m.setQuery(q),
+        placeholder: 'e.g. reactive, ssr, architecture...',
+        size: 'small',
+        fullWidth: true,
+      }),
+      categorySelect: useSelect({
+        label: 'Filter by Category',
+        value: bindProp(() => m, 'category'),
+        options: CATEGORY_OPTIONS,
+        onChange: (cat) => m.setCategory(cat),
+        size: 'small',
+        fullWidth: true,
+      }),
+      ratingSlider: useSlider({
+        value: bindProp(() => m, 'minRating'),
+        min: 4.0,
+        max: 5.0,
+        step: 0.1,
+        valueLabelDisplay: 'auto',
+        onChange: (r) => m.setMinRating(r),
+      }),
+      resetBtn: useButton({
+        variant: 'outlined',
+        color: 'inherit',
+        label: 'Reset Filters',
+        onClick: () => m.reset(),
+      }),
+    },
     view: () => (
       <Card variant="outlined" sx={{ bgcolor: 'background.paper', borderColor: 'divider', height: '100%' }}>
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -111,40 +150,18 @@ export const useCatalogFilter = (params: ComponentParams<CatalogFilterStruct>): 
             />
           </Box>
 
-          <TextField
-            label="Search Titles or Descriptions"
-            value={m.query}
-            onChange={m.setQuery}
-            placeholder="e.g. reactive, ssr, architecture..."
-            size="small"
-            fullWidth
-          />
-
-          <Select
-            label="Filter by Category"
-            value={m.category}
-            onChange={m.setCategory}
-            options={CATEGORY_OPTIONS}
-            size="small"
-            fullWidth
-          />
+          <c.children.QueryInput />
+          <c.children.CategorySelect />
 
           <Box>
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
               Minimum Rating: {m.minRating.toFixed(1)} / 5.0
             </Typography>
-            <Slider
-              value={m.minRating}
-              min={4.0}
-              max={5.0}
-              step={0.1}
-              valueLabelDisplay="auto"
-              onChange={m.setMinRating}
-            />
+            <c.children.RatingSlider />
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', pt: 1 }}>
-            <Button variant="outlined" color="inherit" label="Reset Filters" onClick={m.reset} />
+            <c.children.ResetBtn />
           </Box>
         </CardContent>
       </Card>

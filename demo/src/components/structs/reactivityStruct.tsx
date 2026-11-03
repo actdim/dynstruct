@@ -8,7 +8,7 @@ import {
 } from '@actdim/dynstruct/componentModel/contracts';
 import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react/hooks';
 import { prop } from '@actdim/dynstruct/componentModel/core';
-import { Button } from '@actdim/dynstruct-mui/Button';
+import { useButton, type ButtonStruct } from '@actdim/dynstruct-mui/Button';
 import { Box, Card, CardContent, Typography, Chip, Divider } from '@mui/material';
 import { type DemoMsgStruct } from '../../bus/portalMsgStruct';
 
@@ -49,6 +49,14 @@ export type ReactivityStruct = ComponentStruct<
       replaceRefHolder: () => void;
       mutateRefHolderInternal: () => void;
       resetAll: () => void;
+    };
+    children: {
+      mutateDeepBtn: ButtonStruct;
+      pushShallowBtn: ButtonStruct;
+      mutateShallowBtn: ButtonStruct;
+      replaceRefBtn: ButtonStruct;
+      mutateRefBtn: ButtonStruct;
+      resetAllBtn: ButtonStruct;
     };
   }
 >;
@@ -113,6 +121,44 @@ export const useReactivity = (params: ComponentParams<ReactivityStruct>): Compon
         m.refHolder = { configKey: 'v1.0-default', updated: new Date().toLocaleTimeString() };
       },
     },
+    children: {
+      mutateDeepBtn: useButton({
+        label: 'Mutate deepObject.nested.count++',
+        variant: 'outlined',
+        color: 'primary',
+        onClick: () => m.mutateDeepNested(),
+      }),
+      pushShallowBtn: useButton({
+        label: 'Push New Item (Triggers Render)',
+        variant: 'outlined',
+        color: 'secondary',
+        onClick: () => m.pushShallowItem(),
+      }),
+      mutateShallowBtn: useButton({
+        label: 'Mutate Item[0] In-Place (Silent)',
+        variant: 'text',
+        color: 'inherit',
+        onClick: () => m.mutateShallowItemDirectly(),
+      }),
+      replaceRefBtn: useButton({
+        label: 'Replace Reference (Triggers Render)',
+        variant: 'outlined',
+        color: 'warning',
+        onClick: () => m.replaceRefHolder(),
+      }),
+      mutateRefBtn: useButton({
+        label: 'Mutate refHolder Property (Silent)',
+        variant: 'text',
+        color: 'inherit',
+        onClick: () => m.mutateRefHolderInternal(),
+      }),
+      resetAllBtn: useButton({
+        label: 'Reset All State',
+        variant: 'outlined',
+        color: 'inherit',
+        onClick: () => m.resetAll(),
+      }),
+    },
     view: () => {
       return (
         <Card variant="outlined" sx={{ bgcolor: 'background.paper', borderColor: 'divider' }}>
@@ -145,12 +191,7 @@ export const useReactivity = (params: ComponentParams<ReactivityStruct>): Compon
                   {`deepObject.nested: { count: ${m.deepObject.nested.count}, name: "${m.deepObject.nested.name}" }`}
                 </Typography>
               </Box>
-              <Button
-                label="Mutate deepObject.nested.count++"
-                variant="outlined"
-                color="primary"
-                onClick={m.mutateDeepNested}
-              />
+              <c.children.MutateDeepBtn />
             </Box>
 
             {/* Shallow Reactivity Block */}
@@ -175,18 +216,8 @@ export const useReactivity = (params: ComponentParams<ReactivityStruct>): Compon
                 ))}
               </Box>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Button
-                  label="Push New Item (Triggers Render)"
-                  variant="outlined"
-                  color="secondary"
-                  onClick={m.pushShallowItem}
-                />
-                <Button
-                  label="Mutate Item[0] In-Place (Silent)"
-                  variant="text"
-                  color="inherit"
-                  onClick={m.mutateShallowItemDirectly}
-                />
+                <c.children.PushShallowBtn />
+                <c.children.MutateShallowBtn />
               </Box>
             </Box>
 
@@ -205,25 +236,15 @@ export const useReactivity = (params: ComponentParams<ReactivityStruct>): Compon
                 {`refHolder: { key: "${m.refHolder.configKey}", updated: "${m.refHolder.updated}" }`}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Button
-                  label="Replace Reference (Triggers Render)"
-                  variant="outlined"
-                  color="warning"
-                  onClick={m.replaceRefHolder}
-                />
-                <Button
-                  label="Mutate refHolder Property (Silent)"
-                  variant="text"
-                  color="inherit"
-                  onClick={m.mutateRefHolderInternal}
-                />
+                <c.children.ReplaceRefBtn />
+                <c.children.MutateRefBtn />
               </Box>
             </Box>
 
             <Divider />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button label="Reset All State" variant="outlined" color="inherit" onClick={m.resetAll} />
+              <c.children.ResetAllBtn />
             </Box>
           </CardContent>
         </Card>

@@ -7,13 +7,13 @@ import {
   type ComponentModel,
 } from '@actdim/dynstruct/componentModel/contracts';
 import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react/hooks';
-import { prop } from '@actdim/dynstruct/componentModel/core';
-import { TextField } from '@actdim/dynstruct-mui/TextField';
-import { Select } from '@actdim/dynstruct-mui/Select';
-import { Checkbox } from '@actdim/dynstruct-mui/Checkbox';
-import { Switch } from '@actdim/dynstruct-mui/Switch';
-import { Slider } from '@actdim/dynstruct-mui/Slider';
-import { Button } from '@actdim/dynstruct-mui/Button';
+import { prop, bind, bindProp } from '@actdim/dynstruct/componentModel/core';
+import { useTextField, type TextFieldStruct } from '@actdim/dynstruct-mui/TextField';
+import { useSelect, type SelectStruct, type SelectOption } from '@actdim/dynstruct-mui/Select';
+import { useCheckbox, type CheckboxStruct } from '@actdim/dynstruct-mui/Checkbox';
+import { useSwitch, type SwitchStruct } from '@actdim/dynstruct-mui/Switch';
+import { useSlider, type SliderStruct } from '@actdim/dynstruct-mui/Slider';
+import { useButton, type ButtonStruct } from '@actdim/dynstruct-mui/Button';
 import { Box, Card, CardContent, Typography, Alert } from '@mui/material';
 import { type DemoMsgStruct } from '../../bus/portalMsgStruct';
 import { newMsgId } from '../../bus/ids';
@@ -43,6 +43,16 @@ export type FormDemoStruct = ComponentStruct<
       submit: () => void;
       reset: () => void;
     };
+    children: {
+      usernameInput: TextFieldStruct;
+      emailInput: TextFieldStruct;
+      roleSelect: SelectStruct;
+      experienceSlider: SliderStruct;
+      streamSwitch: SwitchStruct;
+      termsCheckbox: CheckboxStruct;
+      resetBtn: ButtonStruct;
+      submitBtn: ButtonStruct;
+    };
     msgScope: {
       publish: 'NOTICE.TOAST';
     };
@@ -53,6 +63,13 @@ export type FormDemoStruct = ComponentStruct<
 export const useFormDemo = (params: ComponentParams<FormDemoStruct>): Component<FormDemoStruct> => {
   let c: Component<FormDemoStruct>;
   let m: ComponentModel<FormDemoStruct>;
+
+  const roleOptions: SelectOption[] = [
+    { value: 'frontend', label: 'Frontend Engineer' },
+    { value: 'backend', label: 'Backend / Systems Engineer' },
+    { value: 'fullstack', label: 'Full-Stack Architect' },
+    { value: 'devops', label: 'Platform / DevOps Engineer' },
+  ];
 
   // #region model
   const def: ComponentDef<FormDemoStruct> = {
@@ -98,15 +115,14 @@ export const useFormDemo = (params: ComponentParams<FormDemoStruct>): Component<
       validate: () => {
         const nextErrors: Record<string, string> = {};
         if (!m.username || m.username.trim().length < 3) {
-          nextErrors.username = 'Username must contain at least 3 characters.';
+          nextErrors.username = 'Username must be at least 3 characters.';
         }
         if (!m.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email)) {
-          nextErrors.email = 'Please provide a valid email address.';
+          nextErrors.email = 'Valid email address is required.';
         }
         if (!m.termsAccepted) {
-          nextErrors.termsAccepted = 'You must accept the terms of service.';
+          nextErrors.termsAccepted = 'You must accept the terms before submitting.';
         }
-
         m.errors = nextErrors;
         return Object.keys(nextErrors).length === 0;
       },
@@ -116,7 +132,7 @@ export const useFormDemo = (params: ComponentParams<FormDemoStruct>): Component<
             channel: 'NOTICE.TOAST',
             payload: {
               id: newMsgId(),
-              message: 'Validation failed: Check highlighted fields.',
+              message: 'Validation failed! Check required fields.',
               severity: 'error',
             },
           });
@@ -155,116 +171,114 @@ export const useFormDemo = (params: ComponentParams<FormDemoStruct>): Component<
         m.errors = {};
       },
     },
-    view: () => {
-      const roleOptions = [
-        { value: 'frontend', label: 'Frontend Engineer' },
-        { value: 'fullstack', label: 'Full-Stack Architect' },
-        { value: 'systems', label: 'Systems & Infrastructure' },
-        { value: 'designer', label: 'UI/UX Specialist' },
-      ];
-
-      return (
-        <Card variant="outlined" sx={{ bgcolor: 'background.paper', borderColor: 'divider' }}>
-          <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Box>
-              <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
-                Contract-Driven Form with Validation
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Pure MobX reactivity with zero-boilerplate action mutators and typed msgmesh notifications.
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-              <TextField
-                label="Username"
-                value={m.username}
-                onChange={m.setUsername}
-                error={Boolean(m.errors.username)}
-                helperText={m.errors.username}
-                placeholder="e.g. alex_developer"
-                fullWidth
-              />
-
-              <TextField
-                label="Email"
-                value={m.email}
-                onChange={m.setEmail}
-                error={Boolean(m.errors.email)}
-                helperText={m.errors.email}
-                placeholder="alex@example.com"
-                fullWidth
-              />
-            </Box>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-              <Select
-                label="Primary Engineering Role"
-                value={m.role}
-                options={roleOptions}
-                onChange={m.setRole}
-                fullWidth
-              />
-
-              <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1 }}>
-                  Experience Level: {m.experienceYears} Years
-                </Typography>
-                <Slider
-                  value={m.experienceYears}
-                  min={1}
-                  max={20}
-                  step={1}
-                  onChange={m.setExperienceYears}
-                />
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              <Switch
-                label="Enable Real-Time Event Stream"
-                checked={m.notifications}
-                onChange={m.setNotifications}
-              />
-
-              <Checkbox
-                label="Accept Terms & Architecture Agreement"
-                checked={m.termsAccepted}
-                error={Boolean(m.errors.termsAccepted)}
-                helperText={m.errors.termsAccepted}
-                onChange={m.setTermsAccepted}
-              />
-            </Box>
-
-            {m.submittedPayload && (
-              <Alert severity="success" sx={{ mt: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
-                  Verified Payload Output:
-                </Typography>
-                <pre style={{ margin: 0, fontSize: '11px', overflowX: 'auto' }}>
-                  {m.submittedPayload}
-                </pre>
-              </Alert>
-            )}
-
-            <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', pt: 1 }}>
-              <Button
-                label="Reset"
-                variant="outlined"
-                color="secondary"
-                onClick={m.reset}
-              />
-              <Button
-                label="Submit Contract Form"
-                variant="contained"
-                color="primary"
-                onClick={m.submit}
-              />
-            </Box>
-          </CardContent>
-        </Card>
-      );
+    children: {
+      usernameInput: useTextField({
+        label: 'Username',
+        value: bindProp(() => m, 'username'),
+        onChange: (v) => m.setUsername(v),
+        error: bind(() => Boolean(m.errors.username)),
+        helperText: bind(() => m.errors.username),
+        placeholder: 'e.g. alex_developer',
+        fullWidth: true,
+      }),
+      emailInput: useTextField({
+        label: 'Email',
+        value: bindProp(() => m, 'email'),
+        onChange: (v) => m.setEmail(v),
+        error: bind(() => Boolean(m.errors.email)),
+        helperText: bind(() => m.errors.email),
+        placeholder: 'alex@example.com',
+        fullWidth: true,
+      }),
+      roleSelect: useSelect({
+        label: 'Primary Engineering Role',
+        value: bindProp(() => m, 'role'),
+        options: roleOptions,
+        onChange: (v) => m.setRole(v),
+        fullWidth: true,
+      }),
+      experienceSlider: useSlider({
+        value: bindProp(() => m, 'experienceYears'),
+        min: 1,
+        max: 20,
+        step: 1,
+        onChange: (v) => m.setExperienceYears(v),
+      }),
+      streamSwitch: useSwitch({
+        label: 'Enable Real-Time Event Stream',
+        checked: bindProp(() => m, 'notifications'),
+        onChange: (v) => m.setNotifications(v),
+      }),
+      termsCheckbox: useCheckbox({
+        label: 'Accept Terms & Architecture Agreement',
+        checked: bindProp(() => m, 'termsAccepted'),
+        error: bind(() => Boolean(m.errors.termsAccepted)),
+        helperText: bind(() => m.errors.termsAccepted),
+        onChange: (v) => m.setTermsAccepted(v),
+      }),
+      resetBtn: useButton({
+        label: 'Reset',
+        variant: 'outlined',
+        color: 'secondary',
+        onClick: () => m.reset(),
+      }),
+      submitBtn: useButton({
+        label: 'Submit Contract Form',
+        variant: 'contained',
+        color: 'primary',
+        onClick: () => m.submit(),
+      }),
     },
+    view: () => (
+      <Card variant="outlined" sx={{ bgcolor: 'background.paper', borderColor: 'divider' }}>
+        <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box>
+            <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
+              Contract-Driven Form with Validation
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Pure MobX reactivity with zero-boilerplate action mutators and typed msgmesh notifications.
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+            <c.children.UsernameInput />
+            <c.children.EmailInput />
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+            <c.children.RoleSelect />
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mb: 1 }}>
+                Experience Level: {m.experienceYears} Years
+              </Typography>
+              <c.children.ExperienceSlider />
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <c.children.StreamSwitch />
+            <c.children.TermsCheckbox />
+          </Box>
+
+          {m.submittedPayload && (
+            <Alert severity="success" sx={{ mt: 1 }}>
+              <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                Verified Payload Output:
+              </Typography>
+              <pre style={{ margin: 0, fontSize: '11px', overflowX: 'auto' }}>
+                {m.submittedPayload}
+              </pre>
+            </Alert>
+          )}
+
+          <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', pt: 1 }}>
+            <c.children.ResetBtn />
+            <c.children.SubmitBtn />
+          </Box>
+        </CardContent>
+      </Card>
+    ),
   };
   // #endregion model
 
