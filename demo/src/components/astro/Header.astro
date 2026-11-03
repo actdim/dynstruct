@@ -18,17 +18,17 @@ const navItems = [
 ];
 ---
 
-<header class="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
+<header class="sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md transition-colors">
   <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
     <div class="flex items-center gap-3">
-      <a href={withBase('/')} class="flex items-center gap-2 text-lg font-bold tracking-tight text-white hover:text-sky-400 transition-colors">
+      <a href={withBase('/')} class="flex items-center gap-2 text-lg font-bold tracking-tight text-slate-900 dark:text-white hover:text-sky-600 dark:hover:text-sky-400 transition-colors">
         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 font-mono text-sm font-extrabold text-white shadow-md shadow-sky-500/20">
           D
         </span>
         <span>dynstruct</span>
         <span class="text-slate-400 font-normal text-sm">demo</span>
       </a>
-      <span class="hidden rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs font-medium text-sky-400 sm:inline-block">
+      <span class="hidden rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs font-medium text-sky-600 dark:text-sky-400 sm:inline-block">
         Astro SSR + React Islands
       </span>
     </div>
@@ -41,8 +41,8 @@ const navItems = [
             href={withBase(item.href)}
             class={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               isActive
-                ? 'bg-slate-800 text-sky-400 shadow-sm'
-                : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                ? 'bg-slate-100 dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             {item.label}
@@ -52,11 +52,28 @@ const navItems = [
     </nav>
 
     <div class="flex items-center gap-2">
+      <!-- Theme Toggle Button -->
+      <button
+        id="theme-toggle"
+        type="button"
+        aria-label="Toggle light or dark theme"
+        class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+      >
+        <!-- Sun icon (visible in dark mode -> click for light) -->
+        <svg class="h-4 w-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <!-- Moon icon (visible in light mode -> click for dark) -->
+        <svg class="h-4 w-4 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      </button>
+
       <a
         href="https://actdim.github.io/dynstruct/llms.txt"
         target="_blank"
         rel="noopener noreferrer"
-        class="hidden rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-mono text-slate-300 hover:border-slate-500 hover:text-white md:inline-flex"
+        class="hidden rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 px-2.5 py-1 text-xs font-mono text-slate-600 dark:text-slate-300 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white md:inline-flex"
       >
         /llms.txt
       </a>
@@ -64,10 +81,25 @@ const navItems = [
         href="https://github.com/actdim/dynstruct"
         target="_blank"
         rel="noopener noreferrer"
-        class="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-slate-500 hover:text-white transition-colors"
+        class="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
       >
         GitHub
       </a>
     </div>
   </div>
 </header>
+
+<script is:inline>
+  const toggleBtn = document.getElementById('theme-toggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      const newMode = isDark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newMode);
+      try {
+        localStorage.setItem('actdim_theme_preference', newMode);
+      } catch (e) {}
+      window.dispatchEvent(new CustomEvent('actdim:theme-changed', { detail: { mode: newMode } }));
+    });
+  }
+</script>

@@ -190,4 +190,59 @@ test.describe('Dynstruct Demo Smoke & Hydration Suite', () => {
     await page.getByRole('button', { name: 'Mutate Item[0] In-Place (Silent)' }).click();
     await expect(page.getByText('View Render Passes: 2')).toBeVisible();
   });
+
+  test('theme toggle switches html dark class and persists across navigation', async ({ page }) => {
+    await page.goto('/');
+    await waitForIslands(page);
+
+    const html = page.locator('html');
+    const initialIsDark = (await html.getAttribute('class'))?.includes('dark') ?? false;
+
+    const toggleBtn = page.locator('#theme-toggle');
+    await expect(toggleBtn).toBeVisible();
+    await toggleBtn.click();
+
+    // Verify class and data-theme toggled
+    if (initialIsDark) {
+      await expect(html).not.toHaveClass(/dark/);
+      await expect(html).toHaveAttribute('data-theme', 'light');
+    } else {
+      await expect(html).toHaveClass(/dark/);
+      await expect(html).toHaveAttribute('data-theme', 'dark');
+    }
+
+    // Navigate to /showcase and verify persisted theme is preserved immediately
+    await page.goto('/showcase');
+    await waitForIslands(page);
+    if (initialIsDark) {
+      await expect(html).not.toHaveClass(/dark/);
+      await expect(html).toHaveAttribute('data-theme', 'light');
+    } else {
+      await expect(html).toHaveClass(/dark/);
+      await expect(html).toHaveAttribute('data-theme', 'dark');
+    }
+  });
+
+  test('showcase gallery features Dynstruct-MUI adapters across 4 categories with binding code', async ({ page }) => {
+    await page.goto('/showcase');
+    await waitForIslands(page);
+
+    // Toggle binding pattern code viewer
+    const viewCodeBtn = page.getByRole('button', { name: 'View Binding Pattern' });
+    await expect(viewCodeBtn).toBeVisible();
+    await viewCodeBtn.click();
+
+    const codeBlock = page.locator('pre code');
+    await expect(codeBlock).toBeVisible();
+    await expect(codeBlock).toContainText('ComponentStruct');
+    await expect(codeBlock).toContainText('ComponentDef');
+
+    // Switch between all 4 categories via Dynstruct-MUI tabs
+    const categories = ['Form Controls & Inputs', 'Feedback & Indicators', 'Surfaces & Navigation', 'Actions & Buttons'];
+    for (const cat of categories) {
+      const tab = page.getByRole('tab', { name: cat });
+      await expect(tab).toBeVisible();
+      await tab.click();
+    }
+  });
 });

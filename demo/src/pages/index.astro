@@ -7,21 +7,21 @@ import { SplitPlaygroundIsland } from '../components/islands/SplitPlaygroundIsla
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
     <!-- Hero Banner -->
     <div class="mb-10 text-center">
-      <div class="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-400 mb-4">
+      <div class="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-medium text-sky-600 dark:text-sky-400 mb-4">
         <span>Production-Grade Architecture</span>
-        <span class="text-slate-500">/</span>
+        <span class="text-slate-400 dark:text-slate-500">/</span>
         <span>Astro Islands + Dynstruct + MsgMesh</span>
       </div>
 
-      <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+      <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
         Structure-First UI Architecture
       </h1>
-      <p class="mx-auto mt-4 max-w-2xl text-base text-slate-400 sm:text-lg">
-        Replace fragile prop-drilling and spaghetti state with compile-time type contracts (<code class="text-sky-300 font-mono text-sm">ComponentStruct</code>), zero-boilerplate MobX reactivity, and decoupled message bus channels.
+      <p class="mx-auto mt-4 max-w-2xl text-base text-slate-600 dark:text-slate-400 sm:text-lg">
+        Replace fragile prop-drilling and spaghetti state with compile-time type contracts (<code class="text-sky-600 dark:text-sky-300 font-mono text-sm">ComponentStruct</code>), zero-boilerplate MobX reactivity, and decoupled message bus channels.
       </p>
 
       <!-- Key Metrics Row -->
-      <div class="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-slate-300">
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600 dark:text-slate-300">
         <div class="flex items-center gap-2">
           <span class="h-2 w-2 rounded-full bg-sky-400" />
           <span>Zero-FOUC Astro SSR Shell</span>
@@ -41,10 +41,10 @@ import { SplitPlaygroundIsland } from '../components/islands/SplitPlaygroundIsla
     <section class="mb-12">
       <div class="mb-4 flex items-center justify-between">
         <div>
-          <h2 class="text-2xl font-bold tracking-tight text-white">
+          <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Interactive Code Playground
           </h2>
-          <p class="text-sm text-slate-400">
+          <p class="text-sm text-slate-600 dark:text-slate-400">
             Compare pure TypeScript contracts on the left with live interactive Dynstruct-MUI previews on the right.
           </p>
         </div>
@@ -55,33 +55,33 @@ import { SplitPlaygroundIsland } from '../components/islands/SplitPlaygroundIsla
 
     <!-- Architecture Advantages Section -->
     <section class="grid grid-cols-1 gap-6 md:grid-cols-3">
-      <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/20 text-sky-400 font-mono font-bold mb-4">
+      <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-6">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/20 text-sky-600 dark:text-sky-400 font-mono font-bold mb-4">
           01
         </div>
-        <h3 class="text-lg font-semibold text-white">Explicit Contracts</h3>
-        <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Explicit Contracts</h3>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
           Props, actions, and message scopes are verified by TypeScript before any JSX is rendered. Eliminates implicit dependencies and refactoring fear.
         </p>
       </div>
 
-      <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-mono font-bold mb-4">
+      <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-6">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold mb-4">
           02
         </div>
-        <h3 class="text-lg font-semibold text-white">Zero Reactivity Boilerplate</h3>
-        <p class="mt-2 text-sm text-slate-400 leading-relaxed">
-          Mutate model properties directly: <code class="text-sky-300 font-mono text-xs">model.count++</code>. Zero <code class="font-mono text-xs">useState</code> or <code class="font-mono text-xs">useEffect</code> dependency loops.
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Zero Reactivity Boilerplate</h3>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+          Mutate model properties directly: <code class="text-sky-600 dark:text-sky-300 font-mono text-xs">model.count++</code>. Zero <code class="font-mono text-xs">useState</code> or <code class="font-mono text-xs">useEffect</code> dependency loops.
         </p>
       </div>
 
-      <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20 text-purple-400 font-mono font-bold mb-4">
+      <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 p-6">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20 text-purple-600 dark:text-purple-400 font-mono font-bold mb-4">
           03
         </div>
-        <h3 class="text-lg font-semibold text-white">Island Decoupling</h3>
-        <p class="mt-2 text-sm text-slate-400 leading-relaxed">
-          Independent Astro islands communicate through <code class="text-sky-300 font-mono text-xs">@actdim/msgmesh</code> without needing a monolithic React root or global Context.
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Astro Shell + Islands</h3>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+          Zero-FOUC server HTML for layout and chrome with isolated Material UI islands. Fast first paint and instant client-side interactivity.
         </p>
       </div>
     </section>

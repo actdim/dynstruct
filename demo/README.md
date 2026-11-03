@@ -85,10 +85,23 @@ Without this configuration:
 
 ## Key Portal Routes
 
-- `/` : Interactive split-screen playground comparing TypeScript contracts with live component previews.
+- `/` : Interactive split-screen playground comparing TypeScript contracts with live component previews (built as pure Dynstruct struct with zero useState).
 - `/ssr-demo` : Dedicated Astro SSR / SSG verification with SEO crawler instructions.
 - `/cross-island` : Independent Astro islands coordinating strictly through the MsgMesh bus.
-- `/showcase` : Comprehensive gallery of all `@actdim/dynstruct-mui` components.
+- `/showcase` : Comprehensive gallery of 24+ `@actdim/dynstruct-mui` components with live interactive Dynstruct binding code examples across 4 categories (Actions, Form Inputs, Feedback, Surfaces/Nav).
+
+---
+
+## Architectural Canons & Invariants
+
+1. **Zero `useState` in Components & Islands**:
+   - All interactive UI state (scenario switching, form inputs, toggles, counters, code snippet viewer) resides strictly in Dynstruct reactive model props (`ComponentDef.props`) and actions (`ComponentDef.actions`).
+   - Local React `useState`, `useReducer`, or mutable state hooks are forbidden. All components and islands dogfood `useComponent` + `toReact`.
+
+2. **Light / Dark Theme Switching**:
+   - Zero-FOUC initialization: `Layout.astro` executes an inline blocking `<head>` script before body render to set document class (`dark` or light) and `data-theme` attribute based on `localStorage` (`actdim_theme_preference`) or system color preference.
+   - Header toggle: `Header.astro` provides an instant toggle button with Sun/Moon icons.
+   - Multi-island synchronization: `PortalProvider.tsx` uses a reactive MobX theme store, updating the Material UI theme mode across all mounted islands synchronously without page reload.
 
 ---
 

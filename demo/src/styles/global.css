@@ -1,6 +1,22 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  --color-bg-canvas: #f8fafc;
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-elevated: #f1f5f9;
+  --color-border-subtle: #e2e8f0;
+  --color-border-prominent: #cbd5e1;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-accent-blue: #0284c7;
+  --color-accent-cyan: #0891b2;
+  --color-accent-purple: #9333ea;
+}
+
+html.dark {
   --color-bg-canvas: #090d16;
   --color-bg-surface: #0f172a;
   --color-bg-surface-elevated: #1e293b;

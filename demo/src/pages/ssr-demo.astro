@@ -12,40 +12,40 @@ const ssrTimestamp = new Date().toLocaleTimeString();
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
     <!-- Header Section -->
     <div class="mb-8">
-      <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 mb-3">
+      <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-3">
         <span>Zero-JavaScript Server HTML</span>
-        <span class="text-slate-500">/</span>
+        <span class="text-slate-400 dark:text-slate-500">/</span>
         <span>SEO Crawler Verified</span>
       </div>
-      <h1 class="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
         Astro Server-Side Rendering (SSR / SSG) Demonstration
       </h1>
-      <p class="mt-2 max-w-3xl text-base text-slate-400">
+      <p class="mt-2 max-w-3xl text-base text-slate-600 dark:text-slate-400">
         This page demonstrates server-side data fetching in Astro frontmatter passed directly into a Dynstruct-MUI React island, prerendered at build time (SSG). The initial HTML payload is completely populated before JavaScript executes, giving 100% crawlable content to search engine bots. Switching from SSG to on-demand SSR requires only setting <code>output: 'server'</code> and adding an Astro deployment adapter with zero component code changes.
       </p>
     </div>
 
     <!-- DevTools Verification Walkthrough Box -->
-    <div class="mb-8 rounded-xl border border-sky-500/30 bg-sky-950/20 p-5 shadow-lg">
-      <div class="flex items-center gap-2 text-sm font-semibold text-sky-400 mb-2">
+    <div class="mb-8 rounded-xl border border-sky-500/30 bg-sky-50 dark:bg-sky-950/20 p-5 shadow-lg">
+      <div class="flex items-center gap-2 text-sm font-semibold text-sky-600 dark:text-sky-400 mb-2">
         <span class="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500/20 text-xs font-bold">
           i
         </span>
         <span>How to Verify Pure SSR &amp; Crawler SEO in Your Browser:</span>
       </div>
 
-      <ol class="mt-2 space-y-2 text-xs text-slate-300 sm:text-sm list-decimal list-inside leading-relaxed">
+      <ol class="mt-2 space-y-2 text-xs text-slate-700 dark:text-slate-300 sm:text-sm list-decimal list-inside leading-relaxed">
         <li>
-          <strong class="text-white">Disable JavaScript</strong>: Open Chrome/Edge DevTools (<kbd class="rounded bg-slate-800 px-1 py-0.5 text-xs text-slate-300">F12</kbd>), press <kbd class="rounded bg-slate-800 px-1 py-0.5 text-xs text-slate-300">Ctrl+Shift+P</kbd>, type <code class="text-sky-300">Disable JavaScript</code>, and press Enter.
+          <strong class="text-slate-900 dark:text-white">Disable JavaScript</strong>: Open Chrome/Edge DevTools (<kbd class="rounded bg-slate-200 dark:bg-slate-800 px-1 py-0.5 text-xs text-slate-800 dark:text-slate-300">F12</kbd>), press <kbd class="rounded bg-slate-200 dark:bg-slate-800 px-1 py-0.5 text-xs text-slate-800 dark:text-slate-300">Ctrl+Shift+P</kbd>, type <code class="text-sky-600 dark:text-sky-300">Disable JavaScript</code>, and press Enter.
         </li>
         <li>
-          <strong class="text-white">Refresh the Page</strong> (<kbd class="rounded bg-slate-800 px-1 py-0.5 text-xs text-slate-300">F5</kbd>): View the rendered table below. Notice that every title, rating, and description is fully present and visible.
+          <strong class="text-slate-900 dark:text-white">Refresh the Page</strong> (<kbd class="rounded bg-slate-200 dark:bg-slate-800 px-1 py-0.5 text-xs text-slate-800 dark:text-slate-300">F5</kbd>): View the rendered table below. Notice that every title, rating, and description is fully present and visible.
         </li>
         <li>
-          <strong class="text-white">Inspect Raw Page Source</strong> (<kbd class="rounded bg-slate-800 px-1 py-0.5 text-xs text-slate-300">Ctrl+U</kbd>): Search for <code class="text-sky-300">Astro Server-Side Rendering Engine</code>. The text exists directly in the static server markup without client JS execution.
+          <strong class="text-slate-900 dark:text-white">Inspect Raw Page Source</strong> (<kbd class="rounded bg-slate-200 dark:bg-slate-800 px-1 py-0.5 text-xs text-slate-800 dark:text-slate-300">Ctrl+U</kbd>): Search for <code class="text-sky-600 dark:text-sky-300">Astro Server-Side Rendering Engine</code>. The text exists directly in the static server markup without client JS execution.
         </li>
         <li>
-          <strong class="text-white">Re-enable JavaScript</strong>: Press <kbd class="rounded bg-slate-800 px-1 py-0.5 text-xs text-slate-300">Ctrl+Shift+P</kbd> and select <code class="text-sky-300">Enable JavaScript</code>. Notice client hydration completes seamlessly without hydration mismatches or DOM replacements.
+          <strong class="text-slate-900 dark:text-white">Re-enable JavaScript</strong>: Press <kbd class="rounded bg-slate-200 dark:bg-slate-800 px-1 py-0.5 text-xs text-slate-800 dark:text-slate-300">Ctrl+Shift+P</kbd> and select <code class="text-sky-600 dark:text-sky-300">Enable JavaScript</code>. Notice client hydration completes seamlessly without hydration mismatches or DOM replacements.
         </li>
       </ol>
     </div>

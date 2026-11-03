@@ -18,7 +18,7 @@ const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,8 +27,23 @@ const currentPath = Astro.url.pathname;
     <title>{title} | Dynstruct Demo</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#090d16" />
+    <script is:inline>
+      (function () {
+        try {
+          const stored = localStorage.getItem('actdim_theme_preference');
+          const isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased min-h-screen flex flex-col transition-colors duration-150">
     <Header currentPath={currentPath} />
     <main class="flex-1 w-full">
       <slot />

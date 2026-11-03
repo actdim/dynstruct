@@ -152,6 +152,8 @@ flowchart LR
 8. **Hydration-clean markup**: no block elements inside `span` / `p` (for example `ListItemText` uses `slotProps` with `component: 'div'`); the e2e suite fails on any browser console error or warning.
 9. **Single React / MobX / MUI copy**: `resolve.dedupe` in `astro.config.mjs` keeps listing the shared runtime packages, because the `@actdim` libraries are linked from a workspace.
 10. **Monorepo-aware Vite fs allow list**: `astro.config.mjs` discovers ancestor workspace and git roots (`findAllowedRoots`) so that Vite dev server can serve hoisted dependencies (such as `@astrojs/react` client hydration runtime) without 403 Forbidden errors across nested `pnpm-workspace.yaml` boundaries.
+11. **Zero useState canon**: all interactive demo UI elements (`Playground`, `ShowcaseGallery`, etc.) strictly dogfood Dynstruct (`ComponentStruct` + `ComponentDef` + `useComponent` + `toReact`); local React `useState` hooks are banned in favor of MobX reactive model props.
+12. **Zero-FOUC theme synchronization**: `Layout.astro` initializes document theme via a blocking `<head>` script, while `PortalProvider` observes theme updates via reactive store to synchronize Material UI palette modes across all mounted islands without page reload.
 
 ## Related Topics
 

@@ -116,6 +116,8 @@ The Playwright config (`playwright.config.ts`) runs `pnpm build && pnpm preview 
 - Async search through `RPC.SEARCH` and `msgBroker`.
 - The playground contract panel shows an `export type` for all five scenarios.
 - The reactivity demo counts committed renders without render-phase mutation.
+- Theme switching toggles document class, persists in `localStorage`, and preserves mode across route navigation without FOUC.
+- Component showcase features 24+ `@actdim/dynstruct-mui` adapters across 4 categories with interactive Dynstruct binding code panels and zero `useState`.
 
 Run the e2e suite after any change to pages, islands, structs or the bus; run typecheck after any TypeScript or `.astro` change.
 
