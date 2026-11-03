@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-<!-- No active issues -->
+- [ ] `(feat)` [demo-theme-and-showcase](ISSUES/feat--demo-theme-and-showcase.md) - plan ready
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
@@ -23,7 +23,6 @@
 - [ ] `(feat)` [nav-service-dependencies](ISSUES/feat--nav-service-dependencies.md)
 - [ ] `(feat)` [problem-details-http-errors](ISSUES/feat--problem-details-http-errors.md)
 - [ ] `(feat)` [request-accepts-and-cors](ISSUES/feat--request-accepts-and-cors.md)
-- [ ] `(feat)` [security-endpoints-optional](ISSUES/feat--security-endpoints-optional.md)
 - [ ] `(feat)` [server-sent-events-support](ISSUES/feat--server-sent-events-support.md)
 - [ ] `(feat)` [signalr-integration](ISSUES/feat--signalr-integration.md)
 - [ ] `(feat)` [single-getter-prop-binding](ISSUES/feat--single-getter-prop-binding.md)
@@ -41,6 +40,6 @@
 - [x] `(task)` [move-into-lib](ISSUES/done/task--move-into-lib.md)
 - [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
 - [x] `(task)` [demo-docs-into-lib](ISSUES/done/task--demo-docs-into-lib.md)
+- [x] `(feat)` [security-endpoints-optional](ISSUES/done/feat--security-endpoints-optional.md)
 - [x] `(bug)` [demo-monorepo-vite-fs-allow](ISSUES/done/bug--demo-monorepo-vite-fs-allow.md)
-- [x] `(docs)` [along-kb-setup](ISSUES/done/docs--along-kb-setup.md)
-<!-- 44 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 45 older completed issue(s) archived in .along/ISSUES/done/ -->

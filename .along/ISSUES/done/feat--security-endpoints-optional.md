@@ -3,7 +3,8 @@ protocol: along
 protocol_version: "4.6.0"
 slug: security-endpoints-optional
 type: feat
-status: in-progress
+status: done
+completed: 2026-11-03
 priority: high
 created: 2026-11-03
 updated: 2026-11-03
