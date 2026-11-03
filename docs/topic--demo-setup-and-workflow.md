@@ -18,6 +18,7 @@ tags: [setup-and-workflow, build, test, e2e, github-pages, ci, monorepo]
 
 - Inside mempart, `src/pnpm-workspace.yaml` lists `packages/dynstruct/demo` and links all `@actdim` dependencies (`dynstruct`, `dynstruct-mui`, `msgmesh`, `ui-core`, `utico`) from their folders, so local development runs against library sources in the same checkout. The nested dynstruct `pnpm-workspace.yaml` is ignored there.
 - In a standalone dynstruct checkout, the repository `pnpm-workspace.yaml` (packages `.` and `demo`) links the library from the folder; the other `@actdim` packages come from npm.
+- **Vite serving boundary (`server.fs.allow`)**: Because `packages/dynstruct` defines its own `pnpm-workspace.yaml` for standalone mode, Vite dev server treats it as the default workspace root. Inside `mempart`, hoisted dependencies (such as `@astrojs/react`) reside in `src/node_modules/.pnpm/...`. To avoid HTTP 403 Forbidden errors when serving client hydration scripts via `/@fs/`, `astro.config.mjs` uses `findAllowedRoots` to dynamically include parent workspace and Git roots.
 
 ```text
 demo/

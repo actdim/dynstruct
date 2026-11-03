@@ -46,7 +46,7 @@ The page is split into two worlds:
 
 | Component | Location | Responsibility |
 |---|---|---|
-| Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `resolve.dedupe` for `react`, `react-dom`, `mobx`, `mobx-react-lite`, `@emotion/*`, `@mui/material` |
+| Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `server.fs.allow` with upward root discovery (`findAllowedRoots`) for monorepo and standalone compatibility, Vite `resolve.dedupe` for `react`, `react-dom`, `mobx`, `mobx-react-lite`, `@emotion/*`, `@mui/material` |
 | Layout | `src/layouts/Layout.astro` | HTML document, `title` / `description` props, favicon through `withBase`, header and footer around the page slot |
 | Header / Footer | `src/components/astro/Header.astro`, `Footer.astro` | Navigation (base-aware active-link matching), links to the dynstruct `llms.txt` (docs site) and the `@actdim` GitHub repositories |
 | Pages | `src/pages/index.astro`, `ssr-demo.astro`, `cross-island.astro`, `showcase.astro` | One route each; mount one or two islands with `client:load` |
@@ -151,6 +151,7 @@ flowchart LR
 7. **Playground code comes from source**: structs shown in the playground keep `// #region contract`, `// #region model` and `// #region integration` markers; `extractRegion` throws when a marker is missing.
 8. **Hydration-clean markup**: no block elements inside `span` / `p` (for example `ListItemText` uses `slotProps` with `component: 'div'`); the e2e suite fails on any browser console error or warning.
 9. **Single React / MobX / MUI copy**: `resolve.dedupe` in `astro.config.mjs` keeps listing the shared runtime packages, because the `@actdim` libraries are linked from a workspace.
+10. **Monorepo-aware Vite fs allow list**: `astro.config.mjs` discovers ancestor workspace and git roots (`findAllowedRoots`) so that Vite dev server can serve hoisted dependencies (such as `@astrojs/react` client hydration runtime) without 403 Forbidden errors across nested `pnpm-workspace.yaml` boundaries.
 
 ## Related Topics
 

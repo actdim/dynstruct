@@ -70,6 +70,17 @@ pnpm run build:demo
 pnpm --filter @actdim/dynstruct-demo preview
 ```
 
+### Monorepo vs Standalone Workspace Boundary (Vite `server.fs.allow`)
+
+When running inside a parent monorepo like `mempart`, pnpm installs virtual packages at the monorepo root (`src/node_modules/.pnpm/...`). Because `packages/dynstruct` contains its own `pnpm-workspace.yaml` for standalone use, Vite's default workspace auto-detection (`searchForWorkspaceRoot`) treats `packages/dynstruct` as the root boundary.
+
+To prevent Vite from blocking hoisted client hydration scripts (e.g. `@astrojs/react/dist/client.js`) with `403 Forbidden` (`outside of Vite serving allow list`), `astro.config.mjs` dynamically resolves ancestor workspace and repository roots (`findAllowedRoots`) and adds them to `vite.server.fs.allow`.
+
+Without this configuration:
+- React islands fail client hydration (`[astro-island] Error hydrating ...`).
+- Pages remain stuck in static pre-hydration HTML (`Client: Pre-Hydration (Static HTML)`).
+- Interacting with unhydrated inputs triggers Astro event replay retries on every keystroke, causing dev server request storms and browser UI stutter.
+
 ---
 
 ## Key Portal Routes
