@@ -1,14 +1,16 @@
 ---
 protocol: along
-slug: domain-model
-title: Domain Model
-type: domain-model
+slug: demo-domain-model
+title: "Demo: Domain Model"
+type: topic
 created: 2026-11-01
-updated: 2026-11-01
+updated: 2026-11-03
 tags: [domain-model, msgmesh, channels, contracts, catalog, routes]
 ---
 
 # @actdim/dynstruct-demo Domain Model & Contracts
+
+> The demo app lives in [`demo/`](../demo/README.md) of this repository; file paths in this article are relative to `demo/`.
 
 ## 1. Domain Overview
 
@@ -31,7 +33,7 @@ The demo has no backend. Its domain is made of three things:
 | `PlaygroundScenario` | `src/data/codeSnippets.ts` | Data record | One entry per playground tab |
 | Struct contracts | `src/components/structs/*.tsx` | `ComponentStruct<DemoMsgStruct, ...>` | `props`, `actions`, `msgScope` per component |
 | Pages | `src/pages/*.astro` | Routes | `/`, `/ssr-demo`, `/cross-island`, `/showcase` |
-| Static assets | `public/` | Files | `favicon.svg`, `llms.txt`, `llms-full.txt` |
+| Static assets | `public/` | Files | `favicon.svg` |
 
 ### 2.1. Bus channels
 
@@ -94,7 +96,6 @@ Filter categories offered by `CatalogFilter` are `ALL`, `Architecture`, `Network
 | `/ssr-demo` | `src/pages/ssr-demo.astro` | `SsrCatalogIsland` | Build-time data fetch, crawlable HTML, hydration over existing DOM |
 | `/cross-island` | `src/pages/cross-island.astro` | `CrossIslandFilter`, `CrossIslandList` | Two independent islands coordinated through `CATALOG.FILTER` |
 | `/showcase` | `src/pages/showcase.astro` | `ShowcaseGalleryIsland` | Gallery of `@actdim/dynstruct-mui` controls (Button, TextField, Select, Checkbox, Switch, Slider) next to MUI feedback and surface widgets |
-| `/llms.txt`, `/llms-full.txt` | `public/` | - | AI agent discovery metadata, served as static files |
 
 All routes are served under the configured base (`/` locally, `/dynstruct/demo/` on GitHub Pages).
 
@@ -234,5 +235,5 @@ Data dependencies:
 
 ## Related Topics
 
-- [Architecture](./topic--architecture.md): shell vs islands, bus lifecycle, base path, invariants.
-- [Setup And Workflow](./topic--setup-and-workflow.md): commands, tests and Pages CI.
+- [Architecture](./topic--demo-architecture.md): shell vs islands, bus lifecycle, base path, invariants.
+- [Setup And Workflow](./topic--demo-setup-and-workflow.md): commands, tests and Pages CI.

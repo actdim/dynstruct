@@ -31,6 +31,12 @@ flowchart TD
     INDEX --> T_ALONG_PROTOCOL
     T_ARCHITECTURE["01 Architecture"]
     INDEX --> T_ARCHITECTURE
+    T_DEMO_ARCHITECTURE["Demo: Architecture"]
+    INDEX --> T_DEMO_ARCHITECTURE
+    T_DEMO_DOMAIN_MODEL["Demo: Domain Model"]
+    INDEX --> T_DEMO_DOMAIN_MODEL
+    T_DEMO_SETUP_AND_WORKFLOW["Demo: Setup And Workflow"]
+    INDEX --> T_DEMO_SETUP_AND_WORKFLOW
     T_DEPENDENCIES["Dependencies & Submodules AI Documentation and Rules"]
     INDEX --> T_DEPENDENCIES
     T_DOMAIN_MODEL["02 Domain Model"]
@@ -56,6 +62,12 @@ flowchart TD
     T_ARCHITECTURE -.->|references| T_DOMAIN_MODEL
     T_ARCHITECTURE -.->|references| T_SETUP_AND_WORKFLOW
     T_ARCHITECTURE -.->|references| T_LICENSE
+    T_DEMO_ARCHITECTURE -.->|references| T_DEMO_DOMAIN_MODEL
+    T_DEMO_ARCHITECTURE -.->|references| T_DEMO_SETUP_AND_WORKFLOW
+    T_DEMO_DOMAIN_MODEL -.->|references| T_DEMO_ARCHITECTURE
+    T_DEMO_DOMAIN_MODEL -.->|references| T_DEMO_SETUP_AND_WORKFLOW
+    T_DEMO_SETUP_AND_WORKFLOW -.->|references| T_DEMO_ARCHITECTURE
+    T_DEMO_SETUP_AND_WORKFLOW -.->|references| T_DEMO_DOMAIN_MODEL
     T_DOMAIN_MODEL -.->|references| T_ARCHITECTURE
     T_DOMAIN_MODEL -.->|references| T_02_CORE_CONCEPTS
     T_DOMAIN_MODEL -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
@@ -83,6 +95,9 @@ flowchart TD
 - **[API Reference & Development Guide](./topic--05-api-reference.md)** (topic) `05-api-reference`, `api`, `contracts`
 - **[Along Protocol Reference](./topic--along-protocol.md)** (reference) `protocol`, `agents-md`, `checklist`, `routing`, `concurrency`, `along-team`, `conventions`
 - **[01 Architecture](./topic--architecture.md)** (topic) `architecture`
+- **[Demo: Architecture](./topic--demo-architecture.md)** (topic) `architecture`, `astro`, `islands`, `msgmesh`, `dynstruct`, `ssg`, `base-path`
+- **[Demo: Domain Model](./topic--demo-domain-model.md)** (topic) `domain-model`, `msgmesh`, `channels`, `contracts`, `catalog`, `routes`
+- **[Demo: Setup And Workflow](./topic--demo-setup-and-workflow.md)** (topic) `setup-and-workflow`, `build`, `test`, `e2e`, `github-pages`, `ci`, `monorepo`
 - **[Dependencies & Submodules AI Documentation and Rules](./topic--dependencies.md)** (topic) `dependencies`, `ai-context`, `submodules`, `vendor`, `rules`
 - **[02 Domain Model](./topic--domain-model.md)** (topic) `domain-model`
 - **[License](./topic--license.md)** (license) `license`, `mit`

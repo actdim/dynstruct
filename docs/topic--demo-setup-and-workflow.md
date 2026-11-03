@@ -1,14 +1,16 @@
 ---
 protocol: along
-slug: setup-and-workflow
-title: Setup And Workflow
-type: setup-workflow
+slug: demo-setup-and-workflow
+title: "Demo: Setup And Workflow"
+type: topic
 created: 2026-11-01
 updated: 2026-11-03
 tags: [setup-and-workflow, build, test, e2e, github-pages, ci, monorepo]
 ---
 
 # @actdim/dynstruct-demo Setup, Build & Test Workflow
+
+> The demo app lives in [`demo/`](../demo/README.md) of this repository; file paths in this article are relative to `demo/`.
 
 ## 1. Repository Layout
 
@@ -27,7 +29,7 @@ demo/
 |   |-- data/           sampleCatalog.ts, codeSnippets.ts
 |   |-- lib/            withBase.ts
 |   `-- styles/         global.css (Tailwind)
-|-- public/             favicon.svg, llms.txt, llms-full.txt
+|-- public/             favicon.svg
 |-- e2e/                smoke.spec.ts, fixtures.ts (console watcher), hydration.ts
 |-- astro.config.mjs    base / site from DEMO_BASE / DEMO_SITE
 |-- playwright.config.ts
@@ -118,6 +120,6 @@ Run the e2e suite after any change to pages, islands, structs or the bus; run ty
 
 ## Related Topics
 
-- [Architecture](./topic--architecture.md): shell vs islands, bus lifecycle, base path, invariants.
-- [Domain Model](./topic--domain-model.md): channels, payloads, catalog types and routes.
-- [README](../README.md): quick start and route list.
+- [Architecture](./topic--demo-architecture.md): shell vs islands, bus lifecycle, base path, invariants.
+- [Domain Model](./topic--demo-domain-model.md): channels, payloads, catalog types and routes.
+- [README](../demo/README.md): quick start and route list.

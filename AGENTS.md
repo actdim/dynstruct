@@ -715,4 +715,4 @@ See the following engineering guidelines:
 - `[languages/typescript.md](.along/rules/languages/typescript.md)`
 - `[platforms/web.md](.along/rules/platforms/web.md)`
 <!-- END ALONG-RULES -->
-- **Demo**: `demo/` holds `@actdim/dynstruct-demo` (Astro portal) with its own `AGENTS.md` and `.along/`. `pnpm-workspace.yaml` (packages `.` and `demo`) links this library to it as `workspace:*`; the demo is outside the library build, lint, tests and npm tarball. `.github/workflows/pages.yml` deploys the docs at `/dynstruct/` and the demo at `/dynstruct/demo/`.
+- **Demo**: `demo/` holds `@actdim/dynstruct-demo` (Astro portal). It has no Along context of its own: its docs are `docs/topic--demo-architecture.md`, `topic--demo-domain-model.md`, `topic--demo-setup-and-workflow.md`, its scope and roadmap are in `.along/VISION.md`, and its issues go in this repository's `.along/`. `pnpm-workspace.yaml` (packages `.` and `demo`) links this library to it as `workspace:*`; the demo is outside the library build, lint, tests and npm tarball. `.github/workflows/pages.yml` deploys the docs at `/dynstruct/` and the demo at `/dynstruct/demo/`.

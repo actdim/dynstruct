@@ -6,13 +6,3 @@ dist
 .DS_Store
 test-results
 playwright-report
-
-
-
-# Along ephemeral session and diagnostics
-.along/.session/
-.along/diagnostics/
-.along/artifacts/
-.along/dashboard.html
-.along/DASHBOARD.md
-__pycache__/

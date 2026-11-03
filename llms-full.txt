@@ -117,7 +117,7 @@ Try `@actdim/dynstruct` in your browser via StackBlitz:
 pnpm run storybook
 ```
 
-The showcase portal (Astro + React islands with `@actdim/dynstruct-mui` and `@actdim/msgmesh`) lives in [`demo/`](./demo/README.md) and is deployed at https://actdim.github.io/dynstruct/demo/. It is a member of this repository's pnpm workspace and is not part of the npm package.
+The showcase portal (Astro + React islands with `@actdim/dynstruct-mui` and `@actdim/msgmesh`) lives in [`demo/`](./demo/README.md) and is deployed at https://actdim.github.io/dynstruct/demo/. It is a member of this repository's pnpm workspace and is not part of the npm package. Docs: [Demo Architecture](./docs/topic--demo-architecture.md), [Demo Domain Model](./docs/topic--demo-domain-model.md), [Demo Setup & Workflow](./docs/topic--demo-setup-and-workflow.md).
 
 ---
 
@@ -1032,7 +1032,7 @@ See the following engineering guidelines:
 - `[languages/typescript.md](.along/rules/languages/typescript.md)`
 - `[platforms/web.md](.along/rules/platforms/web.md)`
 <!-- END ALONG-RULES -->
-- **Demo**: `demo/` holds `@actdim/dynstruct-demo` (Astro portal) with its own `AGENTS.md` and `.along/`. `pnpm-workspace.yaml` (packages `.` and `demo`) links this library to it as `workspace:*`; the demo is outside the library build, lint, tests and npm tarball. `.github/workflows/pages.yml` deploys the docs at `/dynstruct/` and the demo at `/dynstruct/demo/`.
+- **Demo**: `demo/` holds `@actdim/dynstruct-demo` (Astro portal). It has no Along context of its own: its docs are `docs/topic--demo-architecture.md`, `topic--demo-domain-model.md`, `topic--demo-setup-and-workflow.md`, its scope and roadmap are in `.along/VISION.md`, and its issues go in this repository's `.along/`. `pnpm-workspace.yaml` (packages `.` and `demo`) links this library to it as `workspace:*`; the demo is outside the library build, lint, tests and npm tarball. `.github/workflows/pages.yml` deploys the docs at `/dynstruct/` and the demo at `/dynstruct/demo/`.
 
 ---
 
@@ -2969,6 +2969,514 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 - [Domain Model](./topic--domain-model.md) - Domain Contracts and Component Structs
 - [Setup & Workflow](./topic--setup-and-workflow.md) - Setup, Build, Tests & Storybook Workflow
 - [License](./topic--license.md) - License Information
+
+---
+
+## Document: docs/topic--demo-architecture.md (Demo: Architecture)
+
+# @actdim/dynstruct-demo Architecture
+
+> The demo app lives in [`demo/`](../demo/README.md) of this repository; file paths in this article are relative to `demo/`.
+
+## 1. System Overview
+
+`@actdim/dynstruct-demo` is an Astro portal that showcases `@actdim/dynstruct` (structure-first component model), `@actdim/dynstruct-mui` (Material UI adapters for Dynstruct contracts) and `@actdim/msgmesh` (typed message bus). It is built as a static site (`astro build`, default `output: 'static'`) and deployed to GitHub Pages at https://actdim.github.io/dynstruct/demo/.
+
+The page is split into two worlds:
+
+- **Astro shell** (`.astro` files, Tailwind CSS): document layout, header, footer, hero banners and explanatory text. It renders to plain HTML at build time and ships no JavaScript of its own.
+- **React islands** (`src/components/islands/*.tsx`, all mounted with `client:load`): interactive regions. Each island is an independent React root hydrated over its pre-rendered HTML. Material UI and Emotion run only inside islands.
+
+```text
++--------------------------------------------------------------------------------------+
+|  Astro shell (build time, zero JS)                                                   |
+|  src/layouts/Layout.astro -> Header.astro, <slot />, Footer.astro, global.css        |
+|  src/pages/*.astro (route = file name), src/lib/withBase.ts                          |
++--------------------------------------------------------------------------------------+
+|  React islands (client:load, one React root each)                                    |
+|  src/components/islands/*.tsx -> PortalProvider (MUI ThemeProvider +                 |
+|                                  ComponentContextProvider { msgBus })                |
++--------------------------------------------------------------------------------------+
+|  Dynstruct structs (src/components/structs/*.tsx)                                    |
+|  ComponentStruct contract -> ComponentDef (props, actions, msgBroker, events, view)  |
+|  useComponent(def, params) + toReact(...) -> React component                         |
++--------------------------------------------------------------------------------------+
+|  Bus layer (src/bus)                                                                 |
+|  portalMsgStruct.ts (DemoMsgStruct), portalBus.ts (getPortalMsgBus), ids.ts          |
++--------------------------------------------------------------------------------------+
+|  Data (src/data): sampleCatalog.ts (SSG data), codeSnippets.ts (playground regions)  |
++--------------------------------------------------------------------------------------+
+```
+
+## Core Components
+
+| Component | Location | Responsibility |
+|---|---|---|
+| Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `resolve.dedupe` for `react`, `react-dom`, `mobx`, `mobx-react-lite`, `@emotion/*`, `@mui/material` |
+| Layout | `src/layouts/Layout.astro` | HTML document, `title` / `description` props, favicon through `withBase`, header and footer around the page slot |
+| Header / Footer | `src/components/astro/Header.astro`, `Footer.astro` | Navigation (base-aware active-link matching), links to the dynstruct `llms.txt` (docs site) and the `@actdim` GitHub repositories |
+| Pages | `src/pages/index.astro`, `ssr-demo.astro`, `cross-island.astro`, `showcase.astro` | One route each; mount one or two islands with `client:load` |
+| PortalProvider | `src/components/common/PortalProvider.tsx` | Dark MUI theme plus Dynstruct `ComponentContextProvider` whose `msgBus` is `getPortalMsgBus()` |
+| Islands | `src/components/islands/*.tsx` | Thin wrappers: `PortalProvider` + one struct (or the playground / gallery) |
+| Structs | `src/components/structs/*.tsx` | Idiomatic Dynstruct components: `CatalogFilter`, `CatalogList`, `SsrCatalog`, `FormDemo`, `Counter`, `DialogToastDemo`, `ReactivityDemo`, `AsyncSearchDemo` |
+| Portal bus | `src/bus/portalBus.ts` | `getPortalMsgBus()`: browser singleton, fresh bus per call during SSR; `CATALOG.FILTER` configured with `replayBufferSize: 1` |
+| Bus contract | `src/bus/portalMsgStruct.ts` | `DemoMsgStruct = BaseAppMsgStruct & MsgStruct<DemoCustomChannels>`, payload types, `DEFAULT_FILTER` |
+| Message ids | `src/bus/ids.ts` | `newMsgId()`: `crypto.randomUUID()` with a counter fallback; used for toast ids |
+| Base path helper | `src/lib/withBase.ts` | Prefixes root-relative links with `import.meta.env.BASE_URL` |
+| Playground snippets | `src/data/codeSnippets.ts` | Imports struct sources with `?raw` and cuts `// #region contract|model|integration` blocks for the code panel |
+| SSG data | `src/data/sampleCatalog.ts` | `getSampleCatalog()`: async server-side data source for `/ssr-demo` |
+
+### 2.1. Astro shell vs React islands
+
+The shell owns everything that does not need interactivity, so the first paint has no CSS-in-JS and no layout shift. MUI and Emotion are loaded only by islands. Every island is mounted with `client:load`, so it hydrates as soon as the page loads; the e2e helper `waitForIslands` (`e2e/hydration.ts`) waits until no `astro-island[ssr]` element remains.
+
+The home page playground (`SplitPlaygroundIsland`) is a plain React component for the scenario selector and code tabs; the live preview inside it renders one Dynstruct struct per scenario under a `PortalProvider`. The code panel content is taken from the real struct source files, not from copies (`extractRegion` in `src/data/codeSnippets.ts`).
+
+### 2.2. Cross-island msgmesh bus
+
+React Context cannot cross island boundaries: each island has its own React root and its own `PortalProvider`. The shared channel is the module-level bus singleton returned by `getPortalMsgBus()` in the browser. Islands on the same page import the same module instance, so they publish and subscribe on the same `MsgBus<DemoMsgStruct>` without a common React ancestor.
+
+During SSR / SSG (`typeof window === 'undefined'`) the function returns a new bus per call, so no state leaks between island renders or between pages at build time.
+
+### 2.3. Declarative msgBroker
+
+Structs register subscriptions and RPC providers inside `def.msgBroker` instead of calling `msgBus.on` / `msgBus.provide` by hand:
+
+- `msgBroker.subscribe` - `CatalogList` (`CATALOG.FILTER`), `DialogToastDemo` (`NOTICE.TOAST`, `DIALOG.OPEN`, `DRAWER.TOGGLE`).
+- `msgBroker.provide` - `AsyncSearchDemo` (`RPC.SEARCH`).
+
+Dynstruct binds these registrations to the component lifecycle and releases them per mount, which keeps them correct under React StrictMode double mounting. Publishing stays imperative through `c.msgBus.send(...)` and requests through `c.msgBus.request(...)`. Each struct declares the channels it touches in its `msgScope` (`publish`, `subscribe`, `provide`), which the type system checks against `DemoMsgStruct`.
+
+### 2.4. SSG / SSR switch
+
+`/ssr-demo` awaits `getSampleCatalog()` in the page frontmatter and passes the result into `SsrCatalogIsland` as `initialItems` together with an `ssrTimestamp`. With the default `output: 'static'` this runs once at build time (SSG), so the generated HTML already contains every catalog row and is readable with JavaScript disabled. Moving to on-demand SSR needs `output: 'server'` in `astro.config.mjs` plus an Astro deployment adapter; page and component code stay unchanged. The deployed GitHub Pages site is static, so it uses SSG.
+
+### 2.5. Base-path handling
+
+GitHub Pages serves the site under `/dynstruct/demo/`. `astro.config.mjs` reads `DEMO_BASE` (default `/`) into `base` and `DEMO_SITE` into `site`. All internal links go through `withBase(path)`, which strips the trailing slash from `BASE_URL` and prefixes the path. `Header.astro` strips the base from `Astro.url.pathname` before comparing it with its base-relative nav items, so active-link highlighting works both locally and on Pages.
+
+```mermaid
+flowchart LR
+    ENV["DEMO_BASE / DEMO_SITE env"] --> CFG["astro.config.mjs base, site"]
+    CFG --> BASEURL["import.meta.env.BASE_URL"]
+    BASEURL --> WB["withBase(path)"]
+    BASEURL --> HDR["Header.astro active-link match"]
+    WB --> LINKS["nav links, favicon"]
+```
+
+## Data Flow
+
+### 3.1. Cross-island filter (`/cross-island`)
+
+```mermaid
+sequenceDiagram
+    participant F as CrossIslandFilter island (CatalogFilter)
+    participant B as Portal MsgBus (browser singleton)
+    participant L as CrossIslandList island (CatalogList)
+    F->>B: send CATALOG.FILTER { query, category, minRating }
+    B-->>L: msgBroker.subscribe callback
+    L->>L: m.filter = payload, receivedCount++
+    L->>L: view() recomputes filtered ALL_ITEMS
+    Note over F,L: Reset publishes DEFAULT_FILTER values, keeping both islands in sync
+```
+
+`CatalogFilter` publishes on every change of query, category or minimum rating; the category value `ALL` is sent as `category: undefined`. The channel has `replayBufferSize: 1`, so a subscriber that attaches after the last publish still receives the current filter.
+
+### 3.2. Playground overlays and RPC (`/`)
+
+```mermaid
+flowchart TD
+    BTN["DialogToastDemo buttons"] -->|send NOTICE.TOAST / DIALOG.OPEN / DRAWER.TOGGLE| BUS["Portal MsgBus"]
+    FORM["FormDemo"] -->|send NOTICE.TOAST| BUS
+    BUS -->|msgBroker.subscribe| DT["DialogToastDemo model: toasts, dialogOpen, drawerOpen"]
+    Q["AsyncSearchDemo setQuery, 250 ms debounce"] -->|request RPC.SEARCH| BUS
+    BUS -->|msgBroker.provide handler, 100 ms simulated latency| P["RPC.SEARCH provider in AsyncSearchDemo"]
+    P -->|out items| Q
+```
+
+`AsyncSearchDemo` numbers each request (`searchSeq`) and ignores responses that are not the latest, so out-of-order RPC replies never overwrite newer results.
+
+### 3.3. Build-time data (`/ssr-demo`)
+
+```mermaid
+flowchart LR
+    FM["ssr-demo.astro frontmatter"] -->|await getSampleCatalog| DATA["copy of SAMPLE_SSR_CATALOG"]
+    DATA -->|initialItems, ssrTimestamp props| ISL["SsrCatalogIsland"]
+    ISL --> HTML["Pre-rendered HTML table"]
+    HTML -->|client:load hydration| LIVE["SsrCatalog: client filter and sort, clientHydrationTime set in onReady"]
+```
+
+## Invariants
+
+1. **MUI only inside islands**: `.astro` files use Tailwind classes only; `@mui/material` and Emotion are imported only from `src/components/islands`, `src/components/structs` and `src/components/common`.
+2. **No React Context across islands**: islands communicate only through the portal bus. Each island wraps its content in its own `PortalProvider`.
+3. **One browser bus, isolated SSR buses**: `getPortalMsgBus()` returns a singleton when `window` exists and a fresh bus otherwise. Do not create other buses for portal traffic.
+4. **Declarative registrations**: subscriptions and RPC providers live in `def.msgBroker`; no manual `msgBus.on` / `msgBus.provide` in `events.onReady` / `onDestroy`.
+5. **Typed channels**: every channel and payload is declared in `DemoCustomChannels` (`src/bus/portalMsgStruct.ts`) and listed in the struct's `msgScope`.
+6. **Base-aware links**: every internal URL in the shell goes through `withBase`; never hard-code `/dynstruct/demo/`.
+7. **Playground code comes from source**: structs shown in the playground keep `// #region contract`, `// #region model` and `// #region integration` markers; `extractRegion` throws when a marker is missing.
+8. **Hydration-clean markup**: no block elements inside `span` / `p` (for example `ListItemText` uses `slotProps` with `component: 'div'`); the e2e suite fails on any browser console error or warning.
+9. **Single React / MobX / MUI copy**: `resolve.dedupe` in `astro.config.mjs` keeps listing the shared runtime packages, because the `@actdim` libraries are linked from a workspace.
+
+## Related Topics
+
+- [Domain Model](./topic--demo-domain-model.md): bus channels, payload contracts, catalog types and routes.
+- [Setup And Workflow](./topic--demo-setup-and-workflow.md): running, testing and the GitHub Pages pipeline.
+- [README](../demo/README.md): package overview and channel table.
+
+---
+
+## Document: docs/topic--demo-domain-model.md (Demo: Domain Model)
+
+# @actdim/dynstruct-demo Domain Model & Contracts
+
+> The demo app lives in [`demo/`](../demo/README.md) of this repository; file paths in this article are relative to `demo/`.
+
+## 1. Domain Overview
+
+The demo has no backend. Its domain is made of three things:
+
+- **Bus contract**: the typed channels of the portal message bus (`src/bus/portalMsgStruct.ts`).
+- **Demo catalog data**: in-memory lists of `DemoCatalogItem` used by the filter, search and SSG demos.
+- **Routes and page contracts**: four Astro pages, the props of the shared layout and of the SSG island, and the playground scenario list.
+
+## Entity Taxonomy
+
+| Entity | Defined in | Kind | Notes |
+|---|---|---|---|
+| `DemoMsgStruct` | `src/bus/portalMsgStruct.ts` | Bus contract | `BaseAppMsgStruct` (from `@actdim/dynstruct/appDomain/appContracts`) `&` `MsgStruct<DemoCustomChannels>` |
+| `DemoCustomChannels` | `src/bus/portalMsgStruct.ts` | Channel map | `CATALOG.FILTER`, `NOTICE.TOAST`, `DIALOG.OPEN`, `DRAWER.TOGGLE`, `RPC.SEARCH` |
+| `CatalogFilterPayload` | `src/bus/portalMsgStruct.ts` | Payload | `{ query?, category?, minRating? }` |
+| `DEFAULT_FILTER` | `src/bus/portalMsgStruct.ts` | Constant | `{ query: '', category: undefined, minRating: 4.0 }` |
+| `DemoCatalogItem` | `src/bus/portalMsgStruct.ts` | Data record | Shared by every catalog dataset and by `RPC.SEARCH` output |
+| `ToastItem` | `src/components/structs/dialogToastStruct.tsx` | View model | Toast entry kept by `DialogToastDemo` (max 5) |
+| `PlaygroundScenario` | `src/data/codeSnippets.ts` | Data record | One entry per playground tab |
+| Struct contracts | `src/components/structs/*.tsx` | `ComponentStruct<DemoMsgStruct, ...>` | `props`, `actions`, `msgScope` per component |
+| Pages | `src/pages/*.astro` | Routes | `/`, `/ssr-demo`, `/cross-island`, `/showcase` |
+| Static assets | `public/` | Files | `favicon.svg` |
+
+### 2.1. Bus channels
+
+| Channel | Kind | `in` payload | `out` payload | Publishers | Consumers |
+|---|---|---|---|---|---|
+| `CATALOG.FILTER` | Pub/Sub, `replayBufferSize: 1` | `CatalogFilterPayload` | - | `CatalogFilter` | `CatalogList` (`msgBroker.subscribe`) |
+| `NOTICE.TOAST` | Pub/Sub | `{ id: string; message: string; severity?: 'success' \| 'info' \| 'warning' \| 'error'; duration?: number }` | - | `DialogToastDemo`, `FormDemo` | `DialogToastDemo` |
+| `DIALOG.OPEN` | Pub/Sub | `{ dialogId: string; title: string; content: string }` | - | `DialogToastDemo` | `DialogToastDemo` |
+| `DRAWER.TOGGLE` | Pub/Sub | `{ open: boolean }` | - | `DialogToastDemo` | `DialogToastDemo` |
+| `RPC.SEARCH` | Request/Response | `{ query: string }` | `{ items: DemoCatalogItem[] }` | `AsyncSearchDemo` (`msgBus.request`) | `AsyncSearchDemo` (`msgBroker.provide`) |
+
+Contract source:
+
+```typescript
+export type DemoCustomChannels = {
+  'CATALOG.FILTER': { in: CatalogFilterPayload };
+  'NOTICE.TOAST': {
+    in: { id: string; message: string; severity?: 'success' | 'info' | 'warning' | 'error'; duration?: number };
+  };
+  'DIALOG.OPEN': { in: { dialogId: string; title: string; content: string } };
+  'DRAWER.TOGGLE': { in: { open: boolean } };
+  'RPC.SEARCH': { in: { query: string }; out: { items: DemoCatalogItem[] } };
+};
+
+export type DemoMsgStruct = BaseAppMsgStruct & MsgStruct<DemoCustomChannels>;
+```
+
+Payload rules:
+
+- `CATALOG.FILTER`: the filter UI value `ALL` is sent as `category: undefined`; reset sends the `DEFAULT_FILTER` values.
+- `NOTICE.TOAST`: `id` comes from `newMsgId()` (`src/bus/ids.ts`) so rapid toasts never share a React key; missing `severity` is shown as `info`.
+- `RPC.SEARCH`: an empty `query` returns the whole search dataset; otherwise a case-insensitive match on title, category and description.
+
+### 2.2. Demo catalog data
+
+```typescript
+export type DemoCatalogItem = {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  rating: number;
+  badge?: string;
+};
+```
+
+| Dataset | Location | Ids | Used by |
+|---|---|---|---|
+| `ALL_ITEMS` | `src/components/structs/catalogListStruct.tsx` | `c1` - `c6` | `CatalogList` on `/cross-island` |
+| `SAMPLE_DATABASE` | `src/components/structs/asyncSearchStruct.tsx` (module-private) | `s1` - `s5` | `RPC.SEARCH` provider in `AsyncSearchDemo` |
+| `SAMPLE_SSR_CATALOG` | `src/data/sampleCatalog.ts` | `ssr-1` - `ssr-6` | `getSampleCatalog()` for `/ssr-demo`; imported by `e2e/smoke.spec.ts` to assert pre-rendered titles |
+
+Filter categories offered by `CatalogFilter` are `ALL`, `Architecture`, `Networking`, `Performance`, `Reactivity`, `UI`, matching the `category` values in `ALL_ITEMS`. The slider range is 4.0 - 5.0 in steps of 0.1.
+
+### 2.3. Routes
+
+| Route | Page | Islands | Demonstrates |
+|---|---|---|---|
+| `/` | `src/pages/index.astro` | `SplitPlaygroundIsland` | Split-screen playground: contract / model / integration code next to a live struct |
+| `/ssr-demo` | `src/pages/ssr-demo.astro` | `SsrCatalogIsland` | Build-time data fetch, crawlable HTML, hydration over existing DOM |
+| `/cross-island` | `src/pages/cross-island.astro` | `CrossIslandFilter`, `CrossIslandList` | Two independent islands coordinated through `CATALOG.FILTER` |
+| `/showcase` | `src/pages/showcase.astro` | `ShowcaseGalleryIsland` | Gallery of `@actdim/dynstruct-mui` controls (Button, TextField, Select, Checkbox, Switch, Slider) next to MUI feedback and surface widgets |
+
+All routes are served under the configured base (`/` locally, `/dynstruct/demo/` on GitHub Pages).
+
+## Front-matter Schemas
+
+The demo has no content collections; its "front matter" is the Astro component frontmatter and the props contracts that cross the Astro -> island boundary.
+
+### 3.1. Layout props (`src/layouts/Layout.astro`)
+
+```typescript
+interface Props {
+  title?: string;       // default 'Dynstruct & Dynstruct-MUI Demo Portal'; rendered as '<title> | Dynstruct Demo'
+  description?: string; // default portal description; rendered into <meta name="description">
+}
+```
+
+### 3.2. Header props (`src/components/astro/Header.astro`)
+
+```typescript
+interface Props {
+  currentPath?: string; // Astro.url.pathname including the base; the base is stripped before matching nav items
+}
+```
+
+### 3.3. SSG island props (`src/components/islands/SsrCatalogIsland.tsx`)
+
+```typescript
+interface SsrCatalogIslandProps {
+  initialItems: DemoCatalogItem[]; // result of await getSampleCatalog() in ssr-demo.astro frontmatter
+  ssrTimestamp: string;            // new Date().toLocaleTimeString() at build (or request) time
+}
+```
+
+Island props are serialized by Astro into the page HTML, so they must stay JSON-serializable plain data.
+
+### 3.4. Playground scenario (`src/data/codeSnippets.ts`)
+
+```typescript
+export interface PlaygroundScenario {
+  id: string;              // 'form' | 'counter' | 'overlays' | 'reactivity' | 'async'
+  title: string;
+  badge: string;
+  description: string;
+  contractCode: string;    // extractRegion(source, 'contract')
+  modelCode: string;       // extractRegion(source, 'model')
+  integrationCode: string; // extractRegion(source, 'integration')
+}
+```
+
+| `id` | Struct (source file) | Badge |
+|---|---|---|
+| `form` | `FormDemo` (`formDemoStruct.tsx`) | `dynstruct-mui` |
+| `counter` | `Counter` (`counterStruct.tsx`) | `Reactivity` |
+| `overlays` | `DialogToastDemo` (`dialogToastStruct.tsx`) | `MsgMesh` |
+| `reactivity` | `ReactivityDemo` (`reactivityStruct.tsx`) | `Advanced` |
+| `async` | `AsyncSearchDemo` (`asyncSearchStruct.tsx`) | `RPC Bus` |
+
+### 3.5. Struct contracts with bus scope
+
+| Struct (`regType`) | `msgScope` | Key props |
+|---|---|---|
+| `CatalogFilter` | `publish: 'CATALOG.FILTER'` | `query`, `category`, `minRating`, `publishedCount` |
+| `CatalogList` | `subscribe: 'CATALOG.FILTER'` | `filter`, `receivedCount`, `items` (`reactive: 'ref'`) |
+| `SsrCatalog` | none | `initialItems` (`reactive: 'ref'`), `ssrTimestamp`, `filterQuery`, `sortBy: 'rating' \| 'title'`, `clientHydrationTime` |
+| `FormDemo` | `publish: 'NOTICE.TOAST'` | `username`, `email`, `role`, `notifications`, `termsAccepted`, `experienceYears`, `submittedPayload`, `errors` |
+| `Counter` | none | `count` (0), `step` (1), `max` (20) |
+| `DialogToast` | `publish` and `subscribe`: `NOTICE.TOAST`, `DIALOG.OPEN`, `DRAWER.TOGGLE` | `dialogOpen`, `dialogTitle`, `dialogContent`, `drawerOpen`, `toasts`, `activeToast` |
+| `ReactivityDemo` | none | one prop each with `reactive: true`, `'shallow'`, `'ref'` |
+| `AsyncSearchDemo` | `provide: 'RPC.SEARCH'`, `publish: 'RPC.SEARCH'` | `query`, `loading`, `results`, `executionTimeMs`, `searchError` |
+
+## Graph Relationships
+
+```mermaid
+flowchart LR
+    subgraph Pages
+        P_IDX["/ index.astro"]
+        P_SSR["/ssr-demo"]
+        P_X["/cross-island"]
+        P_SHOW["/showcase"]
+    end
+    subgraph Islands
+        I_PLAY["SplitPlaygroundIsland"]
+        I_SSR["SsrCatalogIsland"]
+        I_F["CrossIslandFilter"]
+        I_L["CrossIslandList"]
+        I_G["ShowcaseGalleryIsland"]
+    end
+    subgraph Structs
+        S_FORM["FormDemo"]
+        S_CNT["Counter"]
+        S_DT["DialogToastDemo"]
+        S_RX["ReactivityDemo"]
+        S_AS["AsyncSearchDemo"]
+        S_SSR["SsrCatalog"]
+        S_F["CatalogFilter"]
+        S_L["CatalogList"]
+    end
+    subgraph Channels
+        C_FILTER["CATALOG.FILTER"]
+        C_TOAST["NOTICE.TOAST"]
+        C_DLG["DIALOG.OPEN"]
+        C_DRW["DRAWER.TOGGLE"]
+        C_RPC["RPC.SEARCH"]
+    end
+    P_IDX --> I_PLAY
+    P_SSR --> I_SSR
+    P_X --> I_F
+    P_X --> I_L
+    P_SHOW --> I_G
+    I_PLAY --> S_FORM
+    I_PLAY --> S_CNT
+    I_PLAY --> S_DT
+    I_PLAY --> S_RX
+    I_PLAY --> S_AS
+    I_SSR --> S_SSR
+    I_F --> S_F
+    I_L --> S_L
+    S_F -->|publish| C_FILTER
+    C_FILTER -->|subscribe| S_L
+    S_FORM -->|publish| C_TOAST
+    S_DT -->|publish| C_TOAST
+    S_DT -->|publish| C_DLG
+    S_DT -->|publish| C_DRW
+    C_TOAST -->|subscribe| S_DT
+    C_DLG -->|subscribe| S_DT
+    C_DRW -->|subscribe| S_DT
+    S_AS -->|request| C_RPC
+    C_RPC -->|provide| S_AS
+```
+
+Data dependencies:
+
+- `SsrCatalog` <- `getSampleCatalog()` <- `SAMPLE_SSR_CATALOG` (`src/data/sampleCatalog.ts`).
+- `CatalogList` <- `ALL_ITEMS`; `CatalogFilter` -> `DEFAULT_FILTER`; both import their types from `src/bus/portalMsgStruct.ts`.
+- `SplitPlaygroundIsland` <- `PLAYGROUND_SCENARIOS` <- `?raw` imports of the five playground struct files.
+- Every island -> `PortalProvider` -> `getPortalMsgBus()` -> `DemoMsgStruct`.
+
+## Related Topics
+
+- [Architecture](./topic--demo-architecture.md): shell vs islands, bus lifecycle, base path, invariants.
+- [Setup And Workflow](./topic--demo-setup-and-workflow.md): commands, tests and Pages CI.
+
+---
+
+## Document: docs/topic--demo-setup-and-workflow.md (Demo: Setup And Workflow)
+
+# @actdim/dynstruct-demo Setup, Build & Test Workflow
+
+> The demo app lives in [`demo/`](../demo/README.md) of this repository; file paths in this article are relative to `demo/`.
+
+## 1. Repository Layout
+
+`@actdim/dynstruct-demo` lives in `demo/` of the dynstruct repository (`https://github.com/actdim/dynstruct`); in the mempart monorepo that is `src/packages/dynstruct/demo`. It depends on `@actdim/dynstruct` as `workspace:*`.
+
+- Inside mempart, `src/pnpm-workspace.yaml` lists `packages/dynstruct/demo` and links all `@actdim` dependencies (`dynstruct`, `dynstruct-mui`, `msgmesh`, `ui-core`, `utico`) from their folders, so local development runs against library sources in the same checkout. The nested dynstruct `pnpm-workspace.yaml` is ignored there.
+- In a standalone dynstruct checkout, the repository `pnpm-workspace.yaml` (packages `.` and `demo`) links the library from the folder; the other `@actdim` packages come from npm.
+
+```text
+demo/
+|-- src/
+|   |-- pages/          index, ssr-demo, cross-island, showcase (.astro)
+|   |-- layouts/        Layout.astro
+|   |-- components/     astro/ (Header, Footer), islands/, structs/, common/ (PortalProvider)
+|   |-- bus/            portalMsgStruct.ts, portalBus.ts, ids.ts
+|   |-- data/           sampleCatalog.ts, codeSnippets.ts
+|   |-- lib/            withBase.ts
+|   `-- styles/         global.css (Tailwind)
+|-- public/             favicon.svg
+|-- e2e/                smoke.spec.ts, fixtures.ts (console watcher), hydration.ts
+|-- astro.config.mjs    base / site from DEMO_BASE / DEMO_SITE
+|-- playwright.config.ts
+`-- tsconfig.json
+```
+
+## Prerequisites
+
+- Node.js 22 (the version used by the Pages workflow) and pnpm 10 (`packageManager` in `src/package.json` for mempart, in the dynstruct `package.json` for a standalone checkout).
+- The mempart checkout with submodules initialized, so the `@actdim` library packages exist under `src/packages/`.
+- Dependencies installed from the monorepo workspace root: `pnpm install` in `src/`.
+- For e2e tests: Playwright browsers (`pnpm --filter @actdim/dynstruct-demo exec playwright install chromium`); the suite runs the `Desktop Chrome` device.
+
+## Runner Commands
+
+### 3.1. From the monorepo (`src/`)
+
+| Command | Effect |
+|---|---|
+| `pnpm run dev:demo` | `pnpm --filter @actdim/dynstruct-demo dev` - Astro dev server with HMR |
+| `pnpm run build:demo` | `pnpm --filter @actdim/dynstruct-demo build` - static build into `dist/` |
+| `pnpm run test:e2e:demo` | `pnpm --filter @actdim/dynstruct-demo test:e2e` - Playwright suite |
+| `pnpm --filter @actdim/dynstruct-demo preview` | Serves the last build locally |
+| `pnpm --filter @actdim/dynstruct-demo typecheck` | `astro check && tsc --noEmit` |
+
+### 3.2. Package scripts (`package.json`)
+
+| Script | Command |
+|---|---|
+| `dev` | `astro dev` |
+| `build` | `astro build` |
+| `preview` | `astro preview` |
+| `astro` | `astro` (raw CLI passthrough) |
+| `typecheck` | `astro check && tsc --noEmit` |
+| `test:e2e` | `playwright test` |
+
+Local dev and local builds use base `/`. To check a Pages-style build locally, set the base before building:
+
+```bash
+DEMO_BASE=/dynstruct/demo/ pnpm --filter @actdim/dynstruct-demo build
+```
+
+### 3.3. GitHub Pages CI
+
+The dynstruct repository workflow `.github/workflows/pages.yml` publishes one site: the docs at https://actdim.github.io/dynstruct/ and the demo at https://actdim.github.io/dynstruct/demo/. It runs on push to `main` (docs, `demo/`, `pnpm-workspace.yaml`, the workflow) and on `workflow_dispatch`.
+
+The `build` job installs only the library (`pnpm install --filter @actdim/dynstruct`) and builds the docs. The `Build demo` step then, with `DEMO_BASE=<base_path>/demo/` and `DEMO_SITE=<origin>` from `actions/configure-pages`:
+
+1. Runs `pnpm install --no-frozen-lockfile` for the whole repository workspace (`.` and `demo`).
+2. Builds the library (`pnpm run build`), because the demo imports `@actdim/dynstruct` through its `dist/` exports.
+3. Builds the demo (`pnpm --filter @actdim/dynstruct-demo build`) and copies `demo/dist` to `.dist-docs/demo`.
+
+`dynstruct-mui`, `msgmesh`, `ui-core` and `utico` come from npm. Until they are published at `>=1.12.0` the step fails; it is `continue-on-error`, so the docs still deploy without the demo.
+
+Reproduce the CI build from a standalone dynstruct checkout:
+
+```bash
+pnpm install --no-frozen-lockfile
+pnpm run build
+DEMO_BASE=/dynstruct/demo/ pnpm --filter @actdim/dynstruct-demo build
+```
+
+### 3.4. Versioning
+
+The demo follows mempart's unified versioning: the `version` in `package.json` is changed only by `pnpm run version:sync <version>` from mempart `src/`, together with every other package and submodule. Never bump it in this repository alone.
+
+## Quality Gates
+
+| Gate | Command | What it guards |
+|---|---|---|
+| Typecheck | `pnpm --filter @actdim/dynstruct-demo typecheck` | Astro template diagnostics (`astro check`) and TypeScript (`tsc --noEmit`) |
+| Build | `pnpm run build:demo` | All routes pre-render (SSG); `extractRegion` throws on missing playground region markers |
+| E2E smoke and hydration | `pnpm run test:e2e:demo` | See below |
+| Pages build | `Build demo` step of the dynstruct Pages workflow (CI) | Demo builds in the standalone dynstruct workspace, not only from the mempart checkout |
+
+The Playwright config (`playwright.config.ts`) runs `pnpm build && pnpm preview --port 4322 --host localhost` as its web server on `http://localhost:4322` (reused locally, fresh in CI, 2 retries and 1 worker in CI). The auto fixture in `e2e/fixtures.ts` fails any test that logs an unexpected browser console error, warning or page error, and `waitForIslands` (`e2e/hydration.ts`) waits until every `astro-island` has dropped its `ssr` attribute. `e2e/smoke.spec.ts` covers:
+
+- Every route (`/`, `/showcase`, `/cross-island`, `/ssr-demo`) hydrates with zero console errors and warnings.
+- Raw pre-rendered HTML has no invalid DOM nesting inside `ListItemText`.
+- `/ssr-demo` pre-renders every `SAMPLE_SSR_CATALOG` title and keeps state across sort and filter.
+- `/cross-island` filter coordination and reset (`CATALOG.FILTER`).
+- Playground overlays driven by bus channels, unique toast keys, no event replay on remount (`NOTICE.TOAST`).
+- Async search through `RPC.SEARCH` and `msgBroker`.
+- The playground contract panel shows an `export type` for all five scenarios.
+- The reactivity demo counts committed renders without render-phase mutation.
+
+Run the e2e suite after any change to pages, islands, structs or the bus; run typecheck after any TypeScript or `.astro` change.
+
+## Related Topics
+
+- [Architecture](./topic--demo-architecture.md): shell vs islands, bus lifecycle, base path, invariants.
+- [Domain Model](./topic--demo-domain-model.md): channels, payloads, catalog types and routes.
+- [README](../demo/README.md): quick start and route list.
 
 ---
 

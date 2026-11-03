@@ -1,14 +1,16 @@
 ---
 protocol: along
-slug: architecture
-title: Architecture
-type: architecture
+slug: demo-architecture
+title: "Demo: Architecture"
+type: topic
 created: 2026-11-01
-updated: 2026-11-01
+updated: 2026-11-03
 tags: [architecture, astro, islands, msgmesh, dynstruct, ssg, base-path]
 ---
 
 # @actdim/dynstruct-demo Architecture
+
+> The demo app lives in [`demo/`](../demo/README.md) of this repository; file paths in this article are relative to `demo/`.
 
 ## 1. System Overview
 
@@ -46,7 +48,7 @@ The page is split into two worlds:
 |---|---|---|
 | Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `resolve.dedupe` for `react`, `react-dom`, `mobx`, `mobx-react-lite`, `@emotion/*`, `@mui/material` |
 | Layout | `src/layouts/Layout.astro` | HTML document, `title` / `description` props, favicon through `withBase`, header and footer around the page slot |
-| Header / Footer | `src/components/astro/Header.astro`, `Footer.astro` | Navigation (base-aware active-link matching), links to `/llms.txt` and the `@actdim` GitHub repositories |
+| Header / Footer | `src/components/astro/Header.astro`, `Footer.astro` | Navigation (base-aware active-link matching), links to the dynstruct `llms.txt` (docs site) and the `@actdim` GitHub repositories |
 | Pages | `src/pages/index.astro`, `ssr-demo.astro`, `cross-island.astro`, `showcase.astro` | One route each; mount one or two islands with `client:load` |
 | PortalProvider | `src/components/common/PortalProvider.tsx` | Dark MUI theme plus Dynstruct `ComponentContextProvider` whose `msgBus` is `getPortalMsgBus()` |
 | Islands | `src/components/islands/*.tsx` | Thin wrappers: `PortalProvider` + one struct (or the playground / gallery) |
@@ -93,7 +95,7 @@ flowchart LR
     CFG --> BASEURL["import.meta.env.BASE_URL"]
     BASEURL --> WB["withBase(path)"]
     BASEURL --> HDR["Header.astro active-link match"]
-    WB --> LINKS["nav links, favicon, /llms.txt"]
+    WB --> LINKS["nav links, favicon"]
 ```
 
 ## Data Flow
@@ -152,6 +154,6 @@ flowchart LR
 
 ## Related Topics
 
-- [Domain Model](./topic--domain-model.md): bus channels, payload contracts, catalog types and routes.
-- [Setup And Workflow](./topic--setup-and-workflow.md): running, testing and the GitHub Pages pipeline.
-- [README](../README.md): package overview and channel table.
+- [Domain Model](./topic--demo-domain-model.md): bus channels, payload contracts, catalog types and routes.
+- [Setup And Workflow](./topic--demo-setup-and-workflow.md): running, testing and the GitHub Pages pipeline.
+- [README](../demo/README.md): package overview and channel table.

@@ -78,8 +78,6 @@ pnpm --filter @actdim/dynstruct-demo preview
 - `/ssr-demo` : Dedicated Astro SSR / SSG verification with SEO crawler instructions.
 - `/cross-island` : Independent Astro islands coordinating strictly through the MsgMesh bus.
 - `/showcase` : Comprehensive gallery of all `@actdim/dynstruct-mui` components.
-- `/llms.txt` : AI agent discovery metadata.
-- `/llms-full.txt` : Full architecture specification for LLMs.
 
 ---
 
@@ -114,9 +112,9 @@ The smoke suite guards against:
 ## Documentation
 
 - Live demo: https://actdim.github.io/dynstruct/demo/
-- [Architecture](docs/topic--architecture.md): Astro shell vs React islands, cross-island bus, declarative `msgBroker`, SSG / SSR switch, base path.
-- [Domain Model](docs/topic--domain-model.md): bus channels and payloads, catalog data, routes and props contracts.
-- [Setup And Workflow](docs/topic--setup-and-workflow.md): commands, typecheck, e2e and the GitHub Pages build (dynstruct repository workflow).
+- [Architecture](../docs/topic--demo-architecture.md): Astro shell vs React islands, cross-island bus, declarative `msgBroker`, SSG / SSR switch, base path.
+- [Domain Model](../docs/topic--demo-domain-model.md): bus channels and payloads, catalog data, routes and props contracts.
+- [Setup And Workflow](../docs/topic--demo-setup-and-workflow.md): commands, typecheck, e2e and the GitHub Pages build (dynstruct repository workflow).
 
 ---
 
