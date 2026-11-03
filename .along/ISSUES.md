@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-<!-- No active issues -->
+- [ ] `(task)` [host-demo](ISSUES/task--host-demo.md) - plan ready
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
@@ -23,6 +23,7 @@
 - [ ] `(feat)` [nav-service-dependencies](ISSUES/feat--nav-service-dependencies.md)
 - [ ] `(feat)` [problem-details-http-errors](ISSUES/feat--problem-details-http-errors.md)
 - [ ] `(feat)` [request-accepts-and-cors](ISSUES/feat--request-accepts-and-cors.md)
+- [ ] `(feat)` [security-endpoints-optional](ISSUES/feat--security-endpoints-optional.md)
 - [ ] `(feat)` [server-sent-events-support](ISSUES/feat--server-sent-events-support.md)
 - [ ] `(feat)` [signalr-integration](ISSUES/feat--signalr-integration.md)
 - [ ] `(feat)` [single-getter-prop-binding](ISSUES/feat--single-getter-prop-binding.md)

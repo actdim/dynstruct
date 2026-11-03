@@ -1,0 +1,108 @@
+# Full Architecture Specification: @actdim/dynstruct-demo
+
+## Architectural Invariants
+1. Zero-FOUC Document Shell:
+   Outer layout components (Layout.astro, Header.astro, Footer.astro) are implemented in native Astro with Tailwind CSS.
+   Material UI and Emotion CSS-in-JS runtimes are strictly prohibited in the outer shell and must remain isolated inside client islands.
+
+2. Island Isolation and Provider Boundaries:
+   Astro mounts each React island in an independent React root (hydrateRoot).
+   Every island requires PortalProvider (<ComponentContextProvider value={{ msgBus }}> and MUI <ThemeProvider>).
+   React Context cannot cross island boundaries; cross-island communication must use the @actdim/msgmesh bus.
+
+3. Declarative Message Broker (`def.msgBroker`):
+   Dynstruct components register bus subscriptions (`subscribe`) and RPC handlers (`provide`) declaratively in ComponentDef.
+   The runtime manages registration and release per mount automatically (StrictMode-safe).
+   Manual bus subscriptions inside lifecycle hooks (`events.onReady` / `onDestroy`) are avoided.
+
+4. Dogfooding Dynstruct Across Islands:
+   All interactive islands (playground scenarios, cross-island filter and list, SSR catalog) are built as Dynstruct structs (`useComponent` + `toReact`) using @actdim/dynstruct-mui adapters.
+
+5. MobX Reactivity Modes in Dynstruct:
+   - prop({ reactive: true }): Deep reactivity; proxy recursively tracks all nested properties.
+   - prop({ reactive: 'shallow' }): Shallow reactivity; array container mutations (push/pop) tracked, item internals untracked.
+   - prop({ reactive: 'ref' }): Reference reactivity; reassignment tracked, internal mutation bypassed.
+
+6. Astro SSG / SSR Semantics:
+   By default, the demo builds with `output: 'static'`, pre-rendering all catalog pages at build time (SSG).
+   The crawlable markup is immediately available to search bots without client JavaScript execution.
+   Switching to on-demand server rendering requires setting `output: 'server'` with an Astro adapter.
+
+## Message Mesh Channels
+
+| Channel | Kind | Payload | Description |
+|---|---|---|---|
+| `CATALOG.FILTER` | Pub/Sub | `{ query?: string, category?: string, minRating?: number }` | Published by `CatalogFilter` to filter items across islands; reset dispatches default filter payload |
+| `NOTICE.TOAST` | Pub/Sub | `{ id: string, message: string, severity?: string, duration?: number }` | Dispatches toast alerts to the notification stack |
+| `DIALOG.OPEN` | Pub/Sub | `{ dialogId: string, title: string, content: string }` | Opens modal dialog with contract-driven payload |
+| `DRAWER.TOGGLE` | Pub/Sub | `{ open: boolean }` | Toggles or sets side drawer open state |
+| `RPC.SEARCH` | Request/Response | In: `{ query: string }`, Out: `{ items: DemoCatalogItem[] }` | RPC search provider with debounce and latest-wins response matching |
+
+## Core Code Examples
+
+### 1. ComponentStruct Declaration
+```typescript
+import { ComponentStruct } from '@actdim/dynstruct/componentModel/contracts';
+import { DemoMsgStruct } from '@/bus/portalMsgStruct';
+
+export type CounterStruct = ComponentStruct<
+  DemoMsgStruct,
+  {
+    props: {
+      count: number;
+      step: number;
+      max: number;
+    };
+    actions: {
+      increment: () => void;
+      decrement: () => void;
+      reset: () => void;
+    };
+  }
+>;
+```
+
+### 2. ComponentDef Implementation with Declarative msgBroker
+```typescript
+export const useCounter = (params: ComponentParams<CounterStruct>) => {
+  let c: Component<CounterStruct>;
+  let m: ComponentModel<CounterStruct>;
+
+  const def: ComponentDef<CounterStruct> = {
+    regType: 'Counter',
+    props: { count: 0, step: 1, max: 20 },
+    actions: {
+      increment: () => { if (m.count + m.step <= m.max) m.count += m.step; },
+      decrement: () => { if (m.count - m.step >= 0) m.count -= m.step; },
+      reset: () => { m.count = 0; },
+    },
+    view: () => (
+      <Card>
+        <Typography variant="h2">{m.count}</Typography>
+        <Button label="+" onClick={m.increment} />
+      </Card>
+    ),
+  };
+
+  c = useComponent(def, params);
+  m = c.model;
+  return c;
+};
+
+export const Counter = toReact(useCounter);
+```
+
+### 3. Astro Island Integration
+```astro
+---
+import Layout from '@/layouts/Layout.astro';
+import { Counter } from '@/components/structs/counterStruct';
+import { PortalProvider } from '@/components/common/PortalProvider';
+---
+
+<Layout title="Counter Island">
+  <PortalProvider client:load>
+    <Counter count={5} />
+  </PortalProvider>
+</Layout>
+```

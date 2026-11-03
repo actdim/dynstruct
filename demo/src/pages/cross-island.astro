@@ -1,0 +1,70 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { CrossIslandFilter } from '../components/islands/CrossIslandFilter';
+import { CrossIslandList } from '../components/islands/CrossIslandList';
+---
+
+<Layout title="Cross-Island MsgMesh Bus">
+  <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <!-- Header Section -->
+    <div class="mb-8">
+      <div class="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-medium text-purple-400 mb-3">
+        <span>Astro Islands Architecture</span>
+        <span class="text-slate-500">/</span>
+        <span>No Shared React Context</span>
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+        Decoupled Cross-Island Bus Coordination
+      </h1>
+      <p class="mt-2 max-w-3xl text-base text-slate-400">
+        In Astro, each React island is mounted into a completely separate React root (<code class="text-sky-300 font-mono text-xs">hydrateRoot</code>). Traditional React Context <span class="text-rose-400 font-semibold">cannot</span> cross island boundaries. <code class="text-sky-300 font-mono text-xs">@actdim/msgmesh</code> bridges independent islands cleanly through typed event bus channels.
+      </p>
+    </div>
+
+    <!-- Architectural Flow Diagram -->
+    <div class="mb-8 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+      <div class="flex flex-col items-center justify-between gap-4 md:flex-row text-center md:text-left">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/20 text-sky-400 font-bold text-sm">
+            01
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-white">Filter Island (Publisher)</div>
+            <div class="text-xs text-slate-400">Captures inputs and dispatches <code class="text-sky-300">CATALOG.FILTER</code></div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs font-mono text-purple-400">
+          <span class="hidden md:inline">-------&gt;</span>
+          <span class="rounded bg-purple-950/80 border border-purple-800/80 px-2.5 py-1">
+            MsgBus: CATALOG.FILTER
+          </span>
+          <span class="hidden md:inline">-------&gt;</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/20 text-purple-400 font-bold text-sm">
+            02
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-white">Catalog Island (Subscriber)</div>
+            <div class="text-xs text-slate-400">Subscribes to events and updates rendered results</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Two-Island Grid -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <!-- Left Column: Filter Island -->
+      <div class="lg:col-span-5">
+        <CrossIslandFilter client:load />
+      </div>
+
+      <!-- Right Column: List Island -->
+      <div class="lg:col-span-7">
+        <CrossIslandList client:load />
+      </div>
+    </div>
+  </div>
+</Layout>

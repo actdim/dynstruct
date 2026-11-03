@@ -109,6 +109,8 @@ Try `@actdim/dynstruct` in your browser via StackBlitz:
 pnpm run storybook
 ```
 
+The showcase portal (Astro + React islands with `@actdim/dynstruct-mui` and `@actdim/msgmesh`) lives in [`demo/`](./demo/README.md) and is deployed at https://actdim.github.io/dynstruct/demo/. It is a member of this repository's pnpm workspace and is not part of the npm package.
+
 ---
 
 ## AI-Assisted Development

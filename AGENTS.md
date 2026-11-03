@@ -1,5 +1,5 @@
 <!-- BEGIN ALONG-PROTOCOL root (managed by along-init - do not edit by hand) -->
-# ALONG-PROTOCOL v4.5.4
+# ALONG-PROTOCOL v4.6.0
 
 This repo carries its own agent context, provider-agnostically. Follow it every session, whatever tool you are. This is the core; procedures (completion checklist, doc routing, merges, along-team, tool-use rules) live in `docs/topic--along-protocol.md` - pull the section you need via `/along-kb-search`. A gate's error message carries its detail.
 
@@ -715,3 +715,4 @@ See the following engineering guidelines:
 - `[languages/typescript.md](.along/rules/languages/typescript.md)`
 - `[platforms/web.md](.along/rules/platforms/web.md)`
 <!-- END ALONG-RULES -->
+- **Demo**: `demo/` holds `@actdim/dynstruct-demo` (Astro portal) with its own `AGENTS.md` and `.along/`. `pnpm-workspace.yaml` (packages `.` and `demo`) links this library to it as `workspace:*`; the demo is outside the library build, lint, tests and npm tarball. `.github/workflows/pages.yml` deploys the docs at `/dynstruct/` and the demo at `/dynstruct/demo/`.

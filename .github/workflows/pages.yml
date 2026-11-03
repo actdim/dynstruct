@@ -10,6 +10,9 @@ on:
       - 'README.md'
       - 'llms.txt'
       - 'llms-full.txt'
+      - 'pnpm-workspace.yaml'
+      - 'demo/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -36,8 +39,12 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      # Only the library: the demo needs sibling @actdim packages that may not be on npm yet.
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --config.auto-install-peers=false
+        run: pnpm install --no-frozen-lockfile --config.auto-install-peers=false --filter @actdim/dynstruct
 
       - name: Copy root files to public
         run: |
@@ -47,6 +54,20 @@ jobs:
 
       - name: Build documentation
         run: pnpm run docs:build
+
+      # The demo (demo/) links this library from the folder and takes the other @actdim packages
+      # from npm. Until they are published at the required version this step fails and the docs
+      # deploy without the demo.
+      - name: Build demo
+        continue-on-error: true
+        env:
+          DEMO_BASE: ${{ steps.pages.outputs.base_path }}/demo/
+          DEMO_SITE: ${{ steps.pages.outputs.origin }}
+        run: |
+          pnpm install --no-frozen-lockfile --config.auto-install-peers=false
+          pnpm run build
+          pnpm --filter @actdim/dynstruct-demo build
+          cp -r demo/dist .dist-docs/demo
 
       - uses: actions/upload-pages-artifact@v3
         with:

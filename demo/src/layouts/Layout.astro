@@ -1,0 +1,38 @@
+---
+import Header from '../components/astro/Header.astro';
+import Footer from '../components/astro/Footer.astro';
+import { withBase } from '../lib/withBase';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Dynstruct & Dynstruct-MUI Demo Portal',
+  description = 'Demonstration and architectural showcase of Dynstruct component model, Dynstruct-MUI, and MsgMesh bus in Astro SSR with React islands.',
+} = Astro.props;
+
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} | Dynstruct Demo</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#090d16" />
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
+    <Header currentPath={currentPath} />
+    <main class="flex-1 w-full">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

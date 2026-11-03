@@ -1,0 +1,803 @@
+# @actdim/dynstruct-demo - Full Documentation Context
+
+> Dynstruct & Dynstruct-MUI Showcase Portal with Astro SSR and React Islands
+
+---
+
+## Document: README.md (Overview)
+
+# @actdim/dynstruct-demo
+
+> Dynstruct & Dynstruct-MUI Showcase Portal with Astro SSR and React Islands
+
+This package is the official demonstration and architectural proof-of-concept portal for:
+- **`@actdim/dynstruct`**: Structure-first component model with fine-grained MobX reactivity.
+- **`@actdim/dynstruct-mui`**: Material UI component wrappers adapted to Dynstruct contracts.
+- **`@actdim/msgmesh`**: Type-safe async message mesh and RPC service bus.
+- **Astro SSR & Islands**: Zero-FOUC outer document shell with isolated Material UI React islands.
+
+---
+
+## Architectural Principles
+
+1. **Zero-FOUC Document Shell**:
+   - Navigation, header, hero banner, and layouts are built purely with native `.astro` components and Tailwind CSS.
+   - Material UI and Emotion CSS-in-JS runtimes are strictly confined to interactive client islands to prevent layout shift and maintain near-100 Lighthouse performance.
+
+2. **Declarative Message Broker (`def.msgBroker`)**:
+   - Components register message bus subscriptions and RPC providers declaratively inside `def.msgBroker` (`subscribe` and `provide`).
+   - Registrations are bounded to the component lifecycle and released per mount automatically, making them resilient under React StrictMode.
+   - Eliminates manual `msgBus.on` and `msgBus.provide` calls from `events.onReady` / `onDestroy`.
+
+3. **Cross-Island Event Mesh**:
+   - In Astro's islands architecture, each island is an independent React root (`hydrateRoot`).
+   - React Context cannot cross island boundaries.
+   - `@actdim/msgmesh` coordinates independent islands over typed channels without prop drilling.
+
+4. **Astro SSR / SSG & SEO Verification**:
+   - Data is pre-fetched on the server during Astro's frontmatter execution.
+   - `/ssr-demo` is pre-rendered at build time (SSG) by default with `output: 'static'`, producing 100% crawlable content accessible without client JavaScript.
+   - Switching from build-time SSG to on-demand SSR requires only changing `output: 'server'` and adding an Astro deployment adapter with zero component code changes.
+   - Client hydration binds MobX observables seamlessly over existing DOM nodes.
+
+---
+
+## Message Mesh Channels
+
+| Channel | Kind | Payload | Description |
+|---|---|---|---|
+| `CATALOG.FILTER` | Pub/Sub | `{ query?: string, category?: string, minRating?: number }` | Published by `CatalogFilter` to filter items across islands; reset dispatches default filter payload |
+| `NOTICE.TOAST` | Pub/Sub | `{ id: string, message: string, severity?: string, duration?: number }` | Dispatches toast alerts to the notification stack |
+| `DIALOG.OPEN` | Pub/Sub | `{ dialogId: string, title: string, content: string }` | Opens modal dialog with contract-driven payload |
+| `DRAWER.TOGGLE` | Pub/Sub | `{ open: boolean }` | Toggles or sets side drawer open state |
+| `RPC.SEARCH` | Request/Response | In: `{ query: string }`, Out: `{ items: DemoCatalogItem[] }` | RPC search provider with debounce and latest-wins response matching |
+
+---
+
+## Dogfooding Islands
+
+All demo islands are implemented as idiomatic Dynstruct structs (`useComponent` + `toReact`) using `@actdim/dynstruct-mui` components:
+- `CatalogFilter` (`src/components/structs/catalogFilterStruct.tsx`): Filter controls island publishing `CATALOG.FILTER`.
+- `CatalogList` (`src/components/structs/catalogListStruct.tsx`): Subscriber catalog island listening to `CATALOG.FILTER`.
+- `SsrCatalog` (`src/components/structs/ssrCatalogStruct.tsx`): Pre-rendered table with live client filtering and sorting.
+
+---
+
+## Getting Started
+
+From the monorepo root (`src/`):
+
+```bash
+# Launch development server
+pnpm run dev:demo
+
+# Build static/SSR production bundle
+pnpm run build:demo
+
+# Preview production build locally
+pnpm --filter @actdim/dynstruct-demo preview
+```
+
+---
+
+## Key Portal Routes
+
+- `/` : Interactive split-screen playground comparing TypeScript contracts with live component previews.
+- `/ssr-demo` : Dedicated Astro SSR / SSG verification with SEO crawler instructions.
+- `/cross-island` : Independent Astro islands coordinating strictly through the MsgMesh bus.
+- `/showcase` : Comprehensive gallery of all `@actdim/dynstruct-mui` components.
+- `/llms.txt` : AI agent discovery metadata.
+- `/llms-full.txt` : Full architecture specification for LLMs.
+
+---
+
+## Testing
+
+Run static diagnostics (including Astro template check and TypeScript):
+
+```bash
+pnpm --filter @actdim/dynstruct-demo typecheck
+```
+
+Run the Playwright smoke and hydration test suite:
+
+```bash
+pnpm --filter @actdim/dynstruct-demo test:e2e
+# Or from src/
+pnpm run test:e2e:demo
+```
+
+The smoke suite guards against:
+- Invalid HTML nesting (e.g. ListItemText block elements inside span or p tags)
+- Browser console hydration errors and warnings across all pre-rendered routes
+- Unintended event replay on island remount (`NOTICE.TOAST`)
+- Filter state desynchronization on reset (`CATALOG.FILTER`)
+- Rapid-fire toast key collisions
+- Out-of-order async search RPC responses
+- Playground contract panel synchronization from real source files (`#region`)
+- StrictMode-safe render counter tracking without render-phase mutation
+
+---
+
+## Documentation
+
+- Live demo: https://actdim.github.io/dynstruct/demo/
+- [Architecture](docs/topic--architecture.md): Astro shell vs React islands, cross-island bus, declarative `msgBroker`, SSG / SSR switch, base path.
+- [Domain Model](docs/topic--domain-model.md): bus channels and payloads, catalog data, routes and props contracts.
+- [Setup And Workflow](docs/topic--setup-and-workflow.md): commands, typecheck, e2e and the GitHub Pages build (dynstruct repository workflow).
+
+---
+
+## License
+
+MIT (c) Actdim.
+
+---
+
+## Document: AGENTS.md (Agent Conventions & Protocol)
+
+<!-- BEGIN ALONG-PROTOCOL ref=../AGENTS.md (managed by along-init - do not edit by hand) -->
+This folder belongs to a repository that uses the ALONG structure. The full working
+guidance + agent-context protocol live once in the nearest ancestor `AGENTS.md` (`../AGENTS.md`) -
+read it there. This folder keeps its OWN `.along/` state; use the nearest one.
+Only this folder's specifics follow.
+<!-- END ALONG-PROTOCOL -->
+
+## Project specifics
+
+<!-- BEGIN ALONG-RULES -->
+See the following engineering guidelines:
+- `[languages/typescript.md](.along/rules/languages/typescript.md)`
+- `[platforms/web.md](.along/rules/platforms/web.md)`
+<!-- END ALONG-RULES -->
+
+- **What**: Astro static portal with React islands showcasing `@actdim/dynstruct`, `@actdim/dynstruct-mui` and `@actdim/msgmesh`; islands share one typed msgmesh bus (`src/bus`), MUI stays inside islands, subscriptions and RPC providers go in `def.msgBroker`.
+- **Routes**: `/` (playground), `/ssr-demo` (SSG data), `/cross-island` (bus between islands), `/showcase` (dynstruct-mui gallery); internal links go through `withBase` (`src/lib/withBase.ts`).
+- **Commands** (from mempart `src/`): `pnpm run dev:demo`, `pnpm run build:demo`, `pnpm run test:e2e:demo`; `pnpm --filter @actdim/dynstruct-demo typecheck`.
+- **Location and workspace**: `demo/` of the dynstruct repository (mempart: `src/packages/dynstruct/demo`). `@actdim/dynstruct` is `workspace:*`; outside mempart the dynstruct `pnpm-workspace.yaml` (packages `.` and `demo`) links it, and `dynstruct-mui`, `msgmesh`, `ui-core`, `utico` come from npm.
+- **CI / Pages**: the dynstruct `.github/workflows/pages.yml` builds the library, then the demo with `DEMO_BASE=/dynstruct/demo/`, and deploys it next to the docs at https://actdim.github.io/dynstruct/demo/ (step is `continue-on-error` until the `@actdim` siblings 1.12.x are on npm).
+- **Versioning**: never bump `version` here; use mempart `pnpm run version:sync <version>` (unified monorepo semver).
+- **Knowledge base**: `docs/INDEX.md` (architecture, domain model, setup and workflow topics).
+
+---
+
+## Document: docs/topic--along-protocol.md (Along Protocol Reference)
+
+<!-- ALONG-PROTOCOL-REFERENCE (managed by along-init - do not edit by hand) -->
+
+# Along Protocol Reference
+
+The managed block in `AGENTS.md` is the always-loaded core of the ALONG-PROTOCOL: where state lives, how work is anchored to an issue, and the list of gates. This article carries the situational procedure the core points to. Pull the section you need with `/along-kb-search` instead of reading the whole file. `along init` and `along update` regenerate this file from the installed protocol; repository-specific guidance belongs in its own `docs/topic--<slug>.md` article or in `AGENTS.md` "Project specifics".
+
+## Scope, Precedence & Subproject Placement
+
+- **Nearest Context Boundary**: Any folder may carry its own `AGENTS.md` + `.along/`; use the NEAREST ones for the area you're working in. On conflict, the more specific wins.
+- **Subproject Localization** [gate: subproject-boundary]: In submodules, nested repos or symlinked folders: all entities (issues, sessions, ADRs, history) MUST be created in the NEAREST `.along/`. Agents are STRICTLY FORBIDDEN from dumping subproject changes into the workspace root `.along/`.
+- **Multi-Subproject Work** [gate: subproject-boundary]: A change spanning subprojects needs an issue in each touched `.along/`, or a root umbrella issue whose child issues there carry `parent: <umbrella key>`. Edits under a subproject `.along/` are checked by path.
+- **Subproject Boundary**: only a nested `.git` or a user-run `along init` makes a subproject; never init a manifest folder.
+- **Precedence**: Nearest `.along/` > higher-level `.along/` > global config (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/config/GEMINI.md`).
+
+## Session Start
+
+Use the NEAREST `.along/` for the area you're working in (fall back to a higher-level one if the folder has none). These files are NOT auto-loaded; read them yourself:
+
+1. `AGENTS.md` (nearest) - conventions to follow.
+2. `.along/ISSUES.md` - active issue board (or query `/along-kb-search`).
+3. `.along/CONSTRAINTS.md` - active architectural constraints (or full log in `.along/DECISIONS.md` / `.along/DECISIONS/`).
+4. Active Issue file `.along/ISSUES/<type>--<slug>.md` for your task.
+
+Also, when relevant: `.along/VISION.md`, `.along/GLOSSARY.md`. These reflect the state WHEN WRITTEN - verify any named file/API/flag against the real code first.
+
+## Multi-Agent & Multi-Branch Concurrency
+
+- **Zero-Manual-Merge Rule** [gate: projection-protection]: On merge conflicts in derived projections (`ISSUES.md`, `INDEX.md`, `DECISIONS.md`), accept either side and run `/along-issue-sync`, `/along-kb-sync`, or `/along-decision-sync` to recompile. `along git setup` registers merge drivers that do this automatically; afterwards run `along git sync`.
+- **Append-Only Merge Driver**: `.along/HISTORY.md` and legacy monolithic `.along/DECISIONS.md` are append-only. Configure `.gitattributes` with `merge=union`. Modular ADR files in `.along/DECISIONS/` are isolated per-file to eliminate merge collisions.
+- **Untracked Exports** [gate: untracked-exports]: `.along/dashboard.html`, `.along/DASHBOARD.md` and per-machine `.along/diagnostics/` stay out of Git.
+- **Context Isolation**: Context is localized to the target issue file, session-scoped blackboard (`.along/.session/<slug>/`), and completed session logs.
+- **Parallel Closeout**: `along session list`; on the user's yes `along plan approve --closeout --ready`, then `along session close --ready`.
+
+## Issue Anchoring & Commits
+
+- **No Code Without Issue** [gate: require-active-issue]: Before modifying source code, agents MUST identify or create an issue in `.along/ISSUES/<type>--<slug>.md` and set `status: in-progress`.
+- **Session Binding & Plan Approval** [gate: require-plan-approval]: `along start <slug>` binds THIS agent session to the issue; parallel sessions keep their own bindings. Source edits unlock after the user approves the plan (`EnterPlanMode` -> `ExitPlanMode`; outside plan mode, write the plan to a file and run `along plan approve --plan-file <path>` after the user's explicit yes). `along plan status` shows the binding.
+- **Exemptions**: Read-only Q&A and 1-line micro-edits (typo fixes, comments) do not require issues.
+- **Inquiry Read-Only Invariance (Zero-Mutation Rule on Questions)** [gate: require-plan-approval]: On interrogative prompts ("is X done?", "why did Y fail?"), write/modify tools are STRICTLY PROHIBITED. Return a read-only audit report and ask for confirmation before modifying anything.
+- **Commit Binding** [gate: commit-issue-binding]: Every commit via `/along-commit` MUST bind to the active issue slug.
+- **No AI Co-Authors**: Commit messages MUST NOT carry `Co-Authored-By:` trailers naming an AI agent (GitHub lists the vendor as a contributor). `along hook install` turns runtime attribution off; opt out via `.along/config.json` `commits.allow_ai_coauthor: true`.
+
+## Issue Plans & Approving Ahead
+
+- **Plan location**: An issue's plan lives next to its ticket in `.along/ISSUES/<key>/plan.md` (committed; moves with the ticket to `done/` and on rename). It is one living file: the approved baseline, then each correction appended as `## Revision N (date, source)` with a `Reason:` line. `along-team` writes its Living Plan there too; blackboards without an issue keep `.along/.session/<slug>/plan.md`.
+- **Plan status** (ticket front-matter `plan_status`, shown on the board): `needs-approval` (written, waiting for the user), `approved` (ready to run), `needs-rework` (cannot be followed within the ticket). Agents may set `needs-approval` / `needs-rework`; only `along plan approve`, after the user's explicit yes, sets `approved` [gate: require-plan-approval]: a file-tool edit that sets it is denied, a shell write is reported at Stop.
+- **Plan Approval Integrity & Revocation** [gate: require-plan-approval]: Approval records (`.along/.session/*/state.json`, `.along/.session/bindings/*.json`, `.along/.session/*/events.jsonl`, `.along/diagnostics/activity/**`) are strictly protected from modification. Direct writes via file tools or inline shell writers (redirects, `tee`, PowerShell cmdlets, `sed -i`, interpreter one-liners) are denied before execution. Any forged plan approval appearing during a turn without a corresponding ledger `approve` entry is automatically revoked at Stop, returned to `planning` phase, recorded as a gate denial, and reported to the operator.
+- **Autonomous Profile & Escalation Policy**:
+  - The `autonomous` profile is strictly operator-environment-sourced (`ALONG_PROFILE=autonomous` or `ALONG_AUTONOMOUS=1`). Configuration files (`.along/config.json`), session state, bindings, and hook payloads cannot activate it; `along start --profile autonomous` exits with code 2.
+  - Escalation approvals never override a denial from any other gate (containment, CLI safety, test verification, plan approval, etc.). An escalation approval can only permit an action that would otherwise be rejected solely because it is in the escalation-required operations list (e.g. default branch pushes, release creation, tag updates).
+  - Escalation checks only run on `PreToolUse`.
+  - Architect self-approval in multi-agent orchestration requires explicit operator opt-in via `ALONG_ARCHITECT_SELF_APPROVAL=1`; otherwise the orchestrator marks `plan_status: needs-approval`, transitions status to `needs-input`, and halts for operator review.
+- **Approve ahead**: Write the plan (plan mode, or a file), show it, and after the user's yes run `along plan approve <slug>` (`--plan-file <path>` outside plan mode) before `along start`. The issue is not started; the ticket says `plan_status: approved` and the CLI logs the approval in `.along/.session/plan-approvals.jsonl` (machine-local, closed to file tools). A later `along start <slug>`, by the user, the agent, or the orchestrator / runner daemon, runs the plan with no second approval and no re-planning (the orchestrator skips its architect).
+- **Approved elsewhere**: `approved` in the ticket with no approval logged on this machine (approved on another machine, or written by hand) is not trusted: show the plan and ask once in the current channel (chat, or the daemon's Telegram reply); the orchestrator stops with `needs-input`.
+- **Plans change during work; escalate only past the ticket**: Once approved, the plan belongs to the agents. A deviation they can resolve while still meeting the ticket's requirements and acceptance criteria is resolved on the spot and recorded (`along plan revise <slug> --plan-file <path> --reason "..."`); no one is asked and the status stays `approved`. Only a problem the ticket cannot absorb (a requirement cannot be met or must change, a decision only the user can make) goes to the user: `along plan rework <slug> --reason "..."`, stop, ask. In `along-team`, implementer and reviewer report plan problems to the supervisor, the architect revises, and only a ticket-level problem halts the run. Plans are not checked for staleness: a plan stays valid until the work shows otherwise.
+
+## Entity Ecosystem
+
+- **Entity types**: Issues (`feat`, `bug`, `debt`, `task`, `docs`, `spike`), Decisions (ADRs), Milestones, Sessions. A risk or blocker is an issue tagged `risk`; a spike is a `spike--<slug>` issue with an `## Outcome` section. Full YAML schemas: `docs/topic--domain-model.md`.
+- **Canonical keys**: `<type>--<slug>` (e.g. `feat--token-refresh`). Reference by key, NEVER by file path.
+- **ADRs**: Modular records in `.along/DECISIONS/ADR-YYYY-MM-DD--<slug>.md` (with legacy fallback to monolithic `DECISIONS.md`). Never edit past entries - mark superseded. Recompile projections (`.along/DECISIONS.md` board and `.along/CONSTRAINTS.md`) via `/along-decision-sync` or `along decision sync`. Create new ADRs via `/along-decision-sync` or `along decision create <slug> --title "..."`. Add terms to `.along/GLOSSARY.md`.
+- **Issue lifecycle** [gate: issue-lifecycle]: Complete active issues via `along wrap <slug>` (or `along issue done <slug> --status cancelled|superseded`). Closing as done requires `validate_issue_completion` (no scaffold placeholders, mandatory Acceptance Criteria, all `- [x]` closed).
+- **Entity references** [gate: entity-reference-integrity] [gate: entity-deletion-protection]: Never delete an entity other entities reference; use `along issue rename` / `along issue supersede`.
+- **Auto-entity creation**: Agents MUST automatically detect user intent (build/fix/refactor -> Issue, blocked/rate-limit -> Issue tagged `risk`, compare/benchmark -> `spike` Issue, release/sprint -> Milestone) and create entities without prompting the user.
+
+## Knowledge Base & Documentation
+
+- **Stable Entry Point**: `README.md` and `docs/` never link into `.along/`; route through `docs/INDEX.md` or `docs/topic--<slug>.md`.
+- **Portable Links**: Relative Markdown links only.
+- **Fact Grounding**: Agents MUST extract facts from actual code, `README.md`, `docs/`, and `package.json`. Generic LLM placeholders are strictly prohibited.
+- **Fast Retrieval**: Agents SHOULD query `/along-kb-search` before reading whole documentation files.
+- **Doc Blast Radius**: After non-trivial code changes, agents MUST map affected symbols to `docs/topic--*.md` articles and update them before completing the task.
+- **Manual Document Lock** [gate: doc-manual-lock]: Documents marked with `write_policy: manual` (or `locked: true`) are protected from automated agent modification during blast radius sweeps. Modifications require an explicit documentation issue (`docs--<slug>`).
+- **Managed Rule Packs** [gate: rule-pack-protection]: Never edit `.along/rules/**/*.md`; `along rules attach` owns them. Project guidelines go to `docs/topic--<slug>.md` or "Project specifics"; revert with `along rules restore`. `.along/rules/gates.yaml` and `.along/scripts/` stay repo-owned.
+
+### Documentation Routing Tree
+
+[gate: doc-routing-compliance]
+
+- Architectural choice / trade-off -> `.along/DECISIONS/` (ADR)
+- Public overview / pitch / landing page -> `README.md`
+- Technical interface contract / CLI spec -> `docs/topic--<slug>.md` (`type: reference`)
+- Conceptual explanation / comparison / philosophy -> `docs/topic--<slug>.md` (`type: explanation`, `write_policy: manual`)
+- Procedural walkthrough / runbook -> `docs/topic--<slug>.md` (`type: guide`)
+
+## While Working
+
+- **Token hygiene**: Use quiet flags (`pytest -q`, `dotnet test -v q`), filter outputs, inspect targeted line ranges.
+- **Lifecycle hooks first**: Agents MUST use `/along-test`, `/along-build`, `/along-dev` (or `.along/scripts/*.py`) before raw shell commands.
+- **Post-change review**: Agents MUST inspect diffs and evaluate blast radius via `along graph-impact` (or static search fallback). Silent skips are forbidden.
+
+## Stage & Session Completion Checklist
+
+When a stage or session completes, agents MUST execute in this order:
+1. [ ] **Tests** [gate: test_before_stop]: Run via `/along-test` with quiet flags. Zero failures caused by this issue. On a failure the test gate prints a `[Baseline]` line. Pre-existing failures (red at HEAD, code the issue did not touch): halt, report the exact failures to the user, file an issue, and only with their agreement bypass: `along commit -n --reason "pre-existing failure in <suite>, tracked in <key>"`, `along wrap <slug> -n --reason "..."`. Never edit tests or fixtures to make them pass unless the issue is about them.
+2. [ ] **File Integrity**: `git status -u` - all new/modified files non-zero size, no empty placeholders.
+3. [ ] **Code Review**: Inspect diff for side effects, verify REQ-N coverage, evaluate blast radius via `along graph-impact` (or static search), verify architectural decision compliance.
+4. [ ] **Entity Reconciliation**: Close issues (`done` + move to `done/`), update milestones, record the `## Outcome` of a spike. [gate: unresolved_gate_denial]: every tool call a gate denied is redone within the gate's rules or disclosed (`along gates denials`, `along gates ack <id> --note "..."`); `along wrap` / `along issue done` refuse until the user has replied to a disclosure (`--force-reason` after their reply).
+5. [ ] **Doc Blast Radius**: Update affected `docs/topic--*.md`, `README.md` and Project specifics; add new terms to `.along/GLOSSARY.md` (create it on first use); touch `.along/VISION.md` only if scope/roadmap changed; run `/along-kb-sync`.
+6. [ ] **Session Log & Wrap** [gate: wrap_before_stop]: `along wrap <slug> --summary "<summary>" (--decisions <ADR...> | --no-decisions)` writes `.along/SESSIONS/<YYYY>/<date>--<slug>.md` (summary, decisions, attributed `files:`, blackboard record), compiles projections, and appends to `.along/HISTORY.md` (provide `--summary` or let it fallback to issue title).
+7. [ ] **Projections** [gate: projection_sync_before_stop]: Run `/along-issue-sync` and `/along-decision-sync`.
+8. [ ] **HISTORY**: Verify line in `.along/HISTORY.md` (appended automatically by `along wrap`; update via `along history append <slug> "..."` if needed).
+9. [ ] **Compaction**: Advise user to run `/compact`.
+
+## Multi-Agent Routing
+
+- **Mandatory Adaptive Complexity Escalation & Execution Mode Routing**: When scope touches > 3 files, crosses subsystems, or refactors core engines: single-agent execution is forbidden - route to `along-team`. Plans MUST declare `Execution Mode: Direct` or `Role-Based`. Role-based blackboards (`along scratch init`) are held to the step loop [gate: team-step-active] [gate: team-reviews-before-stop]; dropping it needs `along scratch fallback <slug> --reason "..."`.
+
+## Tool-Use Rules
+
+- **Contract-First Lifecycle**:
+  - Agents MUST execute `.along/scripts/<action>.py` or `/along-test`, `/along-build`, `/along-dev` before raw shell commands.
+  - When `.along/scripts/` is missing, `along test`/`along build` auto-detects and synthesizes hooks.
+  - In submodules, execute the hook from that subproject's own `.along/scripts/`.
+- **Environment Isolation**:
+  - Agents MUST NOT install system-wide or global packages when a script fails. Fix the architecture (missing `bootstrap.ensure_deps()`, incorrect `uv` wrapper), not the environment.
+- **Workspace Containment** [gate: workspace-containment]: Read and write only inside the workspace. Writes elsewhere are limited to the temp dir and runtime artifact dirs. Other repos need `allowed_roots` (`.along/rules/gates.yaml`, issue frontmatter, `along start --allow-root`). Never touch credential stores (`~/.ssh`, `~/.aws`).
+- **Runtimes Without Along Hooks** (Claude Cowork, Cursor, OpenCode, plain shells): gates are advisory there. Agents MUST self-apply every gate-tagged rule and use the `along` CLI for tests, commits, entity changes, and wrap instead of raw tools. `along doctor` reports the enforcement level.
+- **File Modification & Anti-Deletion**:
+  - Never delete, truncate, or overwrite existing documentation, comments, or code unless explicitly instructed.
+  - After batch edits or migrations, agents MUST run `git diff --stat` and inspect unexpected size reductions.
+  - No stubs or skeletons in place of populated code.
+  - Anchor edits on minimal unique chunks. Restore unintended deletions immediately.
+- **Clean ASCII**: ASCII punctuation only (no typographic dashes, quotes, ellipsis, bullets, NBSP/zero-width chars or BOM); `along sanitize --write` fixes them.
+- **Markdown**: Every code fence names a language.
+- **Commit-time checks**: typography, code fences, links, filenames, secrets, stubs and AI co-authors are checked by `along lint` (pre-commit and CI), not while you work.
+- **Bypass Is The User's Call**: `-n`, `--force-reason`, `scratch fallback` need `--reason` and the user's reply after the failure; each bypass is recorded (`along gates stats`).
+- **File Content Via Tools Only** [gate: cli_safety]: Create/edit files with the agent's file tools. NEVER carry content in heredocs, `python -c`, or inline shell. Write scripts to a file first.
+- **No Ad-Hoc Shell Code Probing**: Agents must never use `python -c` or inline shell commands to probe internal module symbols or inspect functions. Internal engine packages (`alongkit`, `scripts`) are not installed into the global Python environment, and ad-hoc shell probing produces confusing error traces instead of actionable information. Prescribed inspection tools: static file tools (`view_file`, `grep_search`), AST tools (`along graph-*`), official CLI subcommands (`along <command> --help`), or dedicated hermetic tests in `tests/`.
+- **CLI Black-Box Invariance**: Agents MUST treat the Along CLI and development tools as strict opaque black-box executables. Reading Along engine source code (`.along/bin/*.py`, `~/.along/bin/`, `alongkit/**`, `along_*.py`) to inspect internals, arguments, or data structures is STRICTLY FORBIDDEN unless working on the Along repository itself. Always use `along <command> --help` or official documentation in `docs/`. If an Along command returns an error or fails validation, report the exact CLI error output to the user immediately. Do not attempt to reverse-engineer or debug the Along engine.
+- **Verify Written Files**: After writing/patching, confirm parsing (`python -m compileall -q`, `bash -n`, etc.) before moving on.
+- **Hermetic Tests**: Tests MUST target throwaway fixtures (`tempfile.mkdtemp()`), never the live repository. Read-only access to live state is allowed. Keep a meta-test that verifies `git status --porcelain -u` stays clean.
+- Windows-safe filenames: dates `YYYY-MM-DD`, date first.
+- Keep `ISSUES.md` compact: `along context-budget --check` enforces the limit.
+- Never write secrets into tracked files.
+
+---
+
+## Document: docs/topic--architecture.md (Architecture)
+
+# @actdim/dynstruct-demo Architecture
+
+## 1. System Overview
+
+`@actdim/dynstruct-demo` is an Astro portal that showcases `@actdim/dynstruct` (structure-first component model), `@actdim/dynstruct-mui` (Material UI adapters for Dynstruct contracts) and `@actdim/msgmesh` (typed message bus). It is built as a static site (`astro build`, default `output: 'static'`) and deployed to GitHub Pages at https://actdim.github.io/dynstruct/demo/.
+
+The page is split into two worlds:
+
+- **Astro shell** (`.astro` files, Tailwind CSS): document layout, header, footer, hero banners and explanatory text. It renders to plain HTML at build time and ships no JavaScript of its own.
+- **React islands** (`src/components/islands/*.tsx`, all mounted with `client:load`): interactive regions. Each island is an independent React root hydrated over its pre-rendered HTML. Material UI and Emotion run only inside islands.
+
+```text
++--------------------------------------------------------------------------------------+
+|  Astro shell (build time, zero JS)                                                   |
+|  src/layouts/Layout.astro -> Header.astro, <slot />, Footer.astro, global.css        |
+|  src/pages/*.astro (route = file name), src/lib/withBase.ts                          |
++--------------------------------------------------------------------------------------+
+|  React islands (client:load, one React root each)                                    |
+|  src/components/islands/*.tsx -> PortalProvider (MUI ThemeProvider +                 |
+|                                  ComponentContextProvider { msgBus })                |
++--------------------------------------------------------------------------------------+
+|  Dynstruct structs (src/components/structs/*.tsx)                                    |
+|  ComponentStruct contract -> ComponentDef (props, actions, msgBroker, events, view)  |
+|  useComponent(def, params) + toReact(...) -> React component                         |
++--------------------------------------------------------------------------------------+
+|  Bus layer (src/bus)                                                                 |
+|  portalMsgStruct.ts (DemoMsgStruct), portalBus.ts (getPortalMsgBus), ids.ts          |
++--------------------------------------------------------------------------------------+
+|  Data (src/data): sampleCatalog.ts (SSG data), codeSnippets.ts (playground regions)  |
++--------------------------------------------------------------------------------------+
+```
+
+## Core Components
+
+| Component | Location | Responsibility |
+|---|---|---|
+| Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `resolve.dedupe` for `react`, `react-dom`, `mobx`, `mobx-react-lite`, `@emotion/*`, `@mui/material` |
+| Layout | `src/layouts/Layout.astro` | HTML document, `title` / `description` props, favicon through `withBase`, header and footer around the page slot |
+| Header / Footer | `src/components/astro/Header.astro`, `Footer.astro` | Navigation (base-aware active-link matching), links to `/llms.txt` and the `@actdim` GitHub repositories |
+| Pages | `src/pages/index.astro`, `ssr-demo.astro`, `cross-island.astro`, `showcase.astro` | One route each; mount one or two islands with `client:load` |
+| PortalProvider | `src/components/common/PortalProvider.tsx` | Dark MUI theme plus Dynstruct `ComponentContextProvider` whose `msgBus` is `getPortalMsgBus()` |
+| Islands | `src/components/islands/*.tsx` | Thin wrappers: `PortalProvider` + one struct (or the playground / gallery) |
+| Structs | `src/components/structs/*.tsx` | Idiomatic Dynstruct components: `CatalogFilter`, `CatalogList`, `SsrCatalog`, `FormDemo`, `Counter`, `DialogToastDemo`, `ReactivityDemo`, `AsyncSearchDemo` |
+| Portal bus | `src/bus/portalBus.ts` | `getPortalMsgBus()`: browser singleton, fresh bus per call during SSR; `CATALOG.FILTER` configured with `replayBufferSize: 1` |
+| Bus contract | `src/bus/portalMsgStruct.ts` | `DemoMsgStruct = BaseAppMsgStruct & MsgStruct<DemoCustomChannels>`, payload types, `DEFAULT_FILTER` |
+| Message ids | `src/bus/ids.ts` | `newMsgId()`: `crypto.randomUUID()` with a counter fallback; used for toast ids |
+| Base path helper | `src/lib/withBase.ts` | Prefixes root-relative links with `import.meta.env.BASE_URL` |
+| Playground snippets | `src/data/codeSnippets.ts` | Imports struct sources with `?raw` and cuts `// #region contract|model|integration` blocks for the code panel |
+| SSG data | `src/data/sampleCatalog.ts` | `getSampleCatalog()`: async server-side data source for `/ssr-demo` |
+
+### 2.1. Astro shell vs React islands
+
+The shell owns everything that does not need interactivity, so the first paint has no CSS-in-JS and no layout shift. MUI and Emotion are loaded only by islands. Every island is mounted with `client:load`, so it hydrates as soon as the page loads; the e2e helper `waitForIslands` (`e2e/hydration.ts`) waits until no `astro-island[ssr]` element remains.
+
+The home page playground (`SplitPlaygroundIsland`) is a plain React component for the scenario selector and code tabs; the live preview inside it renders one Dynstruct struct per scenario under a `PortalProvider`. The code panel content is taken from the real struct source files, not from copies (`extractRegion` in `src/data/codeSnippets.ts`).
+
+### 2.2. Cross-island msgmesh bus
+
+React Context cannot cross island boundaries: each island has its own React root and its own `PortalProvider`. The shared channel is the module-level bus singleton returned by `getPortalMsgBus()` in the browser. Islands on the same page import the same module instance, so they publish and subscribe on the same `MsgBus<DemoMsgStruct>` without a common React ancestor.
+
+During SSR / SSG (`typeof window === 'undefined'`) the function returns a new bus per call, so no state leaks between island renders or between pages at build time.
+
+### 2.3. Declarative msgBroker
+
+Structs register subscriptions and RPC providers inside `def.msgBroker` instead of calling `msgBus.on` / `msgBus.provide` by hand:
+
+- `msgBroker.subscribe` - `CatalogList` (`CATALOG.FILTER`), `DialogToastDemo` (`NOTICE.TOAST`, `DIALOG.OPEN`, `DRAWER.TOGGLE`).
+- `msgBroker.provide` - `AsyncSearchDemo` (`RPC.SEARCH`).
+
+Dynstruct binds these registrations to the component lifecycle and releases them per mount, which keeps them correct under React StrictMode double mounting. Publishing stays imperative through `c.msgBus.send(...)` and requests through `c.msgBus.request(...)`. Each struct declares the channels it touches in its `msgScope` (`publish`, `subscribe`, `provide`), which the type system checks against `DemoMsgStruct`.
+
+### 2.4. SSG / SSR switch
+
+`/ssr-demo` awaits `getSampleCatalog()` in the page frontmatter and passes the result into `SsrCatalogIsland` as `initialItems` together with an `ssrTimestamp`. With the default `output: 'static'` this runs once at build time (SSG), so the generated HTML already contains every catalog row and is readable with JavaScript disabled. Moving to on-demand SSR needs `output: 'server'` in `astro.config.mjs` plus an Astro deployment adapter; page and component code stay unchanged. The deployed GitHub Pages site is static, so it uses SSG.
+
+### 2.5. Base-path handling
+
+GitHub Pages serves the site under `/dynstruct/demo/`. `astro.config.mjs` reads `DEMO_BASE` (default `/`) into `base` and `DEMO_SITE` into `site`. All internal links go through `withBase(path)`, which strips the trailing slash from `BASE_URL` and prefixes the path. `Header.astro` strips the base from `Astro.url.pathname` before comparing it with its base-relative nav items, so active-link highlighting works both locally and on Pages.
+
+```mermaid
+flowchart LR
+    ENV["DEMO_BASE / DEMO_SITE env"] --> CFG["astro.config.mjs base, site"]
+    CFG --> BASEURL["import.meta.env.BASE_URL"]
+    BASEURL --> WB["withBase(path)"]
+    BASEURL --> HDR["Header.astro active-link match"]
+    WB --> LINKS["nav links, favicon, /llms.txt"]
+```
+
+## Data Flow
+
+### 3.1. Cross-island filter (`/cross-island`)
+
+```mermaid
+sequenceDiagram
+    participant F as CrossIslandFilter island (CatalogFilter)
+    participant B as Portal MsgBus (browser singleton)
+    participant L as CrossIslandList island (CatalogList)
+    F->>B: send CATALOG.FILTER { query, category, minRating }
+    B-->>L: msgBroker.subscribe callback
+    L->>L: m.filter = payload, receivedCount++
+    L->>L: view() recomputes filtered ALL_ITEMS
+    Note over F,L: Reset publishes DEFAULT_FILTER values, keeping both islands in sync
+```
+
+`CatalogFilter` publishes on every change of query, category or minimum rating; the category value `ALL` is sent as `category: undefined`. The channel has `replayBufferSize: 1`, so a subscriber that attaches after the last publish still receives the current filter.
+
+### 3.2. Playground overlays and RPC (`/`)
+
+```mermaid
+flowchart TD
+    BTN["DialogToastDemo buttons"] -->|send NOTICE.TOAST / DIALOG.OPEN / DRAWER.TOGGLE| BUS["Portal MsgBus"]
+    FORM["FormDemo"] -->|send NOTICE.TOAST| BUS
+    BUS -->|msgBroker.subscribe| DT["DialogToastDemo model: toasts, dialogOpen, drawerOpen"]
+    Q["AsyncSearchDemo setQuery, 250 ms debounce"] -->|request RPC.SEARCH| BUS
+    BUS -->|msgBroker.provide handler, 100 ms simulated latency| P["RPC.SEARCH provider in AsyncSearchDemo"]
+    P -->|out items| Q
+```
+
+`AsyncSearchDemo` numbers each request (`searchSeq`) and ignores responses that are not the latest, so out-of-order RPC replies never overwrite newer results.
+
+### 3.3. Build-time data (`/ssr-demo`)
+
+```mermaid
+flowchart LR
+    FM["ssr-demo.astro frontmatter"] -->|await getSampleCatalog| DATA["copy of SAMPLE_SSR_CATALOG"]
+    DATA -->|initialItems, ssrTimestamp props| ISL["SsrCatalogIsland"]
+    ISL --> HTML["Pre-rendered HTML table"]
+    HTML -->|client:load hydration| LIVE["SsrCatalog: client filter and sort, clientHydrationTime set in onReady"]
+```
+
+## Invariants
+
+1. **MUI only inside islands**: `.astro` files use Tailwind classes only; `@mui/material` and Emotion are imported only from `src/components/islands`, `src/components/structs` and `src/components/common`.
+2. **No React Context across islands**: islands communicate only through the portal bus. Each island wraps its content in its own `PortalProvider`.
+3. **One browser bus, isolated SSR buses**: `getPortalMsgBus()` returns a singleton when `window` exists and a fresh bus otherwise. Do not create other buses for portal traffic.
+4. **Declarative registrations**: subscriptions and RPC providers live in `def.msgBroker`; no manual `msgBus.on` / `msgBus.provide` in `events.onReady` / `onDestroy`.
+5. **Typed channels**: every channel and payload is declared in `DemoCustomChannels` (`src/bus/portalMsgStruct.ts`) and listed in the struct's `msgScope`.
+6. **Base-aware links**: every internal URL in the shell goes through `withBase`; never hard-code `/dynstruct/demo/`.
+7. **Playground code comes from source**: structs shown in the playground keep `// #region contract`, `// #region model` and `// #region integration` markers; `extractRegion` throws when a marker is missing.
+8. **Hydration-clean markup**: no block elements inside `span` / `p` (for example `ListItemText` uses `slotProps` with `component: 'div'`); the e2e suite fails on any browser console error or warning.
+9. **Single React / MobX / MUI copy**: `resolve.dedupe` in `astro.config.mjs` keeps listing the shared runtime packages, because the `@actdim` libraries are linked from a workspace.
+
+## Related Topics
+
+- [Domain Model](./topic--domain-model.md): bus channels, payload contracts, catalog types and routes.
+- [Setup And Workflow](./topic--setup-and-workflow.md): running, testing and the GitHub Pages pipeline.
+- [README](../README.md): package overview and channel table.
+
+---
+
+## Document: docs/topic--domain-model.md (Domain Model)
+
+# @actdim/dynstruct-demo Domain Model & Contracts
+
+## 1. Domain Overview
+
+The demo has no backend. Its domain is made of three things:
+
+- **Bus contract**: the typed channels of the portal message bus (`src/bus/portalMsgStruct.ts`).
+- **Demo catalog data**: in-memory lists of `DemoCatalogItem` used by the filter, search and SSG demos.
+- **Routes and page contracts**: four Astro pages, the props of the shared layout and of the SSG island, and the playground scenario list.
+
+## Entity Taxonomy
+
+| Entity | Defined in | Kind | Notes |
+|---|---|---|---|
+| `DemoMsgStruct` | `src/bus/portalMsgStruct.ts` | Bus contract | `BaseAppMsgStruct` (from `@actdim/dynstruct/appDomain/appContracts`) `&` `MsgStruct<DemoCustomChannels>` |
+| `DemoCustomChannels` | `src/bus/portalMsgStruct.ts` | Channel map | `CATALOG.FILTER`, `NOTICE.TOAST`, `DIALOG.OPEN`, `DRAWER.TOGGLE`, `RPC.SEARCH` |
+| `CatalogFilterPayload` | `src/bus/portalMsgStruct.ts` | Payload | `{ query?, category?, minRating? }` |
+| `DEFAULT_FILTER` | `src/bus/portalMsgStruct.ts` | Constant | `{ query: '', category: undefined, minRating: 4.0 }` |
+| `DemoCatalogItem` | `src/bus/portalMsgStruct.ts` | Data record | Shared by every catalog dataset and by `RPC.SEARCH` output |
+| `ToastItem` | `src/components/structs/dialogToastStruct.tsx` | View model | Toast entry kept by `DialogToastDemo` (max 5) |
+| `PlaygroundScenario` | `src/data/codeSnippets.ts` | Data record | One entry per playground tab |
+| Struct contracts | `src/components/structs/*.tsx` | `ComponentStruct<DemoMsgStruct, ...>` | `props`, `actions`, `msgScope` per component |
+| Pages | `src/pages/*.astro` | Routes | `/`, `/ssr-demo`, `/cross-island`, `/showcase` |
+| Static assets | `public/` | Files | `favicon.svg`, `llms.txt`, `llms-full.txt` |
+
+### 2.1. Bus channels
+
+| Channel | Kind | `in` payload | `out` payload | Publishers | Consumers |
+|---|---|---|---|---|---|
+| `CATALOG.FILTER` | Pub/Sub, `replayBufferSize: 1` | `CatalogFilterPayload` | - | `CatalogFilter` | `CatalogList` (`msgBroker.subscribe`) |
+| `NOTICE.TOAST` | Pub/Sub | `{ id: string; message: string; severity?: 'success' \| 'info' \| 'warning' \| 'error'; duration?: number }` | - | `DialogToastDemo`, `FormDemo` | `DialogToastDemo` |
+| `DIALOG.OPEN` | Pub/Sub | `{ dialogId: string; title: string; content: string }` | - | `DialogToastDemo` | `DialogToastDemo` |
+| `DRAWER.TOGGLE` | Pub/Sub | `{ open: boolean }` | - | `DialogToastDemo` | `DialogToastDemo` |
+| `RPC.SEARCH` | Request/Response | `{ query: string }` | `{ items: DemoCatalogItem[] }` | `AsyncSearchDemo` (`msgBus.request`) | `AsyncSearchDemo` (`msgBroker.provide`) |
+
+Contract source:
+
+```typescript
+export type DemoCustomChannels = {
+  'CATALOG.FILTER': { in: CatalogFilterPayload };
+  'NOTICE.TOAST': {
+    in: { id: string; message: string; severity?: 'success' | 'info' | 'warning' | 'error'; duration?: number };
+  };
+  'DIALOG.OPEN': { in: { dialogId: string; title: string; content: string } };
+  'DRAWER.TOGGLE': { in: { open: boolean } };
+  'RPC.SEARCH': { in: { query: string }; out: { items: DemoCatalogItem[] } };
+};
+
+export type DemoMsgStruct = BaseAppMsgStruct & MsgStruct<DemoCustomChannels>;
+```
+
+Payload rules:
+
+- `CATALOG.FILTER`: the filter UI value `ALL` is sent as `category: undefined`; reset sends the `DEFAULT_FILTER` values.
+- `NOTICE.TOAST`: `id` comes from `newMsgId()` (`src/bus/ids.ts`) so rapid toasts never share a React key; missing `severity` is shown as `info`.
+- `RPC.SEARCH`: an empty `query` returns the whole search dataset; otherwise a case-insensitive match on title, category and description.
+
+### 2.2. Demo catalog data
+
+```typescript
+export type DemoCatalogItem = {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  rating: number;
+  badge?: string;
+};
+```
+
+| Dataset | Location | Ids | Used by |
+|---|---|---|---|
+| `ALL_ITEMS` | `src/components/structs/catalogListStruct.tsx` | `c1` - `c6` | `CatalogList` on `/cross-island` |
+| `SAMPLE_DATABASE` | `src/components/structs/asyncSearchStruct.tsx` (module-private) | `s1` - `s5` | `RPC.SEARCH` provider in `AsyncSearchDemo` |
+| `SAMPLE_SSR_CATALOG` | `src/data/sampleCatalog.ts` | `ssr-1` - `ssr-6` | `getSampleCatalog()` for `/ssr-demo`; imported by `e2e/smoke.spec.ts` to assert pre-rendered titles |
+
+Filter categories offered by `CatalogFilter` are `ALL`, `Architecture`, `Networking`, `Performance`, `Reactivity`, `UI`, matching the `category` values in `ALL_ITEMS`. The slider range is 4.0 - 5.0 in steps of 0.1.
+
+### 2.3. Routes
+
+| Route | Page | Islands | Demonstrates |
+|---|---|---|---|
+| `/` | `src/pages/index.astro` | `SplitPlaygroundIsland` | Split-screen playground: contract / model / integration code next to a live struct |
+| `/ssr-demo` | `src/pages/ssr-demo.astro` | `SsrCatalogIsland` | Build-time data fetch, crawlable HTML, hydration over existing DOM |
+| `/cross-island` | `src/pages/cross-island.astro` | `CrossIslandFilter`, `CrossIslandList` | Two independent islands coordinated through `CATALOG.FILTER` |
+| `/showcase` | `src/pages/showcase.astro` | `ShowcaseGalleryIsland` | Gallery of `@actdim/dynstruct-mui` controls (Button, TextField, Select, Checkbox, Switch, Slider) next to MUI feedback and surface widgets |
+| `/llms.txt`, `/llms-full.txt` | `public/` | - | AI agent discovery metadata, served as static files |
+
+All routes are served under the configured base (`/` locally, `/dynstruct/demo/` on GitHub Pages).
+
+## Front-matter Schemas
+
+The demo has no content collections; its "front matter" is the Astro component frontmatter and the props contracts that cross the Astro -> island boundary.
+
+### 3.1. Layout props (`src/layouts/Layout.astro`)
+
+```typescript
+interface Props {
+  title?: string;       // default 'Dynstruct & Dynstruct-MUI Demo Portal'; rendered as '<title> | Dynstruct Demo'
+  description?: string; // default portal description; rendered into <meta name="description">
+}
+```
+
+### 3.2. Header props (`src/components/astro/Header.astro`)
+
+```typescript
+interface Props {
+  currentPath?: string; // Astro.url.pathname including the base; the base is stripped before matching nav items
+}
+```
+
+### 3.3. SSG island props (`src/components/islands/SsrCatalogIsland.tsx`)
+
+```typescript
+interface SsrCatalogIslandProps {
+  initialItems: DemoCatalogItem[]; // result of await getSampleCatalog() in ssr-demo.astro frontmatter
+  ssrTimestamp: string;            // new Date().toLocaleTimeString() at build (or request) time
+}
+```
+
+Island props are serialized by Astro into the page HTML, so they must stay JSON-serializable plain data.
+
+### 3.4. Playground scenario (`src/data/codeSnippets.ts`)
+
+```typescript
+export interface PlaygroundScenario {
+  id: string;              // 'form' | 'counter' | 'overlays' | 'reactivity' | 'async'
+  title: string;
+  badge: string;
+  description: string;
+  contractCode: string;    // extractRegion(source, 'contract')
+  modelCode: string;       // extractRegion(source, 'model')
+  integrationCode: string; // extractRegion(source, 'integration')
+}
+```
+
+| `id` | Struct (source file) | Badge |
+|---|---|---|
+| `form` | `FormDemo` (`formDemoStruct.tsx`) | `dynstruct-mui` |
+| `counter` | `Counter` (`counterStruct.tsx`) | `Reactivity` |
+| `overlays` | `DialogToastDemo` (`dialogToastStruct.tsx`) | `MsgMesh` |
+| `reactivity` | `ReactivityDemo` (`reactivityStruct.tsx`) | `Advanced` |
+| `async` | `AsyncSearchDemo` (`asyncSearchStruct.tsx`) | `RPC Bus` |
+
+### 3.5. Struct contracts with bus scope
+
+| Struct (`regType`) | `msgScope` | Key props |
+|---|---|---|
+| `CatalogFilter` | `publish: 'CATALOG.FILTER'` | `query`, `category`, `minRating`, `publishedCount` |
+| `CatalogList` | `subscribe: 'CATALOG.FILTER'` | `filter`, `receivedCount`, `items` (`reactive: 'ref'`) |
+| `SsrCatalog` | none | `initialItems` (`reactive: 'ref'`), `ssrTimestamp`, `filterQuery`, `sortBy: 'rating' \| 'title'`, `clientHydrationTime` |
+| `FormDemo` | `publish: 'NOTICE.TOAST'` | `username`, `email`, `role`, `notifications`, `termsAccepted`, `experienceYears`, `submittedPayload`, `errors` |
+| `Counter` | none | `count` (0), `step` (1), `max` (20) |
+| `DialogToast` | `publish` and `subscribe`: `NOTICE.TOAST`, `DIALOG.OPEN`, `DRAWER.TOGGLE` | `dialogOpen`, `dialogTitle`, `dialogContent`, `drawerOpen`, `toasts`, `activeToast` |
+| `ReactivityDemo` | none | one prop each with `reactive: true`, `'shallow'`, `'ref'` |
+| `AsyncSearchDemo` | `provide: 'RPC.SEARCH'`, `publish: 'RPC.SEARCH'` | `query`, `loading`, `results`, `executionTimeMs`, `searchError` |
+
+## Graph Relationships
+
+```mermaid
+flowchart LR
+    subgraph Pages
+        P_IDX["/ index.astro"]
+        P_SSR["/ssr-demo"]
+        P_X["/cross-island"]
+        P_SHOW["/showcase"]
+    end
+    subgraph Islands
+        I_PLAY["SplitPlaygroundIsland"]
+        I_SSR["SsrCatalogIsland"]
+        I_F["CrossIslandFilter"]
+        I_L["CrossIslandList"]
+        I_G["ShowcaseGalleryIsland"]
+    end
+    subgraph Structs
+        S_FORM["FormDemo"]
+        S_CNT["Counter"]
+        S_DT["DialogToastDemo"]
+        S_RX["ReactivityDemo"]
+        S_AS["AsyncSearchDemo"]
+        S_SSR["SsrCatalog"]
+        S_F["CatalogFilter"]
+        S_L["CatalogList"]
+    end
+    subgraph Channels
+        C_FILTER["CATALOG.FILTER"]
+        C_TOAST["NOTICE.TOAST"]
+        C_DLG["DIALOG.OPEN"]
+        C_DRW["DRAWER.TOGGLE"]
+        C_RPC["RPC.SEARCH"]
+    end
+    P_IDX --> I_PLAY
+    P_SSR --> I_SSR
+    P_X --> I_F
+    P_X --> I_L
+    P_SHOW --> I_G
+    I_PLAY --> S_FORM
+    I_PLAY --> S_CNT
+    I_PLAY --> S_DT
+    I_PLAY --> S_RX
+    I_PLAY --> S_AS
+    I_SSR --> S_SSR
+    I_F --> S_F
+    I_L --> S_L
+    S_F -->|publish| C_FILTER
+    C_FILTER -->|subscribe| S_L
+    S_FORM -->|publish| C_TOAST
+    S_DT -->|publish| C_TOAST
+    S_DT -->|publish| C_DLG
+    S_DT -->|publish| C_DRW
+    C_TOAST -->|subscribe| S_DT
+    C_DLG -->|subscribe| S_DT
+    C_DRW -->|subscribe| S_DT
+    S_AS -->|request| C_RPC
+    C_RPC -->|provide| S_AS
+```
+
+Data dependencies:
+
+- `SsrCatalog` <- `getSampleCatalog()` <- `SAMPLE_SSR_CATALOG` (`src/data/sampleCatalog.ts`).
+- `CatalogList` <- `ALL_ITEMS`; `CatalogFilter` -> `DEFAULT_FILTER`; both import their types from `src/bus/portalMsgStruct.ts`.
+- `SplitPlaygroundIsland` <- `PLAYGROUND_SCENARIOS` <- `?raw` imports of the five playground struct files.
+- Every island -> `PortalProvider` -> `getPortalMsgBus()` -> `DemoMsgStruct`.
+
+## Related Topics
+
+- [Architecture](./topic--architecture.md): shell vs islands, bus lifecycle, base path, invariants.
+- [Setup And Workflow](./topic--setup-and-workflow.md): commands, tests and Pages CI.
+
+---
+
+## Document: docs/topic--setup-and-workflow.md (Setup And Workflow)
+
+# @actdim/dynstruct-demo Setup, Build & Test Workflow
+
+## 1. Repository Layout
+
+`@actdim/dynstruct-demo` lives in `demo/` of the dynstruct repository (`https://github.com/actdim/dynstruct`); in the mempart monorepo that is `src/packages/dynstruct/demo`. It depends on `@actdim/dynstruct` as `workspace:*`.
+
+- Inside mempart, `src/pnpm-workspace.yaml` lists `packages/dynstruct/demo` and links all `@actdim` dependencies (`dynstruct`, `dynstruct-mui`, `msgmesh`, `ui-core`, `utico`) from their folders, so local development runs against library sources in the same checkout. The nested dynstruct `pnpm-workspace.yaml` is ignored there.
+- In a standalone dynstruct checkout, the repository `pnpm-workspace.yaml` (packages `.` and `demo`) links the library from the folder; the other `@actdim` packages come from npm.
+
+```text
+demo/
+|-- src/
+|   |-- pages/          index, ssr-demo, cross-island, showcase (.astro)
+|   |-- layouts/        Layout.astro
+|   |-- components/     astro/ (Header, Footer), islands/, structs/, common/ (PortalProvider)
+|   |-- bus/            portalMsgStruct.ts, portalBus.ts, ids.ts
+|   |-- data/           sampleCatalog.ts, codeSnippets.ts
+|   |-- lib/            withBase.ts
+|   `-- styles/         global.css (Tailwind)
+|-- public/             favicon.svg, llms.txt, llms-full.txt
+|-- e2e/                smoke.spec.ts, fixtures.ts (console watcher), hydration.ts
+|-- astro.config.mjs    base / site from DEMO_BASE / DEMO_SITE
+|-- playwright.config.ts
+`-- tsconfig.json
+```
+
+## Prerequisites
+
+- Node.js 22 (the version used by the Pages workflow) and pnpm 10 (`packageManager` in `src/package.json` for mempart, in the dynstruct `package.json` for a standalone checkout).
+- The mempart checkout with submodules initialized, so the `@actdim` library packages exist under `src/packages/`.
+- Dependencies installed from the monorepo workspace root: `pnpm install` in `src/`.
+- For e2e tests: Playwright browsers (`pnpm --filter @actdim/dynstruct-demo exec playwright install chromium`); the suite runs the `Desktop Chrome` device.
+
+## Runner Commands
+
+### 3.1. From the monorepo (`src/`)
+
+| Command | Effect |
+|---|---|
+| `pnpm run dev:demo` | `pnpm --filter @actdim/dynstruct-demo dev` - Astro dev server with HMR |
+| `pnpm run build:demo` | `pnpm --filter @actdim/dynstruct-demo build` - static build into `dist/` |
+| `pnpm run test:e2e:demo` | `pnpm --filter @actdim/dynstruct-demo test:e2e` - Playwright suite |
+| `pnpm --filter @actdim/dynstruct-demo preview` | Serves the last build locally |
+| `pnpm --filter @actdim/dynstruct-demo typecheck` | `astro check && tsc --noEmit` |
+
+### 3.2. Package scripts (`package.json`)
+
+| Script | Command |
+|---|---|
+| `dev` | `astro dev` |
+| `build` | `astro build` |
+| `preview` | `astro preview` |
+| `astro` | `astro` (raw CLI passthrough) |
+| `typecheck` | `astro check && tsc --noEmit` |
+| `test:e2e` | `playwright test` |
+
+Local dev and local builds use base `/`. To check a Pages-style build locally, set the base before building:
+
+```bash
+DEMO_BASE=/dynstruct/demo/ pnpm --filter @actdim/dynstruct-demo build
+```
+
+### 3.3. GitHub Pages CI
+
+The dynstruct repository workflow `.github/workflows/pages.yml` publishes one site: the docs at https://actdim.github.io/dynstruct/ and the demo at https://actdim.github.io/dynstruct/demo/. It runs on push to `main` (docs, `demo/`, `pnpm-workspace.yaml`, the workflow) and on `workflow_dispatch`.
+
+The `build` job installs only the library (`pnpm install --filter @actdim/dynstruct`) and builds the docs. The `Build demo` step then, with `DEMO_BASE=<base_path>/demo/` and `DEMO_SITE=<origin>` from `actions/configure-pages`:
+
+1. Runs `pnpm install --no-frozen-lockfile` for the whole repository workspace (`.` and `demo`).
+2. Builds the library (`pnpm run build`), because the demo imports `@actdim/dynstruct` through its `dist/` exports.
+3. Builds the demo (`pnpm --filter @actdim/dynstruct-demo build`) and copies `demo/dist` to `.dist-docs/demo`.
+
+`dynstruct-mui`, `msgmesh`, `ui-core` and `utico` come from npm. Until they are published at `>=1.12.0` the step fails; it is `continue-on-error`, so the docs still deploy without the demo.
+
+Reproduce the CI build from a standalone dynstruct checkout:
+
+```bash
+pnpm install --no-frozen-lockfile
+pnpm run build
+DEMO_BASE=/dynstruct/demo/ pnpm --filter @actdim/dynstruct-demo build
+```
+
+### 3.4. Versioning
+
+The demo follows mempart's unified versioning: the `version` in `package.json` is changed only by `pnpm run version:sync <version>` from mempart `src/`, together with every other package and submodule. Never bump it in this repository alone.
+
+## Quality Gates
+
+| Gate | Command | What it guards |
+|---|---|---|
+| Typecheck | `pnpm --filter @actdim/dynstruct-demo typecheck` | Astro template diagnostics (`astro check`) and TypeScript (`tsc --noEmit`) |
+| Build | `pnpm run build:demo` | All routes pre-render (SSG); `extractRegion` throws on missing playground region markers |
+| E2E smoke and hydration | `pnpm run test:e2e:demo` | See below |
+| Pages build | `Build demo` step of the dynstruct Pages workflow (CI) | Demo builds in the standalone dynstruct workspace, not only from the mempart checkout |
+
+The Playwright config (`playwright.config.ts`) runs `pnpm build && pnpm preview --port 4322 --host localhost` as its web server on `http://localhost:4322` (reused locally, fresh in CI, 2 retries and 1 worker in CI). The auto fixture in `e2e/fixtures.ts` fails any test that logs an unexpected browser console error, warning or page error, and `waitForIslands` (`e2e/hydration.ts`) waits until every `astro-island` has dropped its `ssr` attribute. `e2e/smoke.spec.ts` covers:
+
+- Every route (`/`, `/showcase`, `/cross-island`, `/ssr-demo`) hydrates with zero console errors and warnings.
+- Raw pre-rendered HTML has no invalid DOM nesting inside `ListItemText`.
+- `/ssr-demo` pre-renders every `SAMPLE_SSR_CATALOG` title and keeps state across sort and filter.
+- `/cross-island` filter coordination and reset (`CATALOG.FILTER`).
+- Playground overlays driven by bus channels, unique toast keys, no event replay on remount (`NOTICE.TOAST`).
+- Async search through `RPC.SEARCH` and `msgBroker`.
+- The playground contract panel shows an `export type` for all five scenarios.
+- The reactivity demo counts committed renders without render-phase mutation.
+
+Run the e2e suite after any change to pages, islands, structs or the bus; run typecheck after any TypeScript or `.astro` change.
+
+## Related Topics
+
+- [Architecture](./topic--architecture.md): shell vs islands, bus lifecycle, base path, invariants.
+- [Domain Model](./topic--domain-model.md): channels, payloads, catalog types and routes.
+- [README](../README.md): quick start and route list.

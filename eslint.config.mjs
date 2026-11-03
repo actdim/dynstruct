@@ -22,6 +22,8 @@ export default defineConfig([
             '**/build/**',
             '**/coverage/**',
             '**/docs/**',
+            // The demo app (demo/) is a separate workspace package with its own lint setup.
+            'demo/**',
             '**/.storybook/**',
             '**/jest.config.ts',
             '**/*.d.ts',

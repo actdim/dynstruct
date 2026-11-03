@@ -1,0 +1,24 @@
+# @actdim/dynstruct-demo
+
+> Dynstruct & Dynstruct-MUI Showcase Portal with Astro SSR and React Islands
+
+## Architecture Overview
+- Framework: Astro 5 with React Islands (@astrojs/react) and Tailwind CSS.
+- Component Model: @actdim/dynstruct (type-safe ComponentStruct, ComponentDef, declarative def.msgBroker).
+- UI System: @actdim/dynstruct-mui (Material UI adapters wrapped in Dynstruct).
+- Communication Bus: @actdim/msgmesh (typed Pub/Sub and RPC request/response).
+- Layout: Zero-FOUC outer document shell in native Astro; Material UI confined to isolated React islands.
+- Dogfooding: Cross-island filter, list, and SSR catalog implemented as idiomatic Dynstruct structs.
+
+## Key Routes
+- / : Interactive split-screen playground (TypeScript contracts vs live Dynstruct-MUI preview).
+- /ssr-demo : Astro SSG / SSR data fetching in frontmatter with 100% crawlable raw server HTML and client hydration. Prerendered at build time (SSG); switches to server-rendered with output: 'server'.
+- /cross-island : Decoupled cross-island communication over MsgMesh without shared React Context.
+- /showcase : Component gallery for @actdim/dynstruct-mui.
+- /llms.txt : This summary file for AI agents.
+- /llms-full.txt : Comprehensive architectural specification and code examples.
+
+## Package Dependencies
+- @actdim/dynstruct: Structure-first component model with fine-grained MobX reactivity.
+- @actdim/dynstruct-mui: Material UI component wrappers.
+- @actdim/msgmesh: Typed message mesh and RPC service bus.

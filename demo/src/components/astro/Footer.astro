@@ -1,0 +1,31 @@
+---
+import { withBase } from '../../lib/withBase';
+
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="mt-auto border-t border-slate-800/80 bg-slate-950 py-8 text-slate-400">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6">
+    <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
+      <div class="flex flex-col items-center gap-1 md:items-start">
+        <p class="text-sm font-medium text-slate-300">
+          Actdim Dynstruct & Dynstruct-MUI Showcase
+        </p>
+        <p class="text-xs text-slate-500">
+          Architecture: Zero-FOUC Astro SSR shell with isolated Material UI React islands and MsgMesh bus.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-6 text-xs">
+        <a href="https://github.com/actdim/dynstruct" class="hover:text-sky-400 transition-colors">@actdim/dynstruct</a>
+        <a href="https://github.com/actdim/dynstruct-mui" class="hover:text-sky-400 transition-colors">@actdim/dynstruct-mui</a>
+        <a href="https://github.com/actdim/msgmesh" class="hover:text-sky-400 transition-colors">@actdim/msgmesh</a>
+        <a href={withBase('/llms.txt')} class="hover:text-sky-400 transition-colors font-mono">/llms.txt</a>
+      </div>
+    </div>
+
+    <div class="mt-6 border-t border-slate-900 pt-4 text-center text-xs text-slate-600">
+      &copy; {currentYear} Actdim. Released under the MIT License.
+    </div>
+  </div>
+</footer>
