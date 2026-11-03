@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-- [ ] `(feat)` [demo-theme-and-showcase](ISSUES/feat--demo-theme-and-showcase.md) - plan ready
+<!-- No active issues -->
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
@@ -41,5 +41,5 @@
 - [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
 - [x] `(task)` [demo-docs-into-lib](ISSUES/done/task--demo-docs-into-lib.md)
 - [x] `(feat)` [security-endpoints-optional](ISSUES/done/feat--security-endpoints-optional.md)
-- [x] `(bug)` [demo-monorepo-vite-fs-allow](ISSUES/done/bug--demo-monorepo-vite-fs-allow.md)
-<!-- 45 older completed issue(s) archived in .along/ISSUES/done/ -->
+- [x] `(feat)` [demo-theme-and-showcase](ISSUES/done/feat--demo-theme-and-showcase.md)
+<!-- 46 older completed issue(s) archived in .along/ISSUES/done/ -->
