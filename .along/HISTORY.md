@@ -33,3 +33,4 @@ _`<YYYY-MM-DD> - <slug> - <agent> - <summary> - <relative link>`_
 2026-11-03 - demo-monorepo-vite-fs-allow - antigravity - Fix Astro Vite fs allow list for monorepo React islands hydration and document workspace boundary isolation - [Session Log](./SESSIONS/2026/2026-11-03--demo-monorepo-vite-fs-allow.md)
 2026-11-03 - security-endpoints-optional - antigravity - BaseSecurityDomainConfig.endpoints optional; conventions mode checks authSignIn at init; tests and docs - [Session Log](./SESSIONS/2026/2026-11-03--security-endpoints-optional.md)
 2026-11-03 - demo-theme-and-showcase - antigravity - Add theme toggle, expand Dynstruct-MUI showcase with binding examples, and eliminate all useState hooks - [Session Log](./SESSIONS/2026/2026-11-03--demo-theme-and-showcase.md)
+2026-11-03 - demo-canonical-composition - antigravity - refactor demo structs to canonical child composition with prop-less view - [Session Log](./SESSIONS/2026/2026-11-03--demo-canonical-composition.md)

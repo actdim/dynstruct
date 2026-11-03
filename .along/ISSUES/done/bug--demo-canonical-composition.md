@@ -3,7 +3,8 @@ protocol: along
 protocol_version: "4.6.0"
 slug: demo-canonical-composition
 type: bug
-status: in-progress
+status: done
+completed: 2026-11-03
 priority: high
 created: 2026-11-03
 updated: 2026-11-03
@@ -28,7 +29,7 @@ In `dynstruct/demo`, component structs violated Dynstruct canonical principles b
 - REQ-5: The Astro demo portal MUST pass typechecking (`astro check && tsc --noEmit`) and build cleanly.
 
 ## Acceptance Criteria
-- [ ] `showcaseStruct.tsx` wires all components via `def.children` and renders prop-less `<c.children.Name />`.
-- [ ] `CODE_EXAMPLES` in `showcaseStruct.tsx` show canonical Dynstruct patterns with `children` hooks and prop-less JSX.
-- [ ] `playgroundStruct.tsx` and interactive scenarios instantiate child components in `def.children`.
-- [ ] `pnpm --filter @actdim/dynstruct-demo build` succeeds cleanly.
+- [x] `showcaseStruct.tsx` wires all components via `def.children` and renders prop-less `<c.children.Name />`.
+- [x] `CODE_EXAMPLES` in `showcaseStruct.tsx` show canonical Dynstruct patterns with `children` hooks and prop-less JSX.
+- [x] `playgroundStruct.tsx` and interactive scenarios instantiate child components in `def.children`.
+- [x] `pnpm --filter @actdim/dynstruct-demo build` succeeds cleanly.

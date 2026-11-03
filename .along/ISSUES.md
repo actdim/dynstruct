@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-- [ ] `(bug)` [demo-canonical-composition](ISSUES/bug--demo-canonical-composition.md)
+<!-- No active issues -->
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
@@ -42,4 +42,4 @@
 - [x] `(task)` [demo-docs-into-lib](ISSUES/done/task--demo-docs-into-lib.md)
 - [x] `(feat)` [security-endpoints-optional](ISSUES/done/feat--security-endpoints-optional.md)
 - [x] `(feat)` [demo-theme-and-showcase](ISSUES/done/feat--demo-theme-and-showcase.md)
-<!-- 46 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 47 older completed issue(s) archived in .along/ISSUES/done/ -->
