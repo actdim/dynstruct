@@ -1,9 +1,7 @@
-import React, { type ReactNode } from 'react';
+import React, { type ReactNode, useSyncExternalStore } from 'react';
 import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/react/componentContext';
 import { type BaseContext } from '@actdim/dynstruct/componentModel/contracts';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { observable, runInAction } from 'mobx';
-import { observer } from 'mobx-react-lite';
 import { getPortalMsgBus } from '../../bus/portalBus';
 
 function resolveCurrentThemeMode(): 'light' | 'dark' {
@@ -13,19 +11,37 @@ function resolveCurrentThemeMode(): 'light' | 'dark' {
   return 'dark';
 }
 
-export const portalThemeStore = observable({
-  mode: resolveCurrentThemeMode(),
-  setMode(mode: 'light' | 'dark') {
-    this.mode = mode;
+let currentMode: 'light' | 'dark' = resolveCurrentThemeMode();
+const listeners = new Set<() => void>();
+
+export const portalThemeStore = {
+  get mode() {
+    return currentMode;
   },
-});
+  setMode(mode: 'light' | 'dark') {
+    if (currentMode !== mode) {
+      currentMode = mode;
+      listeners.forEach((listener) => listener());
+    }
+  },
+  subscribe(callback: () => void) {
+    listeners.add(callback);
+    return () => {
+      listeners.delete(callback);
+    };
+  },
+  getSnapshot() {
+    return currentMode;
+  },
+  getServerSnapshot() {
+    return 'dark' as const;
+  },
+};
 
 if (typeof window !== 'undefined') {
   window.addEventListener('actdim:theme-changed', ((e: CustomEvent<{ mode: 'light' | 'dark' }>) => {
     if (e.detail?.mode) {
-      runInAction(() => {
-        portalThemeStore.setMode(e.detail.mode);
-      });
+      portalThemeStore.setMode(e.detail.mode);
     }
   }) as EventListener);
 }
@@ -116,16 +132,24 @@ const darkTheme = createTheme({
   },
 });
 
-export const PortalProvider = observer(function PortalProvider({ children }: { children: ReactNode }) {
+export interface PortalProviderProps {
+  children: ReactNode;
+}
+
+export const PortalProvider = ({ children }: PortalProviderProps) => {
+  const mode = useSyncExternalStore(
+    portalThemeStore.subscribe,
+    portalThemeStore.getSnapshot,
+    portalThemeStore.getServerSnapshot
+  );
+
   const msgBus = getPortalMsgBus();
 
-  // ComponentContextProvider defines props.value?: BaseContext with default BaseAppMsgStruct
-  // without exposing TMsgStruct, creating a type invariance mismatch with MsgBus<DemoMsgStruct>.
   const contextValue: BaseContext = {
     msgBus: msgBus as unknown as BaseContext['msgBus'],
   };
 
-  const currentTheme = portalThemeStore.mode === 'light' ? lightTheme : darkTheme;
+  const currentTheme = mode === 'light' ? lightTheme : darkTheme;
 
   return (
     <ThemeProvider theme={currentTheme}>
@@ -134,4 +158,4 @@ export const PortalProvider = observer(function PortalProvider({ children }: { c
       </ComponentContextProvider>
     </ThemeProvider>
   );
-});
+};
