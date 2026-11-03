@@ -86,8 +86,8 @@ Use public package paths (or equivalent local source paths in this repo):
 
 `SecurityService` is a built-in service component - mount it near the app root. It manages `AuthInfo` state and exposes auth channels to all descendants.
 
-- `useConventions: true` (default): handles Bearer token flow (HTTP sign-in, storage, refresh). Configure via `domainConfig.endpoints.*`.
-- `useConventions: false`: delegates to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use for demos, mocks, or custom backends.
+- `useConventions: true` (default): handles Bearer token flow (HTTP sign-in, storage, refresh). Configure via `domainConfig.endpoints.authSignIn` (required in this mode, checked when the service initializes), `authSignOut`, `authRefresh`.
+- `useConventions: false`: delegates to custom providers via `APP.SECURITY.AUTH.SIGNIN.REQUEST` / `APP.SECURITY.AUTH.SIGNOUT.REQUEST`. Use for demos, mocks, or custom backends. `domainConfig.endpoints` is not needed in this mode.
 
 Key channels (string constants from `appDomain/securityContracts` - reference by the string value, e.g. `'APP.SECURITY.AUTH.SIGNIN'`, not by the `$AUTH_*` variable name):
 - `APP.SECURITY.AUTH.SIGNIN` - authenticate and register the result; returns `AuthInfo`

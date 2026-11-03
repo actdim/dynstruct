@@ -12,11 +12,6 @@ const appConfig: BaseAppDomainConfig = {
     security: {
         id: 'test',
         // authType: "bearer",
-        endpoints: {
-            authSignIn: null,
-            // authSignIn: 'https://jsonplaceholder.typicode.com/posts/1',
-            authSignOut: null,
-        },
         routes: {
             authSignInPage: '/login',
             authSignOutPage: '/logout',
@@ -69,7 +64,7 @@ export const SecurityServiceExampleStory: Story = {
     render: (args, context) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <p style={{ margin: 0, color: '#555', fontSize: 13 }}>
-                Demonstrates <b>security service integration</b> — sign-in/sign-out flow and secure
+                Demonstrates <b>security service integration</b> - sign-in/sign-out flow and secure
                 API access. Use email <code>admin@mail.com</code> / password <code>admin</code> to
                 authenticate.
             </p>

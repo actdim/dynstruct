@@ -2,6 +2,11 @@
 
 All notable changes to `@actdim/dynstruct` are documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- `BaseSecurityDomainConfig.endpoints` and its fields are optional; `useConventions: true` without `endpoints.authSignIn` throws when `SecurityService` initializes (`validateSecurityDomainConfig`) (`feat--security-endpoints-optional`).
+
 ## [1.8.3] - 2026-10-13
 
 ### Fixed

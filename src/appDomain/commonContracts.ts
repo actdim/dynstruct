@@ -511,11 +511,12 @@ export type BaseSecurityDomainConfig = {
     id: string;
     name?: string;
     authType?: string;
-    endpoints: {
-        authSignIn: string;
-        authSignOut: string;
+    /** HTTP endpoints of the built-in conventions mode (`<SecurityService useConventions />`). Not needed when the app handles `APP.SECURITY.AUTH.*.REQUEST` itself. */
+    endpoints?: {
+        authSignIn?: string;
+        authSignOut?: string;
         authRefresh?: string;
-        // RFC 8414 (OIDC) — "OAuth 2.0 Authorization Server Metadata"
+        // RFC 8414 (OIDC) - "OAuth 2.0 Authorization Server Metadata"
         // https://datatracker.ietf.org/doc/html/rfc8414
         authService?: string;
     },

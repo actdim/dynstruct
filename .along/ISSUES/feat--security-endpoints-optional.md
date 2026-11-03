@@ -3,7 +3,7 @@ protocol: along
 protocol_version: "4.6.0"
 slug: security-endpoints-optional
 type: feat
-status: open
+status: in-progress
 priority: high
 created: 2026-11-03
 updated: 2026-11-03
@@ -11,6 +11,7 @@ agent: claude-code
 tags: [dynstruct, security, contracts]
 blocked_by: []
 related: []
+plan_status: approved
 ---
 
 # Optional auth endpoints in `BaseSecurityDomainConfig`
@@ -44,6 +45,24 @@ never called, e.g. `/membership/auth/sign-in` in Mempart, which has no such serv
 3. Docs; release through the monorepo-wide `version:sync`.
 
 ## Acceptance Criteria
-- [ ] Type and runtime check in place; existing tests green.
-- [ ] Docs updated.
-- [ ] Automated tests passing (`pnpm test`, `pnpm typecheck` in dynstruct).
+- [x] Type and runtime check in place; existing tests green.
+- [x] Docs updated.
+- [x] Automated tests passing (`pnpm test`, `pnpm typecheck` in dynstruct).
+
+## Plan overrides (2026-11-03)
+1. REQ-2 "fails fast at `SecurityService` start": `SecurityService` loads its config lazily, so "start" means
+   the first `init()` (first request on any `APP.SECURITY.AUTH.*` channel it provides, for example
+   `APP.SECURITY.AUTH.INFO.GET` at app boot) and every `APP.SECURITY.CONFIG.CHANGED`. The check is the exported
+   function `validateSecurityDomainConfig`. Only `authSignIn` is checked; `authSignOut` keeps its existing
+   lazy error in `bearerSignOut`.
+2. REQ-4 "security topic, README config example": dynstruct has no security topic and no README config example.
+   The docs to update are `AGENTS.md` (SecurityService section, line 89), `llms-full.txt` (line 406, same text),
+   `docs/topic--04-react-integration.md` (section "Auth & Security Provider (`AuthInfo`)", line 409) and
+   `CHANGELOG.md` (`## [Unreleased]`).
+3. REQ-5 / Mempart consumer: no Mempart source change in this plan. `src/apps/webapp/src/config/appConfig.ts`
+   (lines 398-403, the `/membership/auth/*` URLs) is cleaned up by `feat--app-shell-package` (roadmap 15), after
+   the type is published in 3R; the file is also owned by plan 11 before 15 (collision matrix). Reason: the
+   Mempart webapp runs `useConventions={false}` (`src/components/layout/MainLayout.tsx` line 112) so the dead URLs
+   are harmless, and a Mempart edit now would only add a root commit and a collision for no behavior change.
+4. "release through the monorepo-wide `version:sync`" is not done here; it is roadmap step 3R.
+

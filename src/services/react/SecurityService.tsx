@@ -115,6 +115,19 @@ const defaultAuthInfo: AuthInfo = {
     scheme: 'Bearer',
 };
 
+/** Throws when the conventions mode (`useConventions: true`) has no sign-in endpoint. */
+export function validateSecurityDomainConfig(config: BaseSecurityDomainConfig | undefined, useConventions: boolean): void {
+    if (!useConventions) {
+        return;
+    }
+    if (!config?.endpoints?.authSignIn) {
+        throw new Error(
+            'SecurityService (useConventions: true) needs domainConfig.endpoints.authSignIn. ' +
+                'Set it, or mount <SecurityService useConventions={false} /> and handle APP.SECURITY.AUTH.SIGNIN.REQUEST.',
+        );
+    }
+}
+
 export const useSecurityService = (params: ComponentParams<Struct>): Component<Struct> => {
     type Internals = {
         storageKeys?: typeof baseStorageKeys;
@@ -137,6 +150,7 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             });
             config = msg.payload;
         }
+        validateSecurityDomainConfig(config, m.useConventions);
         m.domainConfig = config;
         const prefixer = getValuePrefixer<typeof c._.storageKeys>(`${m.domainConfig?.id}/`);
         c._.storageKeys = prefixer(c._.storageKeys);
@@ -149,6 +163,8 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
                 await updateConfig();
             }
         });
+
+        validateSecurityDomainConfig(m.domainConfig, m.useConventions);
 
         if (m.authInfo?.isAuthenticated) {
             c.msgBus.send({

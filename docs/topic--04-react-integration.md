@@ -410,6 +410,26 @@ because they mount after the first publish). `getUrlBuilder` omits `undefined` /
 
 Security status and user credentials flow through standardized security channels, providing automatic token refresh and permission checks across all connected components.
 
+```tsx
+import React from 'react';
+import { SecurityService } from '@actdim/dynstruct/services/react/SecurityService';
+import type { BaseSecurityDomainConfig } from '@actdim/dynstruct/appDomain/commonContracts';
+
+const securityConfig: BaseSecurityDomainConfig = {
+    id: 'my-app',
+    routes: {
+        authSignInPage: '/login',
+        authSignOutPage: '/logout',
+    },
+};
+
+export function App() {
+    return <SecurityService useConventions={false} />;
+}
+```
+
+Endpoints are needed only for `useConventions: true`; a missing `authSignIn` throws on the first security request.
+
 ---
 
 [← Back to 03. Architecture & Wiring](./topic--03-architecture-and-wiring.md) | [Next: 05. API Reference →](./topic--05-api-reference.md)
