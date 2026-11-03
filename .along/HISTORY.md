@@ -28,3 +28,4 @@ _`<YYYY-MM-DD> - <slug> - <agent> - <summary> - <relative link>`_
 2026-10-23 - signin-callback-recursion - claude-code - ensureAuth keeps or unwraps the sign-in callbackUrl instead of nesting it - [Session Log](./SESSIONS/2026/2026-10-23--signin-callback-recursion.md)
 2026-10-29 - external-store-reader - antigravity - Implement fromExternalStore in componentModel/core - [Session Log](./SESSIONS/2026/2026-10-29--external-store-reader.md)
 2026-10-30 - ssr-isomorphic-support - antigravity - Add SSR and isomorphic runtime support to Dynstruct - [Session Log](./SESSIONS/2026/2026-10-30--ssr-isomorphic-support.md)
+2026-11-03 - host-demo - claude-code - demo/ added with pnpm-workspace.yaml and .npmrc; eslint ignores demo/; Pages builds docs plus demo (continue-on-error until @actdim 1.12.x on npm); README and AGENTS link the demo. Library typecheck and 144 tests pass; npm pack lists no demo/ files. - [Session Log](./SESSIONS/2026/2026-11-03--host-demo.md)

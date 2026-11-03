@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-- [ ] `(task)` [host-demo](ISSUES/task--host-demo.md) - plan ready
+<!-- No active issues -->
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
@@ -38,9 +38,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
 - [x] `(feat)` [ssr-isomorphic-support](ISSUES/done/feat--ssr-isomorphic-support.md)
 - [x] `(feat)` [external-store-reader](ISSUES/done/feat--external-store-reader.md)
 - [x] `(feat)` [nav-link](ISSUES/done/feat--nav-link.md)
 - [x] `(bug)` [nav-service-location-sync](ISSUES/done/bug--nav-service-location-sync.md)
-- [x] `(bug)` [empty-response-body](ISSUES/done/bug--empty-response-body.md)
-<!-- 39 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 40 older completed issue(s) archived in .along/ISSUES/done/ -->
