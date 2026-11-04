@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-- [ ] `(docs)` [recipes-cookbook](ISSUES/docs--recipes-cookbook.md)
+- [ ] `(docs)` [recipes-cookbook](ISSUES/docs--recipes-cookbook.md) - plan ready
 
 ## Backlog
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
@@ -38,8 +38,8 @@
 
 ## Done (recent)
 - [x] `(task)` [demo-remove-mobx-mentions](ISSUES/done/task--demo-remove-mobx-mentions.md)
+- [x] `(docs)` [demo-live-links](ISSUES/done/docs--demo-live-links.md)
 - [x] `(task)` [move-into-lib](ISSUES/done/task--move-into-lib.md)
 - [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
 - [x] `(task)` [demo-docs-into-lib](ISSUES/done/task--demo-docs-into-lib.md)
-- [x] `(feat)` [security-endpoints-optional](ISSUES/done/feat--security-endpoints-optional.md)
-<!-- 48 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 49 older completed issue(s) archived in .along/ISSUES/done/ -->

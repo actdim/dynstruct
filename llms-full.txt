@@ -14,6 +14,11 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
+[![Documentation](https://img.shields.io/badge/Docs-actdim.github.io%2Fdynstruct-blue.svg)](https://actdim.github.io/dynstruct/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-actdim.github.io%2Fdynstruct%2Fdemo-brightgreen.svg)](https://actdim.github.io/dynstruct/demo/)
+
+- **Live Interactive Demo**: https://actdim.github.io/dynstruct/demo/
+- **Documentation Site**: https://actdim.github.io/dynstruct/
 
 ---
 
@@ -85,6 +90,8 @@ Explore the complete guide step-by-step from core concepts to advanced patterns:
 
 | Section | Description |
 |---|---|
+| 🚀 [**Live Interactive Demo**](https://actdim.github.io/dynstruct/demo/) | Live showcase portal with Astro SSR, React islands, and Dynstruct-MUI adapters. |
+| 📚 [**Documentation Site**](https://actdim.github.io/dynstruct/) | Full VitePress documentation published on GitHub Pages. |
 | 📖 [**01. Overview & Key Advantages**](./docs/topic--01-overview-and-advantages.md) | Framework design philosophy, UI companion libraries, and comparison with MobX/React. |
 | 🧩 [**02. Core Concepts**](./docs/topic--02-core-concepts.md) | `ComponentStruct`, `ComponentDef`, reactive properties, form helpers (`mapToEdit`), and events. |
 | 🏗️ [**03. Architecture & Wiring**](./docs/topic--03-architecture-and-wiring.md) | Message channels, parent-child wiring, direct bindings (`bind`), and effects. |
@@ -111,6 +118,11 @@ This points agents directly to the compact index and modular topics in `node_mod
 Try `@actdim/dynstruct` in your browser via StackBlitz:
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
+[![Documentation](https://img.shields.io/badge/Docs-actdim.github.io%2Fdynstruct-blue.svg)](https://actdim.github.io/dynstruct/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-actdim.github.io%2Fdynstruct%2Fdemo-brightgreen.svg)](https://actdim.github.io/dynstruct/demo/)
+
+- **Live Interactive Demo**: https://actdim.github.io/dynstruct/demo/
+- **Documentation Site**: https://actdim.github.io/dynstruct/
 
 ```bash
 # Run live Storybook examples locally
@@ -1040,7 +1052,10 @@ See the following engineering guidelines:
 
 # Overview & Key Advantages
 
-[← Back to README](../README.md) | [Next: 02. Core Concepts →](./topic--02-core-concepts.md)
+[<- Back to README](../README.md) | [Next: 02. Core Concepts ->](./topic--02-core-concepts.md)
+
+> [!TIP]
+> **Live Interactive Demo:** Explore Dynstruct and Material UI adapters in the browser at [https://actdim.github.io/dynstruct/demo/](https://actdim.github.io/dynstruct/demo/).
 
 ---
 
@@ -1117,7 +1132,10 @@ expect(sendSpy).toHaveBeenCalledWith({
 
 ---
 
-[← Back to README](../README.md) | [Next: 02. Core Concepts →](./topic--02-core-concepts.md)
+[<- Back to README](../README.md) | [Next: 02. Core Concepts ->](./topic--02-core-concepts.md)
+
+> [!TIP]
+> **Live Interactive Demo:** Explore Dynstruct and Material UI adapters in the browser at [https://actdim.github.io/dynstruct/demo/](https://actdim.github.io/dynstruct/demo/).
 
 ---
 
@@ -2997,6 +3015,9 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 # @actdim/dynstruct-demo Architecture
 
 > The demo app lives in [`demo/`](../demo/README.md) of this repository; file paths in this article are relative to `demo/`.
+>
+> - **Live Demo**: [https://actdim.github.io/dynstruct/demo/](https://actdim.github.io/dynstruct/demo/)
+> - **Documentation**: [https://actdim.github.io/dynstruct/](https://actdim.github.io/dynstruct/)
 
 ## 1. System Overview
 
@@ -3032,7 +3053,7 @@ The page is split into two worlds:
 
 | Component | Location | Responsibility |
 |---|---|---|
-| Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `server.fs.allow` with upward root discovery (`findAllowedRoots`) for monorepo and standalone compatibility, Vite `resolve.dedupe` for `react`, `react-dom`, `@emotion/*`, `@mui/material` |
+| Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `server.fs.allow` with upward root discovery (`findAllowedRoots`) for monorepo and standalone compatibility, Vite `resolve.dedupe` and `ssr.noExternal` for `@actdim/*`, `react`, `react-dom`, `@emotion/*`, `@mui/material` |
 | Layout | `src/layouts/Layout.astro` | HTML document, `title` / `description` props, favicon through `withBase`, header and footer around the page slot |
 | Header / Footer | `src/components/astro/Header.astro`, `Footer.astro` | Navigation (base-aware active-link matching), links to the dynstruct `llms.txt` (docs site) and the `@actdim` GitHub repositories |
 | Pages | `src/pages/index.astro`, `ssr-demo.astro`, `cross-island.astro`, `showcase.astro` | One route each; mount one or two islands with `client:load` |
@@ -3136,7 +3157,7 @@ flowchart LR
 6. **Base-aware links**: every internal URL in the shell goes through `withBase`; never hard-code `/dynstruct/demo/`.
 7. **Playground code comes from source**: structs shown in the playground keep `// #region contract`, `// #region model` and `// #region integration` markers; `extractRegion` throws when a marker is missing.
 8. **Hydration-clean markup**: no block elements inside `span` / `p` (for example `ListItemText` uses `slotProps` with `component: 'div'`); the e2e suite fails on any browser console error or warning.
-9. **Single React / MUI copy**: `resolve.dedupe` in `astro.config.mjs` keeps listing the shared runtime packages, because the `@actdim` libraries are linked from a workspace.
+9. **Single React / dynstruct / MUI copy**: `resolve.dedupe` in `astro.config.mjs` lists `@actdim/dynstruct`, `@actdim/msgmesh`, `@actdim/utico`, `react`, `react-dom` and MUI packages so that ComponentContext and singletons are shared across sibling packages and client islands.
 10. **Monorepo-aware Vite fs allow list**: `astro.config.mjs` discovers ancestor workspace and git roots (`findAllowedRoots`) so that Vite dev server can serve hoisted dependencies (such as `@astrojs/react` client hydration runtime) without 403 Forbidden errors across nested `pnpm-workspace.yaml` boundaries.
 11. **Zero useState canon**: all interactive demo UI elements (`Playground`, `ShowcaseGallery`, etc.) strictly dogfood Dynstruct (`ComponentStruct` + `ComponentDef` + `useComponent` + `toReact`); local React `useState` hooks are banned in favor of Dynstruct reactive model props.
 12. **Zero-FOUC theme synchronization**: `Layout.astro` initializes document theme via a blocking `<head>` script, while `PortalProvider` observes theme updates via reactive store to synchronize Material UI palette modes across all mounted islands without page reload.
@@ -3416,7 +3437,7 @@ demo/
 
 ## Prerequisites
 
-- Node.js 22 (the version used by the Pages workflow) and pnpm 10 (`packageManager` in `src/package.json` for mempart, in the dynstruct `package.json` for a standalone checkout).
+- Node.js 24 (the version used by the Pages workflow) and pnpm 10 (`packageManager` in `src/package.json` for mempart, in the dynstruct `package.json` for a standalone checkout).
 - The mempart checkout with submodules initialized, so the `@actdim` library packages exist under `src/packages/`.
 - Dependencies installed from the monorepo workspace root: `pnpm install` in `src/`.
 - For e2e tests: Playwright browsers (`pnpm --filter @actdim/dynstruct-demo exec playwright install chromium`); the suite runs the `Desktop Chrome` device.

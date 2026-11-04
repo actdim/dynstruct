@@ -35,3 +35,4 @@ _`<YYYY-MM-DD> - <slug> - <agent> - <summary> - <relative link>`_
 2026-11-03 - demo-theme-and-showcase - antigravity - Add theme toggle, expand Dynstruct-MUI showcase with binding examples, and eliminate all useState hooks - [Session Log](./SESSIONS/2026/2026-11-03--demo-theme-and-showcase.md)
 2026-11-03 - demo-canonical-composition - antigravity - refactor demo structs to canonical child composition with prop-less view - [Session Log](./SESSIONS/2026/2026-11-03--demo-canonical-composition.md)
 2026-11-04 - demo-remove-mobx-mentions - antigravity - Remove MobX mentions and direct dependencies from demo - [Session Log](./SESSIONS/2026/2026-11-04--demo-remove-mobx-mentions.md)
+2026-11-04 - demo-live-links - antigravity - Add live demo and documentation links to README, demo README, and docs - [Session Log](./SESSIONS/2026/2026-11-04--demo-live-links.md)
