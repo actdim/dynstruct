@@ -6,7 +6,11 @@ import {
 } from '@/componentModel/contracts';
 import { toHtmlId } from '@/componentModel/core';
 
-export const ReactComponentContext = createContext<ComponentRegistryContext<any, any>>(undefined);
+const CONTEXT_SYMBOL = Symbol.for('@actdim/dynstruct/ReactComponentContext');
+
+export const ReactComponentContext: React.Context<ComponentRegistryContext<any, any>> =
+    ((globalThis as unknown as Record<symbol, React.Context<ComponentRegistryContext<any, any>>>)[CONTEXT_SYMBOL] ??=
+        createContext<ComponentRegistryContext<any, any>>(undefined));
 
 // ComponentRegistry(Context)Provider
 export function ComponentContextProvider(
