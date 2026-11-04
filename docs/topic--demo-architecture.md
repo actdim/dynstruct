@@ -46,7 +46,7 @@ The page is split into two worlds:
 
 | Component | Location | Responsibility |
 |---|---|---|
-| Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `server.fs.allow` with upward root discovery (`findAllowedRoots`) for monorepo and standalone compatibility, Vite `resolve.dedupe` for `@actdim/dynstruct`, `@actdim/msgmesh`, `@actdim/utico`, `react`, `react-dom`, `@emotion/*`, `@mui/material` |
+| Astro config | `astro.config.mjs` | `@astrojs/react` integration, Tailwind Vite plugin, `base` / `site` from `DEMO_BASE` / `DEMO_SITE`, Vite `server.fs.allow` with upward root discovery (`findAllowedRoots`) for monorepo and standalone compatibility, Vite `resolve.dedupe` and `ssr.noExternal` for `@actdim/*`, `react`, `react-dom`, `@emotion/*`, `@mui/material` |
 | Layout | `src/layouts/Layout.astro` | HTML document, `title` / `description` props, favicon through `withBase`, header and footer around the page slot |
 | Header / Footer | `src/components/astro/Header.astro`, `Footer.astro` | Navigation (base-aware active-link matching), links to the dynstruct `llms.txt` (docs site) and the `@actdim` GitHub repositories |
 | Pages | `src/pages/index.astro`, `ssr-demo.astro`, `cross-island.astro`, `showcase.astro` | One route each; mount one or two islands with `client:load` |

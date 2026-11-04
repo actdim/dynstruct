@@ -58,5 +58,13 @@ export default defineConfig({
         '@mui/material',
       ],
     },
+    ssr: {
+      noExternal: [
+        /@actdim\/.*/,
+        '@mui/material',
+        '@emotion/react',
+        '@emotion/styled',
+      ],
+    },
   },
 });
