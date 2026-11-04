@@ -50,8 +50,6 @@ export default defineConfig({
       dedupe: [
         'react',
         'react-dom',
-        'mobx',
-        'mobx-react-lite',
         '@emotion/react',
         '@emotion/styled',
         '@mui/material',

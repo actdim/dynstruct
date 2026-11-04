@@ -3,7 +3,7 @@
 > Dynstruct & Dynstruct-MUI Showcase Portal with Astro SSR and React Islands
 
 This package is the official demonstration and architectural proof-of-concept portal for:
-- **`@actdim/dynstruct`**: Structure-first component model with fine-grained MobX reactivity.
+- **`@actdim/dynstruct`**: Structure-first component model with fine-grained reactivity.
 - **`@actdim/dynstruct-mui`**: Material UI component wrappers adapted to Dynstruct contracts.
 - **`@actdim/msgmesh`**: Type-safe async message mesh and RPC service bus.
 - **Astro SSR & Islands**: Zero-FOUC outer document shell with isolated Material UI React islands.
@@ -30,7 +30,7 @@ This package is the official demonstration and architectural proof-of-concept po
    - Data is pre-fetched on the server during Astro's frontmatter execution.
    - `/ssr-demo` is pre-rendered at build time (SSG) by default with `output: 'static'`, producing 100% crawlable content accessible without client JavaScript.
    - Switching from build-time SSG to on-demand SSR requires only changing `output: 'server'` and adding an Astro deployment adapter with zero component code changes.
-   - Client hydration binds MobX observables seamlessly over existing DOM nodes.
+   - Client hydration binds reactive contracts seamlessly over existing DOM nodes.
 
 ---
 
@@ -101,7 +101,7 @@ Without this configuration:
 2. **Light / Dark Theme Switching**:
    - Zero-FOUC initialization: `Layout.astro` executes an inline blocking `<head>` script before body render to set document class (`dark` or light) and `data-theme` attribute based on `localStorage` (`actdim_theme_preference`) or system color preference.
    - Header toggle: `Header.astro` provides an instant toggle button with Sun/Moon icons.
-   - Multi-island synchronization: `PortalProvider.tsx` uses a reactive MobX theme store, updating the Material UI theme mode across all mounted islands synchronously without page reload.
+   - Multi-island synchronization: `PortalProvider.tsx` uses an external reactive theme store with `useSyncExternalStore`, updating the Material UI theme mode across all mounted islands synchronously without page reload.
 
 ---
 

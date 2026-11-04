@@ -52,7 +52,7 @@ const SAMPLE_DATABASE: DemoCatalogItem[] = [
   },
   {
     id: 's4',
-    title: 'MobX Fine-Grained Observable Mechanics',
+    title: 'Fine-Grained Observable Mechanics',
     category: 'Reactivity',
     description: 'Eliminate React hook dependencies and re-render thrashing with transparent proxies.',
     rating: 4.7,

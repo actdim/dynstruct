@@ -602,7 +602,7 @@ export const useShowcaseGallery = (
       // Feedback
       alertBanner: useAlert({
         severity: 'success',
-        message: 'Dynstruct component model: fine-grained MobX state with Zero useState hooks.',
+        message: 'Dynstruct component model: fine-grained reactive state with Zero useState hooks.',
         onClose: () => m.toggleAlert(),
       }),
       restoreAlertBtn: useButton({

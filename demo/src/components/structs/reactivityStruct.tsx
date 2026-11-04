@@ -166,7 +166,7 @@ export const useReactivity = (params: ComponentParams<ReactivityStruct>): Compon
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box>
                 <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
-                  Fine-Grained MobX Reactivity Modes
+                  Fine-Grained Reactivity Modes
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Compare `deep`, `shallow`, and `ref` reactivity semantics in Dynstruct.

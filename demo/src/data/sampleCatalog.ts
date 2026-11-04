@@ -13,7 +13,7 @@ export const SAMPLE_SSR_CATALOG: DemoCatalogItem[] = [
     id: 'ssr-2',
     title: 'Dynstruct Component Model Hydration',
     category: 'Architecture',
-    description: 'Mounts MobX observable contracts seamlessly over pre-rendered server DOM nodes without hydration mismatch warnings or DOM rebuilding.',
+    description: 'Mounts Dynstruct reactive contracts seamlessly over pre-rendered server DOM nodes without hydration mismatch warnings or DOM rebuilding.',
     rating: 4.9,
     badge: 'Hydration',
   },

@@ -83,7 +83,7 @@ test.describe('Dynstruct Demo Smoke & Hydration Suite', () => {
 
     // All items restored and min rating confirmed
     await expect(page.getByText('ComponentStruct Type-Safe Contracts')).toBeVisible();
-    await expect(page.getByText('Zero-Boilerplate MobX Reactivity')).toBeVisible();
+    await expect(page.getByText('Zero-Boilerplate Reactive Model')).toBeVisible();
     await expect(page.getByText('Min Rating: 4.0')).toBeVisible();
   });
 

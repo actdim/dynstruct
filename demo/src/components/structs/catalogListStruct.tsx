@@ -37,7 +37,7 @@ export const ALL_ITEMS: DemoCatalogItem[] = [
   },
   {
     id: 'c2',
-    title: 'Zero-Boilerplate MobX Reactivity',
+    title: 'Zero-Boilerplate Reactive Model',
     category: 'Reactivity',
     description: 'Fine-grained mutation tracking without manual autorun or useEffect hook dependencies.',
     rating: 4.8,

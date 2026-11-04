@@ -237,7 +237,7 @@ export const useFormDemo = (params: ComponentParams<FormDemoStruct>): Component<
               Contract-Driven Form with Validation
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Pure MobX reactivity with zero-boilerplate action mutators and typed msgmesh notifications.
+              Pure Dynstruct reactivity with zero-boilerplate action mutators and typed msgmesh notifications.
             </Typography>
           </Box>
 

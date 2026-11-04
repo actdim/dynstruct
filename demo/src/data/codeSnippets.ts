@@ -73,7 +73,7 @@ export const PLAYGROUND_SCENARIOS: PlaygroundScenario[] = [
     id: 'counter',
     title: 'Reactive Model & Actions',
     badge: 'Reactivity',
-    description: 'Fine-grained MobX state mutations without boilerplate reducers, hooks, or re-render churn.',
+    description: 'Fine-grained reactive state mutations without boilerplate reducers, hooks, or re-render churn.',
     contractCode: extractRegion(counterSrc, 'contract'),
     modelCode: extractRegion(counterSrc, 'model'),
     integrationCode: extractRegion(counterSrc, 'integration'),
