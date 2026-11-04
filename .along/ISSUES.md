@@ -37,9 +37,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(task)` [demo-remove-mobx-mentions](ISSUES/done/task--demo-remove-mobx-mentions.md)
 - [x] `(task)` [move-into-lib](ISSUES/done/task--move-into-lib.md)
 - [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
 - [x] `(task)` [demo-docs-into-lib](ISSUES/done/task--demo-docs-into-lib.md)
 - [x] `(feat)` [security-endpoints-optional](ISSUES/done/feat--security-endpoints-optional.md)
-- [x] `(feat)` [demo-theme-and-showcase](ISSUES/done/feat--demo-theme-and-showcase.md)
-<!-- 47 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 48 older completed issue(s) archived in .along/ISSUES/done/ -->
