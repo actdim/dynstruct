@@ -58,6 +58,7 @@ export default withMermaid(
         { text: 'Core Concepts', link: '/topic--02-core-concepts' },
         { text: 'React Integration', link: '/topic--04-react-integration' },
         { text: 'API Reference', link: '/topic--05-api-reference' },
+        { text: 'Live Demo', link: 'https://actdim.github.io/dynstruct/demo/' },
         { text: 'License', link: '/topic--license' },
         { text: 'GitHub', link: GITHUB_REPO }
       ],

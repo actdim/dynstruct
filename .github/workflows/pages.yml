@@ -64,7 +64,7 @@ jobs:
           DEMO_BASE: ${{ steps.pages.outputs.base_path }}/demo/
           DEMO_SITE: ${{ steps.pages.outputs.origin }}
         run: |
-          pnpm install --no-frozen-lockfile --config.auto-install-peers=false
+          pnpm install --no-frozen-lockfile --config.auto-install-peers=true
           pnpm run build
           pnpm --filter @actdim/dynstruct-demo build
           cp -r demo/dist .dist-docs/demo
