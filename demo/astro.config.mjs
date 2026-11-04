@@ -48,6 +48,9 @@ export default defineConfig({
     plugins: [tailwindcss()],
     resolve: {
       dedupe: [
+        '@actdim/dynstruct',
+        '@actdim/msgmesh',
+        '@actdim/utico',
         'react',
         'react-dom',
         '@emotion/react',
