@@ -2,6 +2,14 @@
 
 > Dynstruct & Dynstruct-MUI Showcase Portal with Astro SSR and React Islands
 
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://actdim.github.io/dynstruct/demo/)
+[![Documentation](https://img.shields.io/badge/Docs-actdim.github.io%2Fdynstruct-blue.svg)](https://actdim.github.io/dynstruct/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+- **Live Demo Site**: https://actdim.github.io/dynstruct/demo/
+- **Documentation**: https://actdim.github.io/dynstruct/
+
 This package is the official demonstration and architectural proof-of-concept portal for:
 - **`@actdim/dynstruct`**: Structure-first component model with fine-grained reactivity.
 - **`@actdim/dynstruct-mui`**: Material UI component wrappers adapted to Dynstruct contracts.

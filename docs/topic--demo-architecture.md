@@ -11,6 +11,9 @@ tags: [architecture, astro, islands, msgmesh, dynstruct, ssg, base-path]
 # @actdim/dynstruct-demo Architecture
 
 > The demo app lives in [`demo/`](../demo/README.md) of this repository; file paths in this article are relative to `demo/`.
+>
+> - **Live Demo**: [https://actdim.github.io/dynstruct/demo/](https://actdim.github.io/dynstruct/demo/)
+> - **Documentation**: [https://actdim.github.io/dynstruct/](https://actdim.github.io/dynstruct/)
 
 ## 1. System Overview
 

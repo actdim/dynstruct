@@ -10,7 +10,10 @@ tags: [01-overview-and-advantages]
 
 # Overview & Key Advantages
 
-[← Back to README](../README.md) | [Next: 02. Core Concepts →](./topic--02-core-concepts.md)
+[<- Back to README](../README.md) | [Next: 02. Core Concepts ->](./topic--02-core-concepts.md)
+
+> [!TIP]
+> **Live Interactive Demo:** Explore Dynstruct and Material UI adapters in the browser at [https://actdim.github.io/dynstruct/demo/](https://actdim.github.io/dynstruct/demo/).
 
 ---
 
@@ -87,4 +90,7 @@ expect(sendSpy).toHaveBeenCalledWith({
 
 ---
 
-[← Back to README](../README.md) | [Next: 02. Core Concepts →](./topic--02-core-concepts.md)
+[<- Back to README](../README.md) | [Next: 02. Core Concepts ->](./topic--02-core-concepts.md)
+
+> [!TIP]
+> **Live Interactive Demo:** Explore Dynstruct and Material UI adapters in the browser at [https://actdim.github.io/dynstruct/demo/](https://actdim.github.io/dynstruct/demo/).

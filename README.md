@@ -6,6 +6,11 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
+[![Documentation](https://img.shields.io/badge/Docs-actdim.github.io%2Fdynstruct-blue.svg)](https://actdim.github.io/dynstruct/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-actdim.github.io%2Fdynstruct%2Fdemo-brightgreen.svg)](https://actdim.github.io/dynstruct/demo/)
+
+- **Live Interactive Demo**: https://actdim.github.io/dynstruct/demo/
+- **Documentation Site**: https://actdim.github.io/dynstruct/
 
 ---
 
@@ -77,6 +82,8 @@ Explore the complete guide step-by-step from core concepts to advanced patterns:
 
 | Section | Description |
 |---|---|
+| 🚀 [**Live Interactive Demo**](https://actdim.github.io/dynstruct/demo/) | Live showcase portal with Astro SSR, React islands, and Dynstruct-MUI adapters. |
+| 📚 [**Documentation Site**](https://actdim.github.io/dynstruct/) | Full VitePress documentation published on GitHub Pages. |
 | 📖 [**01. Overview & Key Advantages**](./docs/topic--01-overview-and-advantages.md) | Framework design philosophy, UI companion libraries, and comparison with MobX/React. |
 | 🧩 [**02. Core Concepts**](./docs/topic--02-core-concepts.md) | `ComponentStruct`, `ComponentDef`, reactive properties, form helpers (`mapToEdit`), and events. |
 | 🏗️ [**03. Architecture & Wiring**](./docs/topic--03-architecture-and-wiring.md) | Message channels, parent-child wiring, direct bindings (`bind`), and effects. |
@@ -103,6 +110,11 @@ This points agents directly to the compact index and modular topics in `node_mod
 Try `@actdim/dynstruct` in your browser via StackBlitz:
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/~/github.com/actdim/dynstruct?file=src/_stories/componentModel/EffectDemo.tsx)
+[![Documentation](https://img.shields.io/badge/Docs-actdim.github.io%2Fdynstruct-blue.svg)](https://actdim.github.io/dynstruct/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-actdim.github.io%2Fdynstruct%2Fdemo-brightgreen.svg)](https://actdim.github.io/dynstruct/demo/)
+
+- **Live Interactive Demo**: https://actdim.github.io/dynstruct/demo/
+- **Documentation Site**: https://actdim.github.io/dynstruct/
 
 ```bash
 # Run live Storybook examples locally
