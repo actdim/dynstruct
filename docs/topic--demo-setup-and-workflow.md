@@ -39,7 +39,7 @@ demo/
 
 ## Prerequisites
 
-- Node.js 22 (the version used by the Pages workflow) and pnpm 10 (`packageManager` in `src/package.json` for mempart, in the dynstruct `package.json` for a standalone checkout).
+- Node.js 24 (the version used by the Pages workflow) and pnpm 10 (`packageManager` in `src/package.json` for mempart, in the dynstruct `package.json` for a standalone checkout).
 - The mempart checkout with submodules initialized, so the `@actdim` library packages exist under `src/packages/`.
 - Dependencies installed from the monorepo workspace root: `pnpm install` in `src/`.
 - For e2e tests: Playwright browsers (`pnpm --filter @actdim/dynstruct-demo exec playwright install chromium`); the suite runs the `Desktop Chrome` device.
