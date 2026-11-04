@@ -69,7 +69,7 @@ const blankView = () => null;
 // Internal: marks a binding created for a React prop at the React boundary (toReact). Like a React prop,
 // it is controlled by the parent while its value is defined; `undefined` falls back to the model value
 // (the `def.props` default, or what the component itself wrote).
-export const $reactProp = Symbol('reactProp');
+export const $reactProp = Symbol.for('@actdim/dynstruct/$reactProp');
 
 // Service params: never stored in the model; always taken from the latest render.
 export const SERVICE_PARAM_KEYS: ReadonlySet<string> = new Set(['$events', '$id', '$key']);

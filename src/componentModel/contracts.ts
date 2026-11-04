@@ -210,7 +210,7 @@ export type Validator<T = any> = {
     validate: (value: T) => MaybePromise<ValidationResult>;
 };
 
-export const $isBinding = Symbol('isBinding'); // brand
+export const $isBinding = Symbol.for('@actdim/dynstruct/$isBinding'); // brand
 
 export type Binding<T = any, TFrom = any> = {
     // getter
@@ -235,7 +235,7 @@ export type ComponentPropParams<TPropStruct extends ComponentPropStruct> = {
     key?: string | number | null | undefined;
 };
 
-export const $isComponentProp = Symbol('isComponentProperty'); // brand
+export const $isComponentProp = Symbol.for('@actdim/dynstruct/$isComponentProp'); // brand
 
 // ComponentPropDef
 export type ComponentProp<T = any> = {
@@ -443,7 +443,7 @@ export type ComponentMeta = {
 // ComponentRenderFn
 export type ComponentViewFn =(props: ComponentViewProps) => any; // ReactNode for example
 
-export const $isComponent = Symbol('isComponent'); // brand
+export const $isComponent = Symbol.for('@actdim/dynstruct/$isComponent'); // brand
 
 // style?: CSSProperties;
 // classNames?: string[];

@@ -108,7 +108,7 @@ export type NavContext = {
 
 export type NavHistory = Array<NavContext>;
 
-export const $isAppError = Symbol("isAppError"); // brand
+export const $isAppError = Symbol.for('@actdim/dynstruct/$isAppError'); // brand
 export type AppError = {
     type?: string;
     name?: string;
