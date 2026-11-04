@@ -47,6 +47,12 @@ export default defineConfig({
     },
     plugins: [tailwindcss()],
     resolve: {
+      alias: [
+        {
+          find: /^@actdim\/dynstruct\/(.*)$/,
+          replacement: path.resolve(demoDir, '..', 'dist', '$1.es.js'),
+        },
+      ],
       dedupe: [
         '@actdim/dynstruct',
         '@actdim/msgmesh',
@@ -59,12 +65,7 @@ export default defineConfig({
       ],
     },
     ssr: {
-      noExternal: [
-        /@actdim\/.*/,
-        '@mui/material',
-        '@emotion/react',
-        '@emotion/styled',
-      ],
+      noExternal: true,
     },
   },
 });
