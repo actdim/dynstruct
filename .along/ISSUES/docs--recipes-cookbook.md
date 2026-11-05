@@ -12,6 +12,7 @@ tags: [docs, cookbook, dx]
 milestone: v2.0.0
 blocked_by: []
 related: []
+plan_status: approved
 ---
 
 # Cookbook: task-oriented recipes section in docs
