@@ -1,6 +1,6 @@
 {
     "name": "@actdim/dynstruct",
-    "version": "1.12.2",
+    "version": "1.14.0",
     "description": "Structure-first, type-safe component model for TypeScript and React apps with explicit dependency wiring and message bus communication.",
     "author": "Pavel Borodaev",
     "license": "MIT",
@@ -95,8 +95,8 @@
         "docs:preview": "vitepress preview docs"
     },
     "peerDependencies": {
-        "@actdim/msgmesh": ">=1.12.2",
-        "@actdim/utico": ">=1.12.2",
+        "@actdim/msgmesh": ">=1.14.0",
+        "@actdim/utico": ">=1.14.0",
         "http-status": ">=2.1.0",
         "jwt-decode": ">=4.0.0",
         "mobx": ">=6.15.0 <7.0.0",
@@ -110,7 +110,7 @@
         "uuid": ">=13.0.0"
     },
     "devDependencies": {
-        "@actdim/dev-config": ">=1.12.2",
+        "@actdim/dev-config": ">=1.14.0",
         "@braintree/sanitize-url": "^7.1.2",
         "@faker-js/faker": "^10.4.0",
         "@storybook/addon-docs": "10.6.0",
