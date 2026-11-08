@@ -5,4 +5,5 @@ This document compiles active architectural rules and constraints from `.along/D
 Detailed context, history, and superseded ADRs remain in individual decision records.
 
 - **[Params semantics: plain params are initial values, live input only via bindings](DECISIONS/ADR-2026-10-11--params-initial-value-semantics.md)**: 
-- **[React values are stored only in ref props; no auto-detection, DEV error otherwise](DECISIONS/ADR-2026-10-11--react-values-in-ref-props.md)**:
+- **[React values are stored only in ref props; no auto-detection, DEV error otherwise](DECISIONS/ADR-2026-10-11--react-values-in-ref-props.md)**: 
+- **[Dev servers, Storybook and browser checks run through project scripts, not agent-vendor config](DECISIONS/ADR-2026-11-08--no-agent-vendor-dev-tooling.md)**: Dev servers, Storybook and any browser verification are started with the package's own scripts (pnpm run dev, pnpm run storybook, pnpm --dir <pkg> run...

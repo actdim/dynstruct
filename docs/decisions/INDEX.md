@@ -13,10 +13,11 @@ tags: [adr, architecture, decisions, index]
 This directory contains the project's Architectural Decision Records.
 Decisions are authored and maintained in `.along/DECISIONS/` and published here as first-class documentation.
 
-## Active Decisions (2)
+## Active Decisions (3)
 
 - **[params-initial-value-semantics](./ADR-2026-10-11--params-initial-value-semantics.md)** - Params semantics: plain params are initial values, live input only via bindings
 - **[react-values-in-ref-props](./ADR-2026-10-11--react-values-in-ref-props.md)** - React values are stored only in ref props; no auto-detection, DEV error otherwise
+- **[no-agent-vendor-dev-tooling](./ADR-2026-11-08--no-agent-vendor-dev-tooling.md)** - Dev servers, Storybook and browser checks run through project scripts, not agent-vendor config
 
 ## Superseded & Retired Decisions (0)
 
