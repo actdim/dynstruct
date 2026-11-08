@@ -3,7 +3,8 @@ protocol: along
 protocol_version: "4.6.1"
 slug: validation-ergonomics
 type: feat
-status: in-progress
+status: done
+completed: 2026-11-08
 priority: medium
 created: 2026-11-08
 updated: 2026-11-08
@@ -46,11 +47,11 @@ Consumers: `@actdim/dynstruct-mui` (`feat--field-validation-binding` in its repo
 - REQ-11: The `componentState` story MUST demonstrate the new API (cross-field rule, server error via `setValidation`, reset on reopen), and `AGENTS.md` / docs MUST describe the validation workflow.
 
 ## Acceptance Criteria
-- [ ] REQ-1..REQ-10 covered by tests (`tests/react/validation-and-forms.test.tsx` and a new `tests/react/validation-ergonomics.test.tsx`)
-- [ ] Existing validation tests pass without edits (the change is additive)
-- [ ] `componentState` story updated (REQ-11)
-- [ ] `CHANGELOG.md` entry
-- [ ] Detailed plan: `plans/01--validation-ergonomics.md` in this issue's folder
-- [ ] `AGENTS.md` validation section and the relevant `docs/topic--*.md` updated
-- [ ] `pnpm run typecheck`, `pnpm run test`, `pnpm run lint`, `pnpm run build` green
-- [ ] Released only through the monorepo-wide `pnpm run version:sync` in Mempart (no isolated bump)
+- [x] REQ-1..REQ-10 covered by tests (`tests/react/validation-and-forms.test.tsx` and a new `tests/react/validation-ergonomics.test.tsx`: 13 tests)
+- [x] Existing validation tests pass without edits (the change is additive)
+- [x] `componentState` story updated (REQ-11); checked in the browser via `pnpm run storybook`
+- [x] `CHANGELOG.md` entry
+- [x] Detailed plan: `plans/01--validation-ergonomics.md` in this issue's folder
+- [x] `AGENTS.md` validation section and the relevant `docs/topic--*.md` updated
+- [x] `pnpm run typecheck`, `pnpm run test`, `pnpm run lint`, `pnpm run build` green (lint: 0 errors, no new warnings)
+- [x] Released only through the monorepo-wide `pnpm run version:sync` in Mempart (no isolated bump): no version change made here; the release itself is pending with the chain

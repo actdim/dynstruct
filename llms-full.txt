@@ -747,6 +747,46 @@ Avoid:
 - **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) - the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
 - passing reactive model values to external APIs without stripping proxies - use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
 
+## Forms and Validation
+
+Declare rules on the prop; never validate by hand in a submit handler.
+
+```tsx
+props: {
+    name: prop({
+        initialValue: '',
+        validator: { onBlur: true, validate: (v: string) => (v.trim() ? undefined : { isValid: false, message: () => t('nameRequired') }) },
+    }),
+    // cross-field rule: read the closure `m` (or `ctx.model` in a reusable rule factory)
+    confirm: prop({ initialValue: '', validator: { validate: (v: string) => (v === m.email ? undefined : { isValid: false, message: 'Mismatch' }) } }),
+},
+children: {
+    nameField: useTextField({ label: 'Name', ...bindField(() => c, 'name', { hint: () => 'Shown while valid' }) }),
+},
+actions: {
+    submit: async () => {
+        if (!(await c.validate())) { return; }
+        // server field error: shown under the field, cleared when the user edits it
+        // c.setValidation({ name: { isValid: false, message: 'Taken', code: 'NAME_CONFLICT' } });
+    },
+},
+```
+
+| Trigger | When it runs |
+|---|---|
+| `onChange` (default unless `onSubmit` is the only flag) | every write to the path |
+| `onBlur` | `c.touch(path)`, `mapToEdit` blur, `bindField` `onBlur` |
+| `onSubmit` | full `c.validate()` only |
+| manual | `c.validate(path)` |
+
+- `validate(value, ctx)`: `ctx = { path, trigger, model, component }`; return `undefined` for valid.
+- Render `propState[path].visibleError` (the error once `touched`), not `error` (set from the first keystroke).
+- `await c.validate()` resolves to `boolean` and marks every validated field touched; `m.$.isValid` follows results.
+- `c.resetValidation()` when a dialog opens (or closes); `c.resetValidation(path)` for one field.
+- Messages may be functions (`() => t(key)`): evaluated on read, so they follow a locale change.
+- `bindField(() => c, path)` takes a lazy getter: `c` is `undefined` while `def.children` is built, so `bindField(c, ...)` fails.
+- A throwing validator goes to `onCatch`; an older async result never overwrites a newer one.
+
 ## Messaging & MsgMesh Integration Architecture
 
 `@actdim/dynstruct` provides native architectural integration with `@actdim/msgmesh`.
@@ -950,7 +990,7 @@ const reload = () => c.run(async () => { m.items = await fetchItems(); });
   - `serviceCall/` - API adapter integration
   - `securityService/` - auth flow
   - `storageService/` - storage service
-  - `componentState/` - `ComponentStructExt`, form validation with validators, `m.$` and `mapToEdit`
+  - `componentState/` - `ComponentStructExt`, form validation with validators, `m.$`, `mapToEdit`, `visibleError`, `c.validate()` / `setValidation` / `resetValidation`
 - Shared story styles: `src/_stories/componentModel/styles.ts` (`row`, `labelStyle`, `detailsStyle`)
 
 When adding a feature:
@@ -1555,6 +1595,46 @@ Dynstruct eliminates manual `onChange` and `value` boilerplate using `c.mapToEdi
 - Updates `c.model.$.propState['userInfo.email']` with validation errors and status.
 - Integrates seamlessly with Material UI / MUI components: `<TextField {...c.mapToEdit('username')} />`.
 
+### Validation API (`touched`, `visibleError`, server errors, `bindField`)
+
+```tsx
+props: {
+    email: prop({
+        initialValue: '',
+        validator: {
+            onBlur: true,
+            // ctx: { path, trigger, model, component }; `undefined` means valid; message may be a function
+            validate: (v: string) => (v.includes('@') ? undefined : { isValid: false, message: () => t('emailInvalid') }),
+        },
+    }),
+    confirm: prop({
+        initialValue: '',
+        validator: { validate: (v: string) => (v === m.email ? undefined : { isValid: false, message: 'Mismatch' }) },
+    }),
+},
+children: {
+    // UI-kit child: value, error, helperText, onBlur. Lazy getter: `c` is undefined while children are built.
+    emailField: useTextField({ label: 'Email', ...bindField(() => c, 'email', { hint: () => 'Work address' }) }),
+},
+actions: {
+    submit: async () => {
+        if (!(await c.validate())) { return; }      // resolves to boolean, marks every validated field touched
+        try { await save(); }
+        catch { c.setValidation({ email: { isValid: false, message: 'Already registered' } }); } // cleared on edit
+    },
+    open: () => { c.resetValidation(); },          // clean state when a dialog reopens
+},
+```
+
+- `propState[path].error` is the message of the stored invalid result; `visibleError` is the same once the field is
+  `touched` (blur, `c.touch(path)`, a full `c.validate()`, `setValidation`). Render `visibleError`.
+- Triggers: `onChange` (default, unless `onSubmit` is the only flag), `onBlur`, `onSubmit` (full `validate()` only),
+  manual `c.validate(path)`.
+- A function `message` is evaluated on read, so a reactive translation call (`fromExternalStore` reader) re-renders
+  it on locale change.
+- `m.$.isValid` reflects all stored results. An older async result never overwrites a newer one; a throwing validator
+  goes to `onCatch`.
+
 ### Child Component Composition & Typed Slots (`c.children`)
 
 When child components are declared in `Struct.children`, Dynstruct provides typed child accessors in two casing styles:
@@ -2141,6 +2221,18 @@ To connect standard inputs (HTML `<input>` or MUI `<TextField>`) without writing
 // Fully compatible with MUI / @actdim/dynstruct-mui:
 ```
 
+For dynstruct UI-kit children (`@actdim/dynstruct-mui` and similar) use `bindField` from
+`@actdim/dynstruct/componentModel/core` instead: it returns `{ value, error, helperText, onBlur }` for one model path.
+
+```tsx
+children: {
+    nameField: useTextField({ label: 'Name', ...bindField(() => c, 'name', { hint: () => 'As in your passport' }) }),
+},
+```
+
+`error` and `helperText` follow `propState[path].touched` / `visibleError`, so an error appears after blur or a
+submit attempt, not on the first keystroke.
+
 ### 6. Event Coordination & Component Composition Rules
 
 When integrating Dynstruct components in React applications:
@@ -2645,7 +2737,7 @@ Explicit component lifecycle hooks and property change interceptors:
 | `onLayoutDestroy` | `(c: Component) => void \| Promise<void>` | Pre-unmount. Cleanup layout-related observers. |
 | `onDestroy` | `(c: Component) => void \| Promise<void>` | Unmounted. Cleanup non-bus resources. |
 | `onCatch` | `(err: unknown, c: Component) => void` | Error boundary hook for view or effect errors. |
-| `onValidate` | `(c: Component) => Promise<ValidationResult>` | Component-wide form validation handler. |
+| `onValidate` | `(c: Component) => MaybePromise<Partial<Record<propPath, ValidationResult \| undefined>>>` | Component-wide form validation handler; its results are stored as touched. |
 | `onPropChanging` | `(prop, oldVal, newVal) => boolean` | Global guard: returning `false` aborts property update. |
 | `onPropChange` | `(prop, val) => void` | Global post-change notification. |
 | `onChanging<Prop>` | `(oldVal, newVal) => boolean` | Property-specific guard: returning `false` aborts update. |
@@ -2695,7 +2787,11 @@ Instance interface returned by `useComponent`:
 - **Rendering & Forms**:
   - `c.View`: React component view slot (`<c.View />`).
   - `c.children`: Child component view slots.
-  - `c.validate(propPath?)`: Run property validators.
+  - `c.validate(propPath?)`: Run property validators (all handlers and validators without a path); resolves to `true` when every result is valid.
+  - `c.touch(propPath)`: Mark a path touched and run its onBlur rule (or its onChange rule if it never ran).
+  - `c.setValidation(results)`: Store external results (server errors) in `propState`; each is cleared when its path changes. Example: `c.setValidation({ slug: { isValid: false, message: 'Slug taken', code: 'SLUG_CONFLICT' } })`.
+  - `c.resetValidation(propPath?)`: Clear results and touched state for one path or the whole component.
+  - `bindField(() => c, propPath, { hint? })` (from `componentModel/core`): `{ value, error, helperText, onBlur }` params for a UI-kit field child.
   - `c.mapToEdit(propPath?, exclude?)`: Generate two-way form input bindings (`value`, `onChange`, `onBlur`).
   - `c.run(handler, silent)`: Executes async handlers within component error and pending request tracking.
   - `c[Symbol.dispose]()`: Manual disposal cleanup.
@@ -3523,7 +3619,7 @@ Accessible on `c.model.$`:
 - `$.id: string`: Unique component instance ID.
 - `$.regType: string`: Component type name.
 - `$.parent?: Component<any>`: Parent component reference.
-- `$.propState: Record<string, ComponentPropState>`: Validation state, error messages, and dirty flags.
+- `$.propState: Record<string, ComponentPropState>`: Validation state per path: `validation` (last result), `error` (its message), `touched`, `visibleError` (`error` once touched), `validating` (async run in flight).
 - `$.isReady: boolean`: Lifecycle readiness status.
 
 ### 2.5. Directional Message Filtering (`ComponentMsgFilter`)

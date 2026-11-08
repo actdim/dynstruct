@@ -2,7 +2,6 @@
 
 ## Active
 - [ ] `(docs)` [recipes-cookbook](ISSUES/docs--recipes-cookbook.md) - plan ready
-- [ ] `(feat)` [validation-ergonomics](ISSUES/feat--validation-ergonomics.md) - plan ready
 
 ## Backlog
 - [ ] `(bug)` [standalone-missing-peer-devdeps](ISSUES/bug--standalone-missing-peer-devdeps.md)
@@ -40,8 +39,8 @@
 
 ## Done (recent)
 - [x] `(task)` [adopt-dev-config](ISSUES/done/task--adopt-dev-config.md)
+- [x] `(feat)` [validation-ergonomics](ISSUES/done/feat--validation-ergonomics.md)
 - [x] `(task)` [demo-remove-mobx-mentions](ISSUES/done/task--demo-remove-mobx-mentions.md)
 - [x] `(docs)` [demo-live-links](ISSUES/done/docs--demo-live-links.md)
 - [x] `(task)` [move-into-lib](ISSUES/done/task--move-into-lib.md)
-- [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
-<!-- 50 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 51 older completed issue(s) archived in .along/ISSUES/done/ -->
