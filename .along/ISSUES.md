@@ -2,8 +2,10 @@
 
 ## Active
 - [ ] `(docs)` [recipes-cookbook](ISSUES/docs--recipes-cookbook.md) - plan ready
+- [ ] `(task)` [adopt-dev-config](ISSUES/task--adopt-dev-config.md)
 
 ## Backlog
+- [ ] `(bug)` [standalone-missing-peer-devdeps](ISSUES/bug--standalone-missing-peer-devdeps.md)
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
 - [ ] `(debt)` [generic-struct-component-props](ISSUES/debt--generic-struct-component-props.md)
 - [ ] `(debt)` [safe-user-code-execution](ISSUES/debt--safe-user-code-execution.md)
@@ -35,7 +37,6 @@
 - [ ] `(feat)` [visibility-interaction-states](ISSUES/feat--visibility-interaction-states.md)
 - [ ] `(feat)` [websocket-transport-support](ISSUES/feat--websocket-transport-support.md)
 - [ ] `(feat)` [www-authenticate-header-support](ISSUES/feat--www-authenticate-header-support.md)
-- [ ] `(task)` [adopt-dev-config](ISSUES/task--adopt-dev-config.md)
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
