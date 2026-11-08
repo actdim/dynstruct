@@ -73,7 +73,7 @@ Accessible on `c.model.$`:
 - `$.id: string`: Unique component instance ID.
 - `$.regType: string`: Component type name.
 - `$.parent?: Component<any>`: Parent component reference.
-- `$.propState: Record<string, ComponentPropState>`: Validation state, error messages, and dirty flags.
+- `$.propState: Record<string, ComponentPropState>`: Validation state per path: `validation` (last result), `error` (its message), `touched`, `visibleError` (`error` once touched), `validating` (async run in flight).
 - `$.isReady: boolean`: Lifecycle readiness status.
 
 ### 2.5. Directional Message Filtering (`ComponentMsgFilter`)

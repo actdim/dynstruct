@@ -105,6 +105,18 @@ To connect standard inputs (HTML `<input>` or MUI `<TextField>`) without writing
 // Fully compatible with MUI / @actdim/dynstruct-mui:
 ```
 
+For dynstruct UI-kit children (`@actdim/dynstruct-mui` and similar) use `bindField` from
+`@actdim/dynstruct/componentModel/core` instead: it returns `{ value, error, helperText, onBlur }` for one model path.
+
+```tsx
+children: {
+    nameField: useTextField({ label: 'Name', ...bindField(() => c, 'name', { hint: () => 'As in your passport' }) }),
+},
+```
+
+`error` and `helperText` follow `propState[path].touched` / `visibleError`, so an error appears after blur or a
+submit attempt, not on the first keystroke.
+
 ### 6. Event Coordination & Component Composition Rules
 
 When integrating Dynstruct components in React applications:

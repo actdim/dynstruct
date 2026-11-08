@@ -56,6 +56,9 @@ import {
     createModel,
     validate,
     mapToEdit,
+    touch,
+    setValidation,
+    resetValidation,
 } from '../core';
 import { ErrorBoundary } from './errorBoundary';
 import { ErrorPayload, MsgBus } from '@actdim/msgmesh/contracts';
@@ -595,6 +598,15 @@ function createComponent<
         },
         validate: (path) => {
             return validate(component, def, params, path);
+        },
+        touch: (path) => {
+            return touch(component, def, path);
+        },
+        setValidation: (results) => {
+            setValidation(component, results);
+        },
+        resetValidation: (path) => {
+            resetValidation(component, path);
         },
         mapToEdit: (path, exclude) => {
             return mapToEdit(component, def, params, path, exclude);

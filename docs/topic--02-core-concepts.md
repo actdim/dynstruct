@@ -420,6 +420,46 @@ Dynstruct eliminates manual `onChange` and `value` boilerplate using `c.mapToEdi
 - Updates `c.model.$.propState['userInfo.email']` with validation errors and status.
 - Integrates seamlessly with Material UI / MUI components: `<TextField {...c.mapToEdit('username')} />`.
 
+### Validation API (`touched`, `visibleError`, server errors, `bindField`)
+
+```tsx
+props: {
+    email: prop({
+        initialValue: '',
+        validator: {
+            onBlur: true,
+            // ctx: { path, trigger, model, component }; `undefined` means valid; message may be a function
+            validate: (v: string) => (v.includes('@') ? undefined : { isValid: false, message: () => t('emailInvalid') }),
+        },
+    }),
+    confirm: prop({
+        initialValue: '',
+        validator: { validate: (v: string) => (v === m.email ? undefined : { isValid: false, message: 'Mismatch' }) },
+    }),
+},
+children: {
+    // UI-kit child: value, error, helperText, onBlur. Lazy getter: `c` is undefined while children are built.
+    emailField: useTextField({ label: 'Email', ...bindField(() => c, 'email', { hint: () => 'Work address' }) }),
+},
+actions: {
+    submit: async () => {
+        if (!(await c.validate())) { return; }      // resolves to boolean, marks every validated field touched
+        try { await save(); }
+        catch { c.setValidation({ email: { isValid: false, message: 'Already registered' } }); } // cleared on edit
+    },
+    open: () => { c.resetValidation(); },          // clean state when a dialog reopens
+},
+```
+
+- `propState[path].error` is the message of the stored invalid result; `visibleError` is the same once the field is
+  `touched` (blur, `c.touch(path)`, a full `c.validate()`, `setValidation`). Render `visibleError`.
+- Triggers: `onChange` (default, unless `onSubmit` is the only flag), `onBlur`, `onSubmit` (full `validate()` only),
+  manual `c.validate(path)`.
+- A function `message` is evaluated on read, so a reactive translation call (`fromExternalStore` reader) re-renders
+  it on locale change.
+- `m.$.isValid` reflects all stored results. An older async result never overwrites a newer one; a throwing validator
+  goes to `onCatch`.
+
 ### Child Component Composition & Typed Slots (`c.children`)
 
 When child components are declared in `Struct.children`, Dynstruct provides typed child accessors in two casing styles:

@@ -33,7 +33,9 @@ import type {
     PropEventHandlers,
     PropValueChangeHandler,
     PropValueChangingHandler,
+    ValidationContext,
     ValidationResult,
+    ValidationTrigger,
     Validator,
     ValueChangeHandler,
     ValueChangingHandler,
@@ -148,6 +150,45 @@ export function bindProp<T extends object, P extends KeyPath<T, boolean>>(
     };
 }
 
+export type FieldBindingOptions = {
+    /** Helper text shown while there is no visible error. */
+    hint?: () => string | undefined;
+};
+
+export type FieldBinding = {
+    value: Binding;
+    error: Binding;
+    helperText: Binding;
+    onBlur: () => void;
+};
+
+/**
+ * Params for a UI-kit field child: value, error flag, helper text and blur handler of one model path.
+ * Pass a lazy getter: `bindField(() => c, 'name')` - `c` is undefined while `def.children` is built.
+ * `error` follows `touched && isValid === false`, so a result without a message still marks the field.
+ */
+export function bindField<TStruct extends ComponentStruct<any>, P extends KeyPath<TStruct['props'], boolean>>(
+    getComponent: () => Component<TStruct, any>,
+    path: P,
+    options?: FieldBindingOptions,
+): FieldBinding {
+    const state = (): ComponentPropState | undefined =>
+        (getComponent().model.$.propState as Record<string, ComponentPropState | undefined>)[path];
+
+    return {
+        value: bindProp(() => getComponent().model as TStruct['props'], path),
+        error: bind(() => {
+            const s = state();
+
+            return Boolean(s?.touched && s.validation?.isValid === false);
+        }),
+        helperText: bind(() => state()?.visibleError ?? options?.hint?.()),
+        onBlur: () => {
+            void getComponent().touch(path);
+        },
+    };
+}
+
 // export function bindProp<
 //     T extends ComponentModel<any>,
 //     P extends Exclude<KeyPath<T, boolean>, '$' | `$.${string}`>,
@@ -200,10 +241,13 @@ export function prop<T = any>(prop: Partial<ComponentProp<T>>) {
         [$isComponentProp]: true,
     };
     if (prop.validator) {
-        if (!prop.validator.hasOwnProperty('onChange' satisfies keyof Validator)) {
+        // onChange defaults to true unless it is given explicitly or the validator is onSubmit-only
+        const hasOnChange = Object.prototype.hasOwnProperty.call(prop.validator, 'onChange' satisfies keyof Validator);
+        if (!hasOnChange && !prop.validator.onSubmit) {
             prop.validator.onChange = true;
         }
     }
+
     return prop as ComponentProp<T>;
 }
 
@@ -211,6 +255,168 @@ export type ComponentModelEventHandlers = {
     onPropChanging?: PropValueChangingHandler<PropertyKey>;
     onPropChange?: PropValueChangeHandler<PropertyKey>;
 } & Record<PropertyKey, PropEventHandlers>;
+
+// ---- Validation engine ----
+
+type AnyComponent = Component<any, any>;
+type AnyComponentDef = ComponentDef<any, any>;
+type PropStateRecord = Mutable<ComponentPropState>;
+type ValidationSource = 'validator' | 'external';
+type ValidationInternals = { seq: Map<string, number>; source: Map<string, ValidationSource> };
+
+// Per-instance, non-reactive bookkeeping: sequence numbers drop stale async results; source marks external results.
+const _validationInternals = new WeakMap<object, ValidationInternals>();
+
+function getValidationInternals(component: object): ValidationInternals {
+    let data = _validationInternals.get(component);
+    if (!data) {
+        data = { seq: new Map(), source: new Map() };
+        _validationInternals.set(component, data);
+    }
+
+    return data;
+}
+
+function nextSeq(data: ValidationInternals, path: string): number {
+    const seq = (data.seq.get(path) ?? 0) + 1;
+    data.seq.set(path, seq);
+
+    return seq;
+}
+
+function getPropStates(component: AnyComponent): Record<string, PropStateRecord> {
+    return component.model.$.propState as Record<string, PropStateRecord>;
+}
+
+// Records are created lazily (on first validation / touch), never in createModel.
+function ensurePropState(component: AnyComponent, path: string): PropStateRecord {
+    const propState = getPropStates(component);
+    const existing = propState[path];
+    if (existing) {
+        return existing;
+    }
+    const created: PropStateRecord = observable({
+        validation: undefined as ValidationResult | undefined,
+        touched: false,
+        validating: false,
+        get error(): string | undefined {
+            const v = (this as ComponentPropState).validation;
+            if (!v || v.isValid) {
+                return undefined;
+            }
+
+            return typeof v.message === 'function' ? v.message() : v.message;
+        },
+        get visibleError(): string | undefined {
+            const self = this as ComponentPropState;
+
+            return self.touched ? self.error : undefined;
+        },
+    });
+    runInAction(() => {
+        propState[path] = created;
+    });
+
+    return created;
+}
+
+function refreshIsValid(component: AnyComponent): void {
+    const records = Object.values(getPropStates(component));
+    const isValid = records.every((r) => r.validation?.isValid !== false);
+    if (component.model.$.isValid !== isValid) {
+        runInAction(() => {
+            component.model.$.isValid = isValid;
+        });
+    }
+}
+
+function storeResult(
+    component: AnyComponent,
+    path: string,
+    result: ValidationResult | undefined,
+    source: ValidationSource,
+    touch: boolean,
+): void {
+    const record = ensurePropState(component, path);
+    getValidationInternals(component).source.set(path, source);
+    runInAction(() => {
+        record.validation = result ?? { isValid: true };
+        if (touch) {
+            record.touched = true;
+        }
+    });
+    refreshIsValid(component);
+}
+
+async function runPathValidator(
+    component: AnyComponent,
+    def: AnyComponentDef,
+    path: string,
+    trigger: ValidationTrigger,
+): Promise<boolean> {
+    const prop = def.props?.[path];
+    if (!isComponentProp(prop) || !prop.validator?.validate) {
+        return true;
+    }
+    const validator = prop.validator;
+    const data = getValidationInternals(component);
+    const seq = nextSeq(data, path);
+    const record = ensurePropState(component, path);
+    runInAction(() => {
+        record.validating = true;
+    });
+    const ctx: ValidationContext = {
+        path,
+        trigger,
+        model: component.model as Readonly<Record<string, unknown>>,
+        component,
+    };
+    let result: ValidationResult | undefined;
+    try {
+        // run(): a throw or rejection is reported to onCatch once and rethrown (silent = false); caught below.
+        result = await component.run(
+            () => Promise.resolve(validator.validate(getByKeyPath(component.model, path), ctx)),
+            false,
+        );
+    } catch {
+        if (data.seq.get(path) === seq) {
+            runInAction(() => {
+                record.validating = false;
+            });
+        }
+
+        return record.validation?.isValid !== false;
+    }
+    if (data.seq.get(path) !== seq) {
+        // A newer run (or a reset / setValidation) started meanwhile: drop this result.
+        return result?.isValid !== false;
+    }
+    storeResult(component, path, result, 'validator', false);
+    runInAction(() => {
+        record.validating = false;
+    });
+
+    return result?.isValid !== false;
+}
+
+/** Field edit hook: clears an external result for the path and runs an onChange validator. */
+function onFieldChanged(component: AnyComponent, def: AnyComponentDef, path: string): void {
+    const data = getValidationInternals(component);
+    if (data.source.get(path) === 'external') {
+        data.source.delete(path);
+        const record = getPropStates(component)[path];
+        if (record) {
+            runInAction(() => {
+                record.validation = undefined;
+            });
+            refreshIsValid(component);
+        }
+    }
+    const prop = def.props?.[path];
+    if (isComponentProp(prop) && prop.validator?.onChange) {
+        void runPathValidator(component, def, path, 'change');
+    }
+}
 
 export async function validate<
     TStruct extends ComponentStruct<any> = ComponentStruct<any>,
@@ -221,75 +427,97 @@ export async function validate<
     def: ComponentDef<TStruct, TMsgHeaders>,
     params?: ComponentParams<TStruct>,
     path?: TPropPath,
-) {
-    const propState = component.model.$.propState;
-    const model = component.model as TStruct['props'];
-
-    type ValidationResults = Partial<Record<TPropPath, ValidationResult>>;
-
-    function mergeResults(validationResults: ValidationResults) {
-        if (validationResults) {
-            for (const [key, val] of Object.entries(validationResults)) {
-                const path = key as TPropPath;
-                const result = (val as ValidationResult) || { isValid: true };
-                let record = propState[path] as Mutable<ComponentPropState>;
-                if (record) {
-                    runInAction(() => {
-                        record.validation = result;
-                    });
-                } else {
-                    record = observable({
-                        validation: result,
-                        get error() {
-                            const v = (this as ComponentPropState).validation;
-                            return v && !v.isValid ? v.message : undefined;
-                        },
-                    } satisfies ComponentPropState);
-                    runInAction(() => {
-                        propState[path] = record;
-                    });
-                }
-            }
-        }
-    }
-
+): Promise<boolean> {
+    const comp = component as unknown as AnyComponent;
+    const anyDef = def as unknown as AnyComponentDef;
     if (path) {
-        const prop = def.props?.[path];
-        if (isComponentProp(prop)) {
-            const validator = prop.validator;
-            if (validator?.validate) {
-                const val = getByKeyPath(model, path);
-                const result = await Promise.resolve(validator.validate(val));
-                mergeResults({ [path]: result } as ValidationResults);
-            }
-        }
-    } else {
-        let handler = params?.$events?.onValidate;
+        return runPathValidator(comp, anyDef, path, 'manual');
+    }
+    // Order: params handler, def handler, then every prop validator.
+    const handlers = [params?.$events?.onValidate, def.events?.onValidate];
+    for (const handler of handlers) {
         if (handler) {
-            let results = (await Promise.resolve(handler(component))) as ValidationResults;
-            mergeResults(results);
-        }
-
-        handler = def.events?.onValidate;
-        if (handler) {
-            let results = (await Promise.resolve(handler(component))) as ValidationResults;
-            mergeResults(results);
-        }
-
-        if (def.props) {
-            for (const [key, prop] of Object.entries(def.props)) {
-                const path = key as TPropPath;
-                if (isComponentProp(prop)) {
-                    const validator = prop.validator;
-                    if (validator?.validate) {
-                        const val = getByKeyPath(model, path);
-                        const result = await Promise.resolve(validator.validate(val));
-                        mergeResults({ [path]: result } as ValidationResults);
-                    }
+            // the params handler type allows `void` (no results)
+            const results: unknown = await Promise.resolve(handler(component));
+            if (results && typeof results === 'object') {
+                for (const [key, val] of Object.entries(results)) {
+                    storeResult(comp, key, val as ValidationResult | undefined, 'validator', true);
                 }
             }
         }
     }
+    if (def.props) {
+        for (const [key, prop] of Object.entries(def.props)) {
+            if (isComponentProp(prop) && prop.validator?.validate) {
+                await runPathValidator(comp, anyDef, key, 'submit');
+                const record = ensurePropState(comp, key);
+                runInAction(() => {
+                    record.touched = true;
+                });
+            }
+        }
+    }
+    refreshIsValid(comp);
+
+    return Object.values(getPropStates(comp)).every((r) => r.validation?.isValid !== false);
+}
+
+/** Marks a path touched and runs its onBlur rule (or its onChange rule if it never ran). */
+export async function touch<
+    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(component: Component<TStruct, TMsgHeaders>, def: ComponentDef<TStruct, TMsgHeaders>, path: string): Promise<void> {
+    const comp = component as unknown as AnyComponent;
+    const record = ensurePropState(comp, path);
+    runInAction(() => {
+        record.touched = true;
+    });
+    const prop = (def as unknown as AnyComponentDef).props?.[path];
+    if (!isComponentProp(prop) || !prop.validator?.validate) {
+        return;
+    }
+    // onBlur rules run on every blur; an onChange rule runs once if the field was never validated
+    // (blur on an untouched empty required field must show its error).
+    if (prop.validator.onBlur || (prop.validator.onChange && !record.validation)) {
+        await runPathValidator(comp, def as unknown as AnyComponentDef, path, 'blur');
+    }
+}
+
+/** Stores external results (e.g. server errors); each is cleared when its path changes. */
+export function setValidation<
+    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(component: Component<TStruct, TMsgHeaders>, results: Partial<Record<string, ValidationResult | undefined>>): void {
+    const comp = component as unknown as AnyComponent;
+    const data = getValidationInternals(comp);
+    for (const [key, val] of Object.entries(results)) {
+        nextSeq(data, key); // an in-flight validator must not overwrite the external result
+        storeResult(comp, key, val, 'external', true);
+    }
+}
+
+/** Clears results and touched state of one path or of the whole component. */
+export function resetValidation<
+    TStruct extends ComponentStruct<any> = ComponentStruct<any>,
+    TMsgHeaders extends ComponentMsgHeaders = ComponentMsgHeaders,
+>(component: Component<TStruct, TMsgHeaders>, path?: string): void {
+    const comp = component as unknown as AnyComponent;
+    const data = getValidationInternals(comp);
+    const propState = getPropStates(comp);
+    const keys = path ? [path] : Object.keys(propState);
+    runInAction(() => {
+        for (const key of keys) {
+            nextSeq(data, key);
+            data.source.delete(key);
+            const record = propState[key];
+            if (record) {
+                record.validation = undefined;
+                record.touched = false;
+                record.validating = false;
+            }
+        }
+    });
+    refreshIsValid(comp);
 }
 
 export function mapToEdit<
@@ -315,11 +543,8 @@ export function mapToEdit<
     }
     if (exclude.indexOf('onBlur') < 0) {
         const onBlurFactory = (path: TPropPath): BlurEventHandler<TElement> => {
-            return async (evt) => {
-                const prop = def.props?.[path];
-                if (isComponentProp(prop) && prop.validator?.onBlur) {
-                    validate(component, def, params, path);
-                }
+            return () => {
+                void touch(component, def, path);
             };
         };
         inputProps.onBlur = onBlurFactory(path);
@@ -753,15 +978,7 @@ export function createModel<
                         reportReadOnlyWrite(fullPath, binding);
                     }
                     handlers.onPropChange?.(fullPath, val);
-                    const prop = def.props?.[fullPath];
-                    if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
-                        validate(
-                            component,
-                            def,
-                            params,
-                            fullPath as KeyPath<TStruct['props'], boolean>,
-                        );
-                    }
+                    onFieldChanged(component as unknown as AnyComponent, def as unknown as AnyComponentDef, fullPath);
                     return result;
                 },
             });
@@ -846,15 +1063,7 @@ export function createModel<
             handlers?.[key]?.onChange?.(val);
             handlers.onPropChange?.(key, val);
 
-            const prop = def.props?.[key as string];
-            if (isComponentProp(prop) && prop.validator && prop.validator.onChange) {
-                validate(
-                    component,
-                    def,
-                    params,
-                    key as KeyPath<TStruct['props'], boolean>,
-                );
-            }
+            onFieldChanged(component as unknown as AnyComponent, def as unknown as AnyComponentDef, key as string);
 
             return result;
         },

@@ -179,7 +179,7 @@ Explicit component lifecycle hooks and property change interceptors:
 | `onLayoutDestroy` | `(c: Component) => void \| Promise<void>` | Pre-unmount. Cleanup layout-related observers. |
 | `onDestroy` | `(c: Component) => void \| Promise<void>` | Unmounted. Cleanup non-bus resources. |
 | `onCatch` | `(err: unknown, c: Component) => void` | Error boundary hook for view or effect errors. |
-| `onValidate` | `(c: Component) => Promise<ValidationResult>` | Component-wide form validation handler. |
+| `onValidate` | `(c: Component) => MaybePromise<Partial<Record<propPath, ValidationResult \| undefined>>>` | Component-wide form validation handler; its results are stored as touched. |
 | `onPropChanging` | `(prop, oldVal, newVal) => boolean` | Global guard: returning `false` aborts property update. |
 | `onPropChange` | `(prop, val) => void` | Global post-change notification. |
 | `onChanging<Prop>` | `(oldVal, newVal) => boolean` | Property-specific guard: returning `false` aborts update. |
@@ -229,7 +229,11 @@ Instance interface returned by `useComponent`:
 - **Rendering & Forms**:
   - `c.View`: React component view slot (`<c.View />`).
   - `c.children`: Child component view slots.
-  - `c.validate(propPath?)`: Run property validators.
+  - `c.validate(propPath?)`: Run property validators (all handlers and validators without a path); resolves to `true` when every result is valid.
+  - `c.touch(propPath)`: Mark a path touched and run its onBlur rule (or its onChange rule if it never ran).
+  - `c.setValidation(results)`: Store external results (server errors) in `propState`; each is cleared when its path changes. Example: `c.setValidation({ slug: { isValid: false, message: 'Slug taken', code: 'SLUG_CONFLICT' } })`.
+  - `c.resetValidation(propPath?)`: Clear results and touched state for one path or the whole component.
+  - `bindField(() => c, propPath, { hint? })` (from `componentModel/core`): `{ value, error, helperText, onBlur }` params for a UI-kit field child.
   - `c.mapToEdit(propPath?, exclude?)`: Generate two-way form input bindings (`value`, `onChange`, `onBlur`).
   - `c.run(handler, silent)`: Executes async handlers within component error and pending request tracking.
   - `c[Symbol.dispose]()`: Manual disposal cleanup.

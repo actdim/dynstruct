@@ -198,16 +198,33 @@ export type ValueConverter<TTo, TFrom> = {
     convertBack(value: TTo): TFrom;
 };
 
+/** A message, or a function evaluated on read (reactive: a translation call re-runs on locale change). */
+export type ValidationMessage = string | (() => string);
+
 export type ValidationResult = {
     isValid: boolean;
-    message?: string;
+    message?: ValidationMessage;
+    /** Optional machine code, e.g. a server error code. */
+    code?: string;
+    params?: Readonly<Record<string, string | number>>;
+};
+
+export type ValidationTrigger = 'change' | 'blur' | 'submit' | 'manual';
+
+export type ValidationContext = {
+    readonly path: string;
+    readonly trigger: ValidationTrigger;
+    /** Untyped model access for reusable rule factories; inside a def use the typed closure `m`. */
+    readonly model: Readonly<Record<string, unknown>>;
+    readonly component: Component<any, any>;
 };
 
 export type Validator<T = any> = {
     onBlur?: boolean;
     onChange?: boolean;
     onSubmit?: boolean;
-    validate: (value: T) => MaybePromise<ValidationResult>;
+    /** `undefined` means valid. One-argument validators keep working. */
+    validate: (value: T, ctx: ValidationContext) => MaybePromise<ValidationResult | undefined>;
 };
 
 export const $isBinding = Symbol.for('@actdim/dynstruct/$isBinding'); // brand
@@ -312,7 +329,7 @@ export type ComponentEvents<
     onDestroy?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<void>; // onDispose/onCleanup
     // onError
     onCatch?: (error: unknown, component: Component<TStruct, TMsgHeaders>) => void;
-    onValidate?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<Partial<Record<KeyPath<TStruct["props"], boolean>, ValidationResult>>>;
+    onValidate?: (component: Component<TStruct, TMsgHeaders>) => MaybePromise<Partial<Record<KeyPath<TStruct["props"], boolean>, ValidationResult | undefined>>>;
 } & {
         [P in keyof TStruct['props']as `${typeof $ON_GET}${Capitalize<P & string>}`]?: () => TStruct['props'][P];
     } & {
@@ -486,7 +503,14 @@ export type Component<
     readonly abortSignal: AbortSignal;
     readonly model: ComponentModel<TStruct>;
     readonly children: ComponentChildren<TStruct['children']>;
-    readonly validate: (path?: KeyPath<TStruct["props"], boolean>) => MaybePromise<void>;
+    /** Runs validators (one path, or all handlers and prop validators); resolves `true` when every result is valid. */
+    readonly validate: (path?: KeyPath<TStruct["props"], boolean>) => Promise<boolean>;
+    /** Marks a path touched (blur) and runs its onBlur rule (or its onChange rule if it never ran). */
+    readonly touch: (path: KeyPath<TStruct["props"], boolean>) => Promise<void>;
+    /** Stores external results (e.g. server errors); each one is cleared when its path changes. */
+    readonly setValidation: (results: Partial<Record<KeyPath<TStruct["props"], boolean>, ValidationResult | undefined>>) => void;
+    /** Clears results and touched state of one path or of the whole component. */
+    readonly resetValidation: (path?: KeyPath<TStruct["props"], boolean>) => void;
     readonly mapToEdit: <T extends HTMLElement = HTMLInputElement>(path?: KeyPath<TStruct["props"], boolean>, exclude?: (keyof HtmlInputProps)[]) => Partial<HtmlInputProps<T>>;
     readonly [Symbol.dispose]: () => void;
 };
@@ -497,7 +521,14 @@ export function isComponent(obj: any): obj is Component {
 
 export type ComponentPropState = {
     readonly validation?: ValidationResult;
+    /** Message of the stored invalid result (resolved if it is a function), regardless of `touched`. */
     readonly error?: string | undefined;
+    /** `error` once the field is touched (blur, `touch`, full `validate`, `setValidation`). */
+    readonly visibleError?: string | undefined;
+    /** Always present on stored records; optional so `propState[path] || {}` keeps type-checking. */
+    readonly touched?: boolean;
+    /** A validator run for this path is in flight. */
+    readonly validating?: boolean;
 }
 
 export type ChangeEventHandler<T extends HTMLElement = HTMLInputElement> =

@@ -37,11 +37,14 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
                     email: string;
                     avatarUrl: string;
                 };
+                confirmEmail: string;
+                submitResult: string;
             };
             children: {
                 avatarView: AvatarViewStruct;
                 section1: React.FC;
                 section2: React.FC;
+                section3: React.FC;
             };
         }
     >;
@@ -76,6 +79,16 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
                     },
                 },
             }),
+            // Cross-field rule: reads the closure `m`; lazy message (re-evaluated on read, e.g. for i18n).
+            confirmEmail: prop({
+                initialValue: '',
+                validator: {
+                    onBlur: true,
+                    validate: (v: string) =>
+                        v === m.userInfo.email ? undefined : { isValid: false, message: () => 'Emails do not match' },
+                },
+            }),
+            submitResult: '',
         },
         msgBroker: {
             provide: {
@@ -91,6 +104,7 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
                 'avatar.imageUrl': bind(() => m.userInfo.avatarUrl),
             }),
             section1: () => {
+                // visibleError: shown once the field is touched (blur, validate(), setValidation)
                 const emailState = m.$.propState['userInfo.email'] || {};
                 return (
                     <details open style={detailsStyle}>
@@ -102,13 +116,13 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
                                     type="email"
                                     {...c.mapToEdit('userInfo.email')}
                                     style={{
-                                        borderColor: emailState.error ? '#e53935' : undefined,
-                                        outline: emailState.error ? '1px solid #e53935' : undefined,
+                                        borderColor: emailState.visibleError ? '#e53935' : undefined,
+                                        outline: emailState.visibleError ? '1px solid #e53935' : undefined,
                                     }}
                                 />
-                                {emailState.error && (
+                                {emailState.visibleError && (
                                     <span style={{ color: '#e53935', fontSize: 11 }}>
-                                        {emailState.error}
+                                        {emailState.visibleError}
                                     </span>
                                 )}
                             </div>
@@ -122,6 +136,53 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
                                 </select>
                                 <c.children.AvatarView></c.children.AvatarView>
                             </div>
+                        </div>
+                    </details>
+                );
+            },
+            section3: () => {
+                const confirmState = m.$.propState['confirmEmail'] || {};
+
+                return (
+                    <details open style={detailsStyle}>
+                        <summary style={{ cursor: 'pointer', marginBottom: 8 }}>Validation API</summary>
+                        <div style={row}>
+                            <span style={labelStyle}>Confirm email</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <input type="email" {...c.mapToEdit('confirmEmail')} />
+                                {confirmState.visibleError && (
+                                    <span style={{ color: '#e53935', fontSize: 11 }}>{confirmState.visibleError}</span>
+                                )}
+                            </div>
+                        </div>
+                        <div style={{ ...row, marginTop: 4, gap: 8 }}>
+                            <button
+                                onClick={() =>
+                                    c.run(async () => {
+                                        m.submitResult = (await c.validate()) ? 'Valid' : 'Invalid';
+                                    }, true)
+                                }
+                            >
+                                Submit
+                            </button>
+                            <button
+                                onClick={() =>
+                                    c.setValidation({
+                                        'userInfo.email': { isValid: false, message: 'Email already registered' },
+                                    })
+                                }
+                            >
+                                Simulate server error
+                            </button>
+                            <button
+                                onClick={() => {
+                                    c.resetValidation();
+                                    m.submitResult = '';
+                                }}
+                            >
+                                Reset
+                            </button>
+                            {m.submitResult && <span data-testid="submit-result">{m.submitResult}</span>}
                         </div>
                     </details>
                 );
@@ -156,6 +217,7 @@ export const useComponentStateExample = (params: ComponentParams<Struct>): Compo
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <c.children.Section1 />
+                    <c.children.Section3 />
                     <c.children.Section2 />
                 </div>
             );

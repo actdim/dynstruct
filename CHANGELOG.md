@@ -4,7 +4,14 @@ All notable changes to `@actdim/dynstruct` are documented here. Format: [Keep a 
 
 ## [Unreleased]
 
+### Added
+- Validation ergonomics (`feat--validation-ergonomics`): `c.validate()` resolves to `boolean`; validators receive a second argument `ctx` (`path`, `trigger`, `model`, `component`) and may return `undefined` (valid); `ValidationResult.message` accepts a function evaluated on read (reactive translations) and gains optional `code` / `params`; `c.touch(path)`, `c.setValidation(results)` (external results, cleared when the path changes), `c.resetValidation(path?)`; `propState[path]` gains `touched`, `visibleError` and `validating`; `bindField(() => c, path, { hint })` in `componentModel/core` returns `{ value, error, helperText, onBlur }` for UI-kit field children.
+
 ### Changed
+- `prop({ validator: { onSubmit: true, validate } })` without an explicit `onChange` no longer defaults `onChange` to `true`: such a validator runs only in a full `c.validate()`.
+- `m.$.isValid` now reflects the stored validation results (it was always `true`).
+- An older async validation result for a path no longer overwrites a newer one; a throwing validator is routed to `onCatch` instead of leaving an unhandled rejection.
+- `mapToEdit` blur marks the field touched (`c.touch`).
 - `BaseSecurityDomainConfig.endpoints` and its fields are optional; `useConventions: true` without `endpoints.authSignIn` throws when `SecurityService` initializes (`validateSecurityDomainConfig`) (`feat--security-endpoints-optional`).
 
 ## [1.8.3] - 2026-10-13

@@ -418,6 +418,46 @@ Avoid:
 - **importing or using MobX directly** (`observable`, `computed`, `action`, `autorun`, etc.) - the framework manages reactivity internally; direct MobX usage bypasses the component model and breaks framework guarantees
 - passing reactive model values to external APIs without stripping proxies - use `toPlain(value)` from `@actdim/dynstruct/componentModel/core` before handing data to REST clients, third-party libs, or `postMessage`
 
+## Forms and Validation
+
+Declare rules on the prop; never validate by hand in a submit handler.
+
+```tsx
+props: {
+    name: prop({
+        initialValue: '',
+        validator: { onBlur: true, validate: (v: string) => (v.trim() ? undefined : { isValid: false, message: () => t('nameRequired') }) },
+    }),
+    // cross-field rule: read the closure `m` (or `ctx.model` in a reusable rule factory)
+    confirm: prop({ initialValue: '', validator: { validate: (v: string) => (v === m.email ? undefined : { isValid: false, message: 'Mismatch' }) } }),
+},
+children: {
+    nameField: useTextField({ label: 'Name', ...bindField(() => c, 'name', { hint: () => 'Shown while valid' }) }),
+},
+actions: {
+    submit: async () => {
+        if (!(await c.validate())) { return; }
+        // server field error: shown under the field, cleared when the user edits it
+        // c.setValidation({ name: { isValid: false, message: 'Taken', code: 'NAME_CONFLICT' } });
+    },
+},
+```
+
+| Trigger | When it runs |
+|---|---|
+| `onChange` (default unless `onSubmit` is the only flag) | every write to the path |
+| `onBlur` | `c.touch(path)`, `mapToEdit` blur, `bindField` `onBlur` |
+| `onSubmit` | full `c.validate()` only |
+| manual | `c.validate(path)` |
+
+- `validate(value, ctx)`: `ctx = { path, trigger, model, component }`; return `undefined` for valid.
+- Render `propState[path].visibleError` (the error once `touched`), not `error` (set from the first keystroke).
+- `await c.validate()` resolves to `boolean` and marks every validated field touched; `m.$.isValid` follows results.
+- `c.resetValidation()` when a dialog opens (or closes); `c.resetValidation(path)` for one field.
+- Messages may be functions (`() => t(key)`): evaluated on read, so they follow a locale change.
+- `bindField(() => c, path)` takes a lazy getter: `c` is `undefined` while `def.children` is built, so `bindField(c, ...)` fails.
+- A throwing validator goes to `onCatch`; an older async result never overwrites a newer one.
+
 ## Messaging & MsgMesh Integration Architecture
 
 `@actdim/dynstruct` provides native architectural integration with `@actdim/msgmesh`.
@@ -621,7 +661,7 @@ const reload = () => c.run(async () => { m.items = await fetchItems(); });
   - `serviceCall/` - API adapter integration
   - `securityService/` - auth flow
   - `storageService/` - storage service
-  - `componentState/` - `ComponentStructExt`, form validation with validators, `m.$` and `mapToEdit`
+  - `componentState/` - `ComponentStructExt`, form validation with validators, `m.$`, `mapToEdit`, `visibleError`, `c.validate()` / `setValidation` / `resetValidation`
 - Shared story styles: `src/_stories/componentModel/styles.ts` (`row`, `labelStyle`, `detailsStyle`)
 
 When adding a feature:
