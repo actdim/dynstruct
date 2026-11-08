@@ -2,7 +2,6 @@
 
 ## Active
 - [ ] `(docs)` [recipes-cookbook](ISSUES/docs--recipes-cookbook.md) - plan ready
-- [ ] `(task)` [adopt-dev-config](ISSUES/task--adopt-dev-config.md)
 
 ## Backlog
 - [ ] `(bug)` [standalone-missing-peer-devdeps](ISSUES/bug--standalone-missing-peer-devdeps.md)
@@ -40,9 +39,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(task)` [adopt-dev-config](ISSUES/done/task--adopt-dev-config.md)
 - [x] `(task)` [demo-remove-mobx-mentions](ISSUES/done/task--demo-remove-mobx-mentions.md)
 - [x] `(docs)` [demo-live-links](ISSUES/done/docs--demo-live-links.md)
 - [x] `(task)` [move-into-lib](ISSUES/done/task--move-into-lib.md)
 - [x] `(task)` [host-demo](ISSUES/done/task--host-demo.md)
-- [x] `(task)` [demo-docs-into-lib](ISSUES/done/task--demo-docs-into-lib.md)
-<!-- 49 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 50 older completed issue(s) archived in .along/ISSUES/done/ -->

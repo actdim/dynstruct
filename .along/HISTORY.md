@@ -36,3 +36,4 @@ _`<YYYY-MM-DD> - <slug> - <agent> - <summary> - <relative link>`_
 2026-11-03 - demo-canonical-composition - antigravity - refactor demo structs to canonical child composition with prop-less view - [Session Log](./SESSIONS/2026/2026-11-03--demo-canonical-composition.md)
 2026-11-04 - demo-remove-mobx-mentions - antigravity - Remove MobX mentions and direct dependencies from demo - [Session Log](./SESSIONS/2026/2026-11-04--demo-remove-mobx-mentions.md)
 2026-11-04 - demo-live-links - antigravity - Add live demo and documentation links to README, demo README, and docs - [Session Log](./SESSIONS/2026/2026-11-04--demo-live-links.md)
+2026-11-08 - adopt-dev-config - claude-code - ESLint, Prettier and tsconfig on @actdim/dev-config 1.12.2 presets with no finding, rule-set or Prettier regressions; results in the issue Outcome section - [Session Log](./SESSIONS/2026/2026-11-08--adopt-dev-config.md)
