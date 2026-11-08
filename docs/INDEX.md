@@ -4,7 +4,7 @@ slug: INDEX
 title: '@actdim/dynstruct - Knowledge Base Topic Index'
 type: index
 created: 2026-09-10
-updated: 2026-11-04
+updated: 2026-11-08
 tags: [index, kb, topics, map]
 ---
 
@@ -27,8 +27,6 @@ flowchart TD
     INDEX --> T_04_REACT_INTEGRATION
     T_05_API_REFERENCE["API Reference & Development Guide"]
     INDEX --> T_05_API_REFERENCE
-    T_ALONG_PROTOCOL["Along Protocol Reference"]
-    INDEX --> T_ALONG_PROTOCOL
     T_ARCHITECTURE["01 Architecture"]
     INDEX --> T_ARCHITECTURE
     T_DEMO_ARCHITECTURE["Demo: Architecture"]
@@ -93,7 +91,6 @@ flowchart TD
 - **[Architecture & Wiring](./topic--03-architecture-and-wiring.md)** (topic) `03-architecture-and-wiring`
 - **[React Integration & Service Patterns](./topic--04-react-integration.md)** (topic) `04-react-integration`
 - **[API Reference & Development Guide](./topic--05-api-reference.md)** (topic) `05-api-reference`, `api`, `contracts`
-- **[Along Protocol Reference](./topic--along-protocol.md)** (reference) `protocol`, `agents-md`, `checklist`, `routing`, `concurrency`, `along-team`, `conventions`
 - **[01 Architecture](./topic--architecture.md)** (topic) `architecture`
 - **[Demo: Architecture](./topic--demo-architecture.md)** (topic) `architecture`, `astro`, `islands`, `msgmesh`, `dynstruct`, `ssg`, `base-path`
 - **[Demo: Domain Model](./topic--demo-domain-model.md)** (topic) `domain-model`, `msgmesh`, `channels`, `contracts`, `catalog`, `routes`
