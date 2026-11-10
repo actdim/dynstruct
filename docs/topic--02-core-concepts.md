@@ -12,6 +12,8 @@ tags: [02-core-concepts]
 
 [← Back to 01. Overview & Advantages](./topic--01-overview-and-advantages.md) | [Next: 03. Architecture & Wiring →](./topic--03-architecture-and-wiring.md)
 
+> Looking for a ready answer to a concrete task (validate a form, pass data to a child, call an API)? See the [Cookbook](./topic--cookbook.md).
+
 ---
 
 ## Component Structure

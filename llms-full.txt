@@ -1192,6 +1192,8 @@ expect(sendSpy).toHaveBeenCalledWith({
 
 [← Back to 01. Overview & Advantages](./topic--01-overview-and-advantages.md) | [Next: 03. Architecture & Wiring →](./topic--03-architecture-and-wiring.md)
 
+> Looking for a ready answer to a concrete task (validate a form, pass data to a child, call an API)? See the [Cookbook](./topic--cookbook.md).
+
 ---
 
 ## Component Structure
@@ -2133,6 +2135,8 @@ c.msgBus.send({
 
 [← Back to 03. Architecture & Wiring](./topic--03-architecture-and-wiring.md) | [Next: 05. API Reference →](./topic--05-api-reference.md)
 
+> Task-oriented recipes for services, navigation, auth and testing are in the [Cookbook](./topic--cookbook.md).
+
 ---
 
 ## React Integration Basics
@@ -2976,6 +2980,2443 @@ Instead of prop-drilling or global singletons, components declare a `msgScope` o
 - [Domain Model](./topic--domain-model.md) - Domain Contracts and Component Structs
 - [Setup & Workflow](./topic--setup-and-workflow.md) - Setup, Build, Tests & Storybook Workflow
 - [License](./topic--license.md) - License Information
+
+---
+
+## Document: docs/topic--cookbook-auth-navigation.md (Cookbook: Navigation & Auth)
+
+# Cookbook: Navigation & Auth
+
+Typed routes, navigation over the bus, links, sign-in/out and protected pages.
+Part of the [Cookbook](topic--cookbook.md).
+
+Components never call the router or the auth backend directly: they send `APP.NAV.*` and
+`APP.SECURITY.*` messages, and `NavService` / `SecurityService` (mounted once near the root)
+handle them.
+
+---
+
+## 7.1 Declare typed routes
+
+**Task.** I want route names with typed params that the bus understands.
+
+```ts
+import { createNavigationRoute } from '@actdim/dynstruct/appDomain/navigation';
+import type { NavRoutes } from '@actdim/dynstruct/appDomain/commonContracts';
+
+export const appRoutes = {
+    home: createNavigationRoute({ pattern: '/', element: undefined }),
+    user: createNavigationRoute<{ id: string; tab?: string }>({ pattern: '/users/:id', element: undefined }),
+} satisfies NavRoutes;
+
+export type AppRoutes = typeof appRoutes;
+export type AppMsgStruct = BaseAppMsgStruct<AppRoutes> & MsgStruct<{ /* app channels */ }>;
+```
+
+Mount the service inside the router: `<NavService routes={appRoutes} />`.
+
+**How it works.** Each route gets `url(params)` and `match(url)`. Passing `AppRoutes` to
+`BaseAppMsgStruct` types the route-based form of `APP.NAV.GOTO` (recipe 7.2). Query params can be
+declared in the pattern: `'/users/:id/profile?tab'`.
+
+**See also.** story [`bootstrap.ts`](../src/_stories/componentModel/bootstrap.ts);
+`getUrlBuilder` tests in `tests/react/services.test.tsx`.
+
+---
+
+## 7.2 Navigate from a component
+
+**Task.** Go to another page, back, or replace the current entry.
+
+```ts
+// msgScope: { publish: AppMsgChannels<'APP.NAV.GOTO'> }
+
+// by route name (typed params): group 'ex'
+c.msgBus.send({ channel: 'APP.NAV.GOTO', group: 'ex', payload: { route: 'user', params: { id: '42' } } });
+
+// by path or url: group 'in' (default)
+c.msgBus.send({ channel: 'APP.NAV.GOTO', payload: { path: '/settings', replace: true } });
+c.msgBus.send({ channel: 'APP.NAV.GOTO', payload: { url: '/users/42?tab=files' } });
+
+// back
+c.msgBus.send({ channel: 'APP.NAV.GOTO', payload: { path: -1 } });
+```
+
+**How it works.** `NavService` provides both input groups: `in` takes a path / url / history delta,
+`ex` takes a route name plus typed params and builds the href. `state` sets `location.state` of the
+new entry.
+
+**Gotchas.**
+- `group: 'ex'` is typed from the routes you passed to `BaseAppMsgStruct<AppRoutes>`; a wrong
+  route name or param is a compile error.
+
+**See also.** webapp `components/layout/MainLayout.tsx` (back handler with a fallback route).
+
+---
+
+## 7.3 Render a link
+
+**Task.** A real `<a href>` (middle click opens a new tab) that navigates in place on a plain click.
+
+```tsx
+import { useNavLink, type NavLinkStruct } from '@actdim/dynstruct/services/react/NavLink';
+
+children: {
+    profileLink: useNavLink({ href: bind(() => `/users/${m.userId}`), content: 'Profile' }),
+},
+view: () => <c.children.ProfileLink />,
+```
+
+**How it works.** A plain left click on an app href sends `APP.NAV.GOTO`; modified, middle or
+`target="_blank"` clicks are left to the browser. `@actdim/dynstruct-mui` `useButton({ href })`
+behaves the same way.
+
+**Gotchas.**
+- `content` is a React value: it is declared `reactive: 'ref'` inside `NavLink`, so elements are
+  fine.
+- For a plain React link use `createNavLinkClick(msgBus, href)` as the `onClick` handler.
+
+---
+
+## 7.4 Read the current location and react to changes
+
+**Task.** Highlight the active menu item, read query params.
+
+```ts
+// once
+const msg = await c.msgBus.request({ channel: 'APP.NAV.CONTEXT.GET' });
+m.path = msg.payload.location?.pathname ?? '/';
+
+// on every change
+msgBroker: {
+    subscribe: {
+        'APP.NAV.CONTEXT.CHANGED': {
+            in: { callback: (msg) => { m.path = msg.payload.location?.pathname ?? '/'; m.tab = msg.payload.searchParams?.get('tab'); } },
+        },
+    },
+},
+```
+
+**How it works.** `NavContext` carries `location`, `searchParams`, matched `params` and
+`navType`. `APP.NAV.HISTORY.READ` reads an older history entry.
+
+---
+
+## 7.5 Sign in and sign out
+
+**Task.** A login form signs the user in; a menu item signs out.
+
+```ts
+actions: {
+    signIn: async () => {
+        if (!(await c.validate())) { return; }
+        await c.msgBus.request({
+            channel: 'APP.SECURITY.AUTH.SIGNIN',
+            payload: { credentials: { scheme: 'Bearer', userName: m.email, password: m.password } },
+        });
+    },
+    signOut: async () => {
+        await c.msgBus.request({ channel: 'APP.SECURITY.AUTH.SIGNOUT' });
+    },
+},
+```
+
+Anyone interested in the result subscribes to the `out` group:
+
+```ts
+msgBroker: {
+    subscribe: {
+        'APP.SECURITY.AUTH.SIGNIN': { out: { callback: async () => { await m.refreshUser(); } } },
+        'APP.SECURITY.AUTH.SIGNOUT': { out: { callback: async () => { await m.refreshUser(); } } },
+    },
+},
+```
+
+**How it works.** `SecurityService` keeps `AuthInfo`, persists it through the `APP.STORE.*`
+channels (mount `StorageService`), and publishes the outcome on `out`. `APP.SECURITY.AUTH.INFO.GET` returns the current `AuthInfo`.
+
+**Gotchas.**
+- `credentials` is a discriminated union by `scheme` (`Basic`, `Bearer`, `ApiKey`, ...).
+- A failed sign-in rejects the request; show the message from the error `code`.
+
+**See also.** story [`SecurityServiceExample.tsx`](../src/_stories/componentModel/securityService/SecurityServiceExample.tsx).
+
+---
+
+## 7.6 Protect a page
+
+**Task.** A page needs a signed-in user; otherwise go to the sign-in page and come back.
+
+```ts
+events: {
+    onReady: async () => {
+        const msg = await c.msgBus.request({ channel: 'APP.SECURITY.AUTH.ENSURE' });
+        m.user = msg.payload.properties?.user;
+        await m.load();
+    },
+},
+```
+
+**How it works.** `ENSURE` returns `AuthInfo` when authenticated; otherwise it sends
+`APP.NAV.GOTO` to `routes.authSignInPage` with a `callbackUrl` of the current location.
+
+**Gotchas.**
+- `SecurityService` needs a security config: pass `domainConfig` or provide
+  `APP.SECURITY.CONFIG.GET`. It holds `id`, `routes.authSignInPage` / `authSignOutPage` and, in
+  conventions mode, `endpoints.authSignIn`.
+
+---
+
+## 7.7 Configure the built-in Bearer flow (`useConventions`)
+
+**Task.** My backend has sign-in / refresh / sign-out endpoints returning tokens.
+
+```tsx
+const securityConfig: BaseSecurityDomainConfig = {
+    id: 'my-app',
+    endpoints: { authSignIn: '/api/auth/sign-in', authRefresh: '/api/auth/refresh', authSignOut: '/api/auth/sign-out' },
+    routes: { authSignInPage: '/sign-in', authSignOutPage: '/signed-out' },
+};
+
+<SecurityService useConventions domainConfig={securityConfig} />
+```
+
+**How it works.** With `useConventions: true` (default) the service performs the HTTP sign-in,
+stores and refreshes tokens, and provides `APP.SECURITY.AUTH.APPLY`, which `HttpClient` uses for
+`useAuth: true` requests (`Bearer` and `Basic`).
+
+**Gotchas.**
+- `endpoints.authSignIn` is required in this mode and is checked when the service initializes.
+
+---
+
+## 7.8 Custom auth (mock, OIDC, your own backend)
+
+**Task.** Sign-in is handled by my own code (a mock, an OIDC library, a cookie session).
+
+```tsx
+<SecurityService useConventions={false} />
+
+// in a provider component
+msgBroker: {
+    provide: {
+        'APP.SECURITY.AUTH.SIGNIN.REQUEST': {
+            in: {
+                callback: async (msg) => {
+                    const user = await myAuth.login(msg.payload.credentials);
+                    return { scheme: 'Session', isAuthenticated: true, properties: { user } } as AuthInfo;
+                },
+            },
+        },
+        'APP.SECURITY.AUTH.SIGNOUT.REQUEST': { in: { callback: async () => { await myAuth.logout(); } } },
+        'APP.SECURITY.AUTH.APPLY': {
+            in: { callback: async () => ({ credentials: 'include' }) }, // e.g. cookie session
+        },
+    },
+},
+```
+
+**How it works.** Components still call `SIGNIN` / `SIGNOUT` / `ENSURE`; the service delegates the
+work to the `*.REQUEST` providers. `APP.SECURITY.AUTH.APPLY` is yours to provide in this mode if
+API clients use `useAuth: true`.
+
+**See also.** story [`SecurityServiceExample.tsx`](../src/_stories/componentModel/securityService/SecurityServiceExample.tsx)
+(Basic auth over custom handlers); webapp `components/layout/MainLayout.tsx` (`useConventions={false}`).
+
+---
+
+## 7.9 Authorize API calls (`useAuth`)
+
+**Task.** An API method must send the current token.
+
+```ts
+getProfile(): Promise<Profile> {
+    return this.fetch({ url: '/api/me', method: 'GET', useAuth: true });
+}
+```
+
+**How it works.** `HttpClient` requests `APP.SECURITY.AUTH.APPLY` and merges the returned headers,
+query and `credentials` into the request.
+
+**See also.** [Services](topic--cookbook-services.md), recipe 6.3.
+
+---
+
+## Document: docs/topic--cookbook-components.md (Cookbook: Component Basics)
+
+# Cookbook: Component Basics
+
+Defining, configuring and mounting components, plus the two meanings of `children`.
+Part of the [Cookbook](topic--cookbook.md).
+
+---
+
+## 1.1 Define a component
+
+**Task.** I want a new component with state, an action and a view.
+
+```tsx
+import type { Component, ComponentDef, ComponentModel, ComponentParams, ComponentStruct } from '@actdim/dynstruct/componentModel/contracts';
+import { toReact, useComponent } from '@actdim/dynstruct/componentModel/react/hooks';
+
+type CounterStruct = ComponentStruct<AppMsgStruct, {
+    props: { count: number; step: number };
+    actions: { increment: () => void };
+}>;
+
+export const useCounter = (params: ComponentParams<CounterStruct>): Component<CounterStruct> => {
+    let c: Component<CounterStruct>;
+    let m: ComponentModel<CounterStruct>;
+
+    const def: ComponentDef<CounterStruct> = {
+        props: { count: 0, step: 1 },
+        actions: {
+            increment: () => { m.count += m.step; },
+        },
+        view: () => (
+            <button id={c.id} onClick={() => m.increment()}>
+                {m.count}
+            </button>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
+};
+
+export type { CounterStruct };
+export const Counter = toReact(useCounter);
+```
+
+**How it works.** The struct is the public contract; `def` is the implementation. `c` is the
+instance, `m = c.model` is its reactive model with actions blended in (`m.increment()`, there is no
+`c.actions`). `view` is an observer: it re-renders when what it read changes.
+
+**Gotchas.**
+- `c` and `m` are assigned after `useComponent` returns: anything in `def` that runs while `def`
+  is built must read them lazily (`() => m.x`).
+- The framework does not put `c.id` on the DOM; do it yourself if you need it.
+- Inline JSX handlers with logic are discouraged; call an action.
+
+**See also.** [Core Concepts](topic--02-core-concepts.md);
+story [`SimpleComponent.tsx`](../src/_stories/componentModel/SimpleComponent.tsx).
+
+---
+
+## 1.2 Keep internals private (`ComponentStructExt`)
+
+**Task.** My component needs extra state, fragments and helper actions that callers must not see.
+
+```tsx
+export const useProfile = (params: ComponentParams<ProfileStruct>): Component<ProfileStruct> => {
+    type ImplStruct = ComponentStructExt<ProfileStruct, {
+        props: { loading: boolean };
+        actions: { load: () => Promise<void> };
+        children: { header: React.FC };
+    }>;
+
+    let c: Component<ImplStruct>;
+    let m: ComponentModel<ImplStruct>;
+
+    const def: ComponentDef<ImplStruct> = { /* ... */ };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c; // callers see Component<ProfileStruct>
+};
+```
+
+**How it works.** `ComponentStructExt<Public, Private>` extends the struct inside the
+hook-constructor only. Return type `Component<PublicStruct>` hides the rest.
+
+**Gotchas.**
+- For non-reactive per-instance data (cache, lock) use `ComponentImpl<Struct, Internals>` and pass
+  the internals as the third argument of `useComponent`; access them via `c._`.
+
+**See also.** story [`StateExample.tsx`](../src/_stories/componentModel/componentState/StateExample.tsx);
+`src/services/react/StorageService.tsx`.
+
+---
+
+## 1.3 Defaults vs params
+
+**Task.** I want a default value that the caller can override.
+
+```tsx
+// def: defaults only
+props: { step: 1, label: 'Count' },
+
+// caller (plain React boundary)
+<Counter step={5} />
+
+// caller (another dynstruct component)
+children: { counter: useCounter({ step: 5 }) },                        // initial value
+children: { counter: useCounter({ step: bindProp(() => m, 'step') }) }, // live
+```
+
+**How it works.** A plain param is an **initial value** applied once on top of the default. A
+binding is a **live channel**. Props passed through `toReact` (JSX) are turned into bindings by the
+framework, so they stay live and are owned by the React parent.
+
+**Gotchas.**
+- Never read `params.x` in the hook-constructor (`props: { step: params.step ?? 1 }`): it is a
+  snapshot that looks live.
+- A plain param changed on a later render is not applied (DEV warning). Use a binding, or a new
+  `$key` to recreate the instance.
+
+---
+
+## 1.4 Computed (derived) prop
+
+**Task.** `total` is always `price * qty`.
+
+```ts
+// struct: props: { price: number; qty: number; readonly total: number }
+props: {
+    price: 0,
+    qty: 1,
+    get total() { return m.price * m.qty; },
+},
+```
+
+**How it works.** A getter-only prop becomes a cached computed value. Mark it `readonly` in the
+struct and use `m`, not `this`.
+
+---
+
+## 1.5 Lifecycle: load data, clean up
+
+**Task.** Load data when the component appears; release a resource when it goes away.
+
+```ts
+events: {
+    onInit: () => { /* sync setup, no DOM */ },
+    onReady: async () => { await m.load(); },        // like useEffect, async-safe
+    onLayoutReady: () => { /* DOM is available, sync */ },
+    onDestroy: () => { socket.close(); },
+},
+```
+
+**How it works.** `onInit` runs once on creation; `onLayoutReady` / `onLayoutDestroy` map to
+`useLayoutEffect`; `onReady` / `onDestroy` map to `useEffect`. Errors in all of them go to
+`onCatch`.
+
+**Gotchas.**
+- Subscriptions and requests made through `c.msgBus` are cancelled on unmount automatically; no
+  cleanup needed for them.
+
+---
+
+## 1.6 Mount a component and give it an id
+
+**Task.** Render a dynstruct component from plain React code (router element, root layout) with a
+stable id.
+
+```tsx
+<Route path="/counter" element={<Counter $id="main-counter" step={2} />} />
+<UserCard $key={user.id} />  // id: "userCard#<user.id>"
+```
+
+**How it works.** `toReact(useX)` makes a React component. Id priority: `$id` as is, else
+`<regType>#<$key>`, else `<regType>#<n>`. `regType` is derived from the hook name by the dynstruct
+Vite plugin (`useUserCard` -> `UserCard`).
+
+**Gotchas.**
+- Render `toReact` components only at the boundary with plain React. Inside a dynstruct component
+  declare the hook in `children` ([Composition](topic--cookbook-composition.md), recipe 4.2).
+- `$id`, `$key` and `$events` are service params; they are never stored in the model.
+
+---
+
+## 1.7 Provide the message bus at the app root
+
+**Task.** Every component needs `c.msgBus`; I want one bus for the whole app.
+
+```tsx
+import { createMsgBus } from '@actdim/msgmesh/core';
+import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/react/componentContext';
+
+export const appMsgBus = createMsgBus<AppMsgStruct, AppMsgHeaders>();
+
+export function App() {
+    return (
+        <ComponentContextProvider value={{ msgBus: appMsgBus }}>
+            <NavService routes={appRoutes} />
+            <StorageService storeName="my-app" />
+            {/* <SecurityService />: see the Auth & Navigation recipes for its configuration */}
+            <AppRoutes />
+        </ComponentContextProvider>
+    );
+}
+```
+
+**How it works.** Components get the bus from React context; nobody passes it through props.
+Service components (`NavService`, `SecurityService`, `StorageService`, `ServiceProvider`) are
+mounted once near the root and provide their channels to everybody below.
+
+**Gotchas.**
+- `NavService` uses React Router: mount it inside the router (for example in the root layout
+  route), as the mempart webapp does.
+
+**See also.** [Messaging](topic--cookbook-messaging.md), recipe 5.1;
+story [`bootstrap.ts`](../src/_stories/componentModel/bootstrap.ts);
+webapp `components/layout/MainLayout.tsx`.
+
+---
+
+## 1.8 Choose a reactivity mode
+
+**Task.** A prop holds a big array, a config object or a React element.
+
+```ts
+props: {
+    rows: prop({ initialValue: [], reactive: 'shallow' }),   // container tracked, items plain
+    icon: prop({ initialValue: null, reactive: 'ref' }),     // reassignment tracked, stored by reference
+    config: prop({ initialValue: { debug: false }, reactive: false }), // not tracked
+},
+```
+
+**How it works.** Default is deep reactive. See
+[Composition](topic--cookbook-composition.md), recipe 4.9, for when to pick which.
+
+---
+
+## 1.9 React content in props
+
+**Task.** My component takes an icon (`ReactNode`) or a render function from the caller.
+
+```ts
+// struct: props: { icon?: React.ReactNode; renderEmpty?: React.FC }
+props: {
+    icon: prop({ initialValue: null, reactive: 'ref' }),
+    renderEmpty: undefined,
+},
+view: () => (
+    <div>
+        {m.icon}
+        {m.items.length === 0 && m.renderEmpty && <m.renderEmpty />}
+    </div>
+),
+```
+
+**How it works.** React values (elements, portals, `memo` / `lazy` types, contexts) must be stored
+in `reactive: 'ref'` props. Functions are plain values and need nothing special.
+
+**Gotchas.**
+- In DEV a React value in a deep-reactive prop throws: `[dynstruct] Prop 'x' ... holds a React
+  value ...`. Production does not check.
+- Values that come through bindings (`toReact` props, factory child props) are not stored and not
+  checked.
+
+---
+
+## 1.10 Two kinds of `children`
+
+**Task.** I see `children` in two places and want to know which is which.
+
+| | dynstruct `children` | React `children` |
+|---|---|---|
+| Where declared | `ComponentStruct.children` + `def.children` | JSX body: `<Panel>...</Panel>` |
+| What it holds | child components and fragments **owned** by this component | content the **caller** passes in |
+| How to read | `c.children.name` (instance), `<c.children.Name />` (view) | `props.children` in `view: (props) => ...` |
+| Lifetime | created once with the parent | new on every caller render |
+
+```tsx
+type PanelStruct = ComponentStruct<AppMsgStruct, {
+    props: { title: string };
+    children: { closeButton: ButtonStruct; footer: React.FC }; // dynstruct children
+}>;
+
+const def: ComponentDef<PanelStruct> = {
+    props: { title: '' },
+    children: {
+        closeButton: useButton({ label: 'Close', onClick: () => m.close() }),
+        footer: () => <small>{m.title}</small>,
+    },
+    view: (props) => (
+        <section>
+            <h2>{m.title}</h2>
+            {props.children /* React children from the caller */}
+            <c.children.Footer />
+            <c.children.CloseButton />
+        </section>
+    ),
+};
+
+// caller
+<Panel title="Details">
+    <p>Any React content</p>
+</Panel>
+```
+
+**How it works.**
+- **dynstruct children** are the component's own parts. For a full component child the lowercase
+  key is the instance (`c.children.closeButton.model`, `.effects`, `.id`) and the Capitalized key
+  is its view for JSX (`<c.children.CloseButton />`). For `React.FC` and factory children only the
+  Capitalized key exists.
+- **React children** are `ComponentViewProps.children`: whatever is nested in the JSX tag, passed
+  to `view` as `props.children`. This works for `toReact` components and for
+  `<c.children.Panel>...</c.children.Panel>` alike.
+
+**Gotchas.**
+- Why not flat access (`c.closeButton`)? Keeping children in their own namespace avoids name
+  clashes with props and actions, and keeps the reactive model (`m`) separate from component
+  instances, which are not reactive values.
+- Destructure when the view uses many children: `const { Header, List, Footer } = c.children;`
+  inside `view`.
+- A component without `view` renders its React children as is.
+
+**See also.** `ComponentChildren`, `ComponentViewProps` in [API Reference](topic--05-api-reference.md).
+
+---
+
+## Document: docs/topic--cookbook-composition.md (Cookbook: Composition, Lists & Dialogs)
+
+# Cookbook: Composition, Lists & Dialogs
+
+How to build a screen out of children: fragments, lists, conditional parts, dialogs and slots.
+Part of the [Cookbook](topic--cookbook.md). What `children` means is explained in
+[Components](topic--cookbook-components.md), recipe 1.10.
+
+The priority rule: **every nested dynstruct component is declared in `def.children`** and rendered
+as `<c.children.Name />`. Do not render dynstruct components inline in `view` with props
+(`<Button label={m.title} onClick={...} />`): the parent then tracks every prop expression and
+re-renders on each change.
+
+---
+
+## 4.1 Split a view into sections (`React.FC` children)
+
+**Task.** My view is long; I want named sections that re-render on their own.
+
+```tsx
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: { items: string[]; filter: string };
+    children: { toolbar: React.FC; list: React.FC };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: { items: [], filter: '' },
+    children: {
+        toolbar: () => <input {...c.mapToEdit('filter')} />,
+        list: () => (
+            <ul>
+                {m.items.filter((x) => x.includes(m.filter)).map((x) => <li key={x}>{x}</li>)}
+            </ul>
+        ),
+    },
+    view: () => (
+        <section id={c.id}>
+            <c.children.Toolbar />
+            <c.children.List />
+        </section>
+    ),
+};
+```
+
+**How it works.** A `React.FC` child is a lightweight observer fragment without its own model. It
+reads `m` and re-renders only when what it read changes.
+
+**Gotchas.**
+- Only the Capitalized JSX name exists for fragments (`<c.children.List />`); there is no
+  `c.children.list.model`.
+
+**See also.** story [`StateExample.tsx`](../src/_stories/componentModel/componentState/StateExample.tsx).
+
+---
+
+## 4.2 Use a child component
+
+**Task.** I want a reusable component (button, text field, card) inside mine.
+
+```tsx
+import { useButton, type ButtonStruct } from '@actdim/dynstruct-mui';
+
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: { title: string };
+    actions: { save: () => Promise<void> };
+    children: { saveButton: ButtonStruct };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: { title: 'Save' },
+    actions: { save: async () => { /* ... */ } },
+    children: {
+        saveButton: useButton({ label: bind(() => m.title), onClick: () => m.save() }),
+    },
+    view: () => <c.children.SaveButton />,
+};
+```
+
+**How it works.** The child is created once with the parent; its bindings are lazy, so only the
+child re-renders when `m.title` changes. No `useMemo` / `useCallback` needed.
+
+**Gotchas.**
+- Declare the child's struct in `children` of your struct; that is the dependency contract.
+- The same view must not be mounted twice (`<c.children.X />` in two places): it shares id,
+  effects and abort controller. Declare a second child for a second place.
+
+---
+
+## 4.3 Render a list of child components
+
+**Task.** I have `m.items` and want one card component per item.
+
+```tsx
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: { items: Item[] };
+    children: { card: (p: { item: Item }) => CardStruct };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: { items: [] },
+    children: {
+        card: (p) => useCard({ item: bind(() => p.item), $key: p.item.id }),
+    },
+    view: () => (
+        <div>
+            {m.items.map((item) => <c.children.Card key={item.id} item={item} />)}
+        </div>
+    ),
+};
+```
+
+**How it works.** A function child is a factory: each `<c.children.Card />` element creates its own
+instance and receives the JSX props as live, read-only values (`p`).
+
+**Gotchas.**
+- Bind each value: `bind(() => p.item)`. Passing `p` whole (`useCard(p)`) or `{ item: p.item }`
+  is an initial snapshot only (DEV warning).
+- Use a stable React `key`; `$key` additionally gives a predictable component id
+  (`card#<id>`).
+
+**See also.** test `tests/react/params-semantics.test.tsx` ("Factory children receive live JSX
+props"); webapp `features/profile/UserStoragesList.tsx`.
+
+---
+
+## 4.4 Show a child conditionally
+
+**Task.** Show a spinner while loading, an empty state when there is no data.
+
+```tsx
+children: {
+    spinner: useCircularProgress({ size: 32 }),
+    emptyState: () => <p>No items yet</p>,
+},
+view: () => (
+    <div>
+        {m.loading && <c.children.Spinner />}
+        {!m.loading && m.items.length === 0 && <c.children.EmptyState />}
+    </div>
+),
+```
+
+**How it works.** The child instance exists for the parent's lifetime; the condition only decides
+whether its view is mounted.
+
+**Gotchas.**
+- Keep the condition in `view` (or in a fragment child); do not create children conditionally in
+  `def.children`: hook-constructors follow the rules of React hooks.
+
+---
+
+## 4.5 Parent-controlled dialog
+
+**Task.** A dialog opens when something is selected and closes back into the parent state.
+
+```tsx
+children: {
+    deleteDialog: useDialog({
+        open: bind(() => Boolean(m.toDelete)),
+        onClose: () => { m.toDelete = null; },
+        title: 'Delete item?',
+        content: () => <p>{m.toDelete?.name} will be removed.</p>,
+        actions: () => (
+            <>
+                <c.children.CancelButton />
+                <c.children.ConfirmButton />
+            </>
+        ),
+    }),
+    cancelButton: useButton({ label: 'Cancel', onClick: () => { m.toDelete = null; } }),
+    confirmButton: useButton({ label: 'Delete', color: 'error', onClick: () => m.confirmDelete() }),
+},
+view: () => (
+    <>
+        {/* ... list ... */}
+        <c.children.DeleteDialog />
+    </>
+),
+```
+
+**How it works.** The open state is derived from the model (`toDelete`), so there is no separate
+`open` flag to keep in sync. `content` and `actions` are `React.FC` slots of the dialog.
+
+**See also.** webapp `features/profile/UserStoragesList.tsx`.
+
+---
+
+## 4.6 Global dialog opened over the bus
+
+**Task.** Many places in the app open the same dialog (intake, report, add storage).
+
+```tsx
+// anywhere
+c.msgBus.send({ channel: 'APP.STORAGE.ADD_DIALOG_OPEN' });
+
+// the dialog host, mounted once near the root
+msgBroker: {
+    subscribe: {
+        'APP.STORAGE.ADD_DIALOG_OPEN': {
+            in: { callback: () => { m.open = true; c.resetValidation(); } },
+        },
+    },
+},
+```
+
+**How it works.** The dialog owns its state; callers only express the intent. No prop drilling and
+no callback props.
+
+**See also.** [Messaging](topic--cookbook-messaging.md); webapp `features/intake/IntakeDialog.tsx`.
+
+---
+
+## 4.7 Pass content into a child's slot
+
+**Task.** My card takes a header and a footer from the caller.
+
+```tsx
+// Card: declares the slots
+type CardStruct = ComponentStruct<AppMsgStruct, {
+    props: { header?: React.FC; footer: React.ReactNode };
+}>;
+props: {
+    header: undefined,
+    footer: prop({ initialValue: null, reactive: 'ref' }), // React element: ref prop
+},
+view: () => (
+    <article>
+        {m.header && <m.header />}
+        <div>...</div>
+        <footer>{m.footer}</footer>
+    </article>
+),
+
+// Caller
+children: {
+    card: useCard({ header: () => <h3>{m.title}</h3>, footer: <small>v1</small> }),
+},
+```
+
+**How it works.** A function slot (`React.FC`) is rendered as a component and stays reactive to the
+caller's model. A React element stored in the model must live in a `reactive: 'ref'` prop.
+
+**Gotchas.**
+- A React element in a deep-reactive prop throws in DEV: `... holds a React value ... declare
+  prop({ reactive: 'ref' })`.
+- To render another dynstruct child inside the slot, pass a fragment:
+  `header: () => <c.children.Title />`.
+
+---
+
+## 4.8 Render arbitrary content with a model (`useDynamicContent`)
+
+**Task.** I need a small child that renders data with a function I pass in.
+
+```tsx
+import { useDynamicContent } from '@actdim/dynstruct/componentModel/DynamicContent';
+
+children: {
+    stats: useDynamicContent<Stats>({
+        data: bind(() => m.stats),
+        render: (props, cc) => <span>{cc.model.data.count} items</span>,
+    }),
+},
+```
+
+**How it works.** `DynamicContent` is a generic component with `data` and `render` props; useful
+for one-off fragments that need their own instance (id, error boundary).
+
+---
+
+## 4.9 Large arrays: control reactivity
+
+**Task.** I store thousands of rows and only replace or push them.
+
+```ts
+props: {
+    rows: prop({ initialValue: [], reactive: 'shallow' }), // push/pop tracked, items not proxied
+    chartData: prop({ initialValue: [], reactive: 'ref' }), // only reassignment tracked
+    config: prop({ initialValue: { debug: false }, reactive: false }), // not tracked at all
+},
+```
+
+**How it works.** `'shallow'` keeps the container reactive but items plain; `'ref'` stores by
+reference and tracks only reassignment (replace the array to update); `false` turns tracking off.
+
+**Gotchas.**
+- With `'shallow'` or `'ref'`, editing an item property in place is not seen; replace the item or
+  the array.
+
+---
+
+## 4.10 Use the MUI kit (`@actdim/dynstruct-mui`)
+
+**Task.** I want ready-made inputs, buttons and dialogs that follow the same rules.
+
+```ts
+import { useButton, useTextField, useDialog, type ButtonStruct } from '@actdim/dynstruct-mui';
+```
+
+**How it works.** Each kit component is a dynstruct hook-constructor (`useXxx`) with a `XxxStruct`
+type, used as a child exactly like recipe 4.2. `toReact` exports (`Button`, `TextField`) are only
+for the boundary with plain React code.
+
+---
+
+## Document: docs/topic--cookbook-data-flow.md (Cookbook: Data Flow & Bindings)
+
+# Cookbook: Data Flow & Bindings
+
+How values move between a parent and its children, and how to react to changes.
+Part of the [Cookbook](topic--cookbook.md).
+
+```ts
+import { bind, bindProp, fromExternalStore, toPlain } from '@actdim/dynstruct/componentModel/core';
+```
+
+Pick a binding in this order:
+
+1. `bindProp(() => m, 'prop')` - two-way, typed by key path, nested paths allowed.
+2. `bind(() => expr)` - read-only or derived value.
+3. `bind(get, set[, converter])` - only when get or set needs its own logic.
+
+---
+
+## 2.1 Pass a value down (parent to child, read-only)
+
+**Task.** The child shows a value the parent owns and must follow its changes.
+
+```tsx
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: { title: string };
+    children: { header: HeaderStruct };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: { title: 'Inbox' },
+    children: {
+        header: useHeader({ text: bind(() => m.title) }),
+    },
+    view: () => <c.children.Header />,
+};
+```
+
+**How it works.** A binding is a live channel: the child reads `m.text` through the getter, so it
+re-renders when `m.title` changes. The parent does not track the value and does not re-render.
+
+**Gotchas.**
+- Always a lazy getter: `() => m.title`. `m` is `undefined` while `def` is built, so
+  `useHeader({ text: m.title })` throws.
+- A plain value is an initial value only: `useHeader({ text: 'Inbox' })` is applied once.
+- The child cannot write back through a read-only binding (DEV warning on write).
+
+**See also.** [Core Concepts](topic--02-core-concepts.md), section on params semantics.
+
+---
+
+## 2.2 Two-way binding (`bindProp`)
+
+**Task.** The child edits a value and the parent must see the edits.
+
+```ts
+children: {
+    nameEdit: useTextField({ value: bindProp(() => m, 'name') }),
+    cityEdit: useTextField({ value: bindProp(() => m, 'address.city') }), // nested path
+},
+```
+
+**How it works.** The child's `value` reads and writes `m.name` directly; there is one source of
+truth and no `onChange` callback.
+
+**Gotchas.**
+- Do not write `bind(() => m.name, (v) => { m.name = v; })`: same behavior, longer. Use `bind(get, set)`
+  only when the setter does more (recipe 2.3).
+
+**See also.** story [`EffectDemo.tsx`](../src/_stories/componentModel/EffectDemo.tsx).
+
+---
+
+## 2.3 Binding with extra logic in the setter
+
+**Task.** Closing a dialog must also clear the draft.
+
+```ts
+children: {
+    dialog: useDialog({
+        open: bind(
+            () => m.dialogOpen,
+            (v) => {
+                m.dialogOpen = v;
+                if (!v) { m.draft = null; }
+            },
+        ),
+    }),
+},
+```
+
+**How it works.** `bind(get, set)` is the explicit form; use it when the getter computes something
+or the setter has side effects or writes elsewhere.
+
+---
+
+## 2.4 Convert a value on the way (`ValueConverter`)
+
+**Task.** The model stores cents, the input edits dollars.
+
+```ts
+import type { ValueConverter } from '@actdim/dynstruct/componentModel/contracts';
+
+const centsToDollars: ValueConverter<number, number> = {
+    convert: (cents) => cents / 100,               // source -> child
+    convertBack: (dollars) => Math.round(dollars * 100), // child -> source
+};
+
+children: {
+    priceEdit: useNumberField({ value: bind(() => m.priceCents, (v) => { m.priceCents = v; }, centsToDollars) }),
+},
+```
+
+**How it works.** The child reads `convert(get())` and writes `set(convertBack(value))`.
+For a one-off conversion an inline get/set pair also works (see the converter story).
+
+**See also.** story [`ConverterDemo.tsx`](../src/_stories/componentModel/ConverterDemo.tsx).
+
+---
+
+## 2.5 Child tells the parent something (intent over the bus)
+
+**Task.** A list item was clicked and the page must react. I do not want an `onSelect` callback
+prop.
+
+```tsx
+// Child: publishes an intent
+type ItemStruct = ComponentStruct<AppMsgStruct, {
+    props: { id: string };
+    msgScope: { publish: AppMsgChannels<'ITEM.SELECTED'> };
+}>;
+actions: {
+    select: () => { c.msgBus.send({ channel: 'ITEM.SELECTED', payload: { id: m.id } }); },
+},
+
+// Parent: listens only to its own subtree
+msgBroker: {
+    subscribe: {
+        'ITEM.SELECTED': {
+            in: {
+                callback: (msg) => { m.selectedId = msg.payload.id; },
+                componentFilter: ComponentMsgFilter.FromDescendants,
+            },
+        },
+    },
+},
+```
+
+**How it works.** `FromDescendants` makes the parent receive only messages sent by components in
+its own subtree, so two instances of the page do not hear each other.
+
+**Gotchas.**
+- Callback props (`onSelect*`, `onClose*`, `onChange*`) between components are an anti-pattern:
+  two sources of truth and timing races. `on*` props are fine on primitive wrappers over DOM events
+  (a button `onClick`).
+- Add the channel to the struct's `msgScope` so the contract is visible on the type.
+
+**See also.** [Messaging](topic--cookbook-messaging.md);
+story [`TestContainer.tsx`](../src/_stories/componentModel/TestContainer.tsx).
+
+---
+
+## 2.6 Call a child's action or set its prop
+
+**Task.** The parent must tell one specific child to do something (focus, reset, refresh).
+
+```ts
+actions: {
+    resetFilters: () => { c.children.filters.model.reset(); },
+},
+events: {
+    onChangeText: () => { c.children.preview.model.value = m.text; },
+},
+```
+
+**How it works.** The lowercase key is the child instance: `c.children.filters.model` is its
+reactive model with actions blended in.
+
+**Gotchas.**
+- Use this for commands to a direct child. For "keep in sync" use a binding instead (2.1, 2.2).
+- Only full components have `.model`; `React.FC` children do not (see
+  [Components](topic--cookbook-components.md), recipe 1.10).
+
+---
+
+## 2.7 React to my own prop change (`onChangeX`)
+
+**Task.** When `email` changes I want to recompute something.
+
+```ts
+events: {
+    onChangingAmount: (oldValue, newValue) => newValue >= 0, // return false to reject the write
+    onChangeEmail: (value) => { m.userId = value ? makeId(value) : null; },
+    onPropChange: (prop, value) => { console.debug('changed', prop, value); },
+},
+```
+
+**How it works.** `onChanging<Prop>` runs before the write and can veto it; `onChange<Prop>` runs
+after. `onPropChanging` / `onPropChange` are the generic forms. A React parent can pass the same
+handlers via `$events`.
+
+**Gotchas.**
+- These fire on writes made through this component's model (its own code, `mapToEdit`, a child
+  writing through a two-way binding). A bound prop whose source changes in the parent does not
+  pass through this model's setter: use an effect (2.8).
+
+---
+
+## 2.8 Reload when inputs change (effect)
+
+**Task.** When `query` or `page` changes (including changes that come in through bindings), reload
+the list.
+
+```ts
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: { query: string; page: number; items: Item[] };
+    effects: 'reload';
+}>;
+
+effects: {
+    reload: () => {
+        const key = `${m.query}|${m.page}`; // reading registers the dependencies
+        void m.load(key);
+    },
+},
+actions: {
+    load: async (key: string) => { /* request, then write m.items */ },
+},
+```
+
+**How it works.** An effect is auto-tracked: it re-runs whenever a value it read changes, whatever
+the source. `c.effects.reload.pause()` / `.resume()` / `.stop()` control it.
+
+**Gotchas.**
+- Put the async work into an action so errors reach `onCatch`; guard against stale responses (see
+  [Services](topic--cookbook-services.md), recipe 6.7).
+- Do not use React `useEffect` in the hook-constructor for this: the host is not an observer, so it
+  will not re-run on model changes.
+
+**See also.** story [`EffectDemo.tsx`](../src/_stories/componentModel/EffectDemo.tsx).
+
+---
+
+## 2.9 Derived value (computed prop)
+
+**Task.** `fullName` is always `firstName + lastName`.
+
+```ts
+// struct
+props: { firstName: string; lastName: string; readonly fullName: string };
+
+// def
+props: {
+    firstName: '',
+    lastName: '',
+    get fullName() {
+        return `${m.firstName} ${m.lastName}`.trim(); // use m, not this
+    },
+},
+```
+
+**How it works.** A getter-only prop in `def.props` becomes a cached computed value. It also works
+on nested object literals.
+
+---
+
+## 2.10 Read external state (`fromExternalStore`)
+
+**Task.** I have a non-model store (i18n runtime, theme store, module-level service) and want views,
+bindings or effects to re-run when it changes.
+
+```ts
+const readLocale = fromExternalStore(
+    (onChange) => { i18n.on('languageChanged', onChange); return () => i18n.off('languageChanged', onChange); },
+    () => i18n.language,
+    'locale',
+);
+
+// anywhere tracked: view, bind getter, computed prop, effect
+children: { label: useLabel({ text: bind(() => (readLocale() === 'de' ? 'Hallo' : 'Hello')) }) },
+```
+
+**How it works.** Same contract as React `useSyncExternalStore`; the reader subscribes only while
+something observes it.
+
+**Gotchas.**
+- Never import MobX directly in app code; this is the supported bridge.
+
+---
+
+## 2.11 Hand model data to non-reactive code (`toPlain`)
+
+**Task.** I pass model data to a REST client, a chart library or `postMessage`.
+
+```ts
+chart.setData(toPlain(m.points));
+worker.postMessage(toPlain({ filters: m.filters }));
+```
+
+**How it works.** `toPlain` strips reactive proxies. Payloads sent through `c.msgBus` are already
+unwrapped; call `toPlain` for everything else.
+
+---
+
+## Document: docs/topic--cookbook-errors-testing.md (Cookbook: Errors & Testing)
+
+# Cookbook: Errors & Testing
+
+Where errors go, how to show them, and how to test components with a real bus.
+Part of the [Cookbook](topic--cookbook.md).
+
+---
+
+## 8.1 Know where an error goes
+
+**Task.** I want to know which errors reach `onCatch` and which reach the caller.
+
+| Thrown in | `onCatch` | Re-thrown to the caller |
+|---|---|---|
+| `onInit`, `onReady`, `onLayoutReady`, `onDestroy`, `onLayoutDestroy` | yes | no |
+| effects (`def.effects`) | yes | no |
+| `onChangingX`, `onChangeX`, `onGetX`, `onPropChange(ing)` | yes | no |
+| binding get / set | yes | no |
+| actions (`def.actions`) | yes | yes |
+| `msgBroker` subscriber / provider callbacks | yes | yes |
+| `c.msgBus.request(...)` rejection | yes | yes |
+| `c.run(fn)` / `c.run(fn, true)` | yes | yes / no |
+| a plain helper function or inline JSX handler | no | yes |
+
+**How it works.** Every routed error is also pushed to `m.$.errors` and sent on `APP.ERROR`
+(topic `$SYSTEM_TOPIC`) with the component as `source`.
+
+**See also.** [Core Concepts](topic--02-core-concepts.md), error handling.
+
+---
+
+## 8.2 Handle errors in one place (`onCatch`)
+
+**Task.** Any failure of this component should show a message and a retry button.
+
+```tsx
+const def: ComponentDef<ImplStruct> = {
+    props: { status: 'idle', errorText: '' },
+    useErrorBoundary: false, // only async errors expected here
+    actions: {
+        load: async () => {
+            m.status = 'loading';
+            m.items = (await c.msgBus.request({ channel: 'API.ITEMS.GETALL', payload: [] })).payload;
+            m.status = 'idle';
+        },
+    },
+    events: {
+        onReady: () => m.load(),
+        onCatch: (err) => {
+            m.status = 'error';
+            m.errorText = err instanceof HttpClientError && err.code ? t(`errors.${err.code}`) : t('errors.generic');
+        },
+    },
+    view: () =>
+        m.status === 'error' ? (
+            <p role="alert">
+                {m.errorText} <button onClick={() => c.run(() => m.load(), true)}>Retry</button>
+            </p>
+        ) : (
+            <ItemList items={m.items} />
+        ),
+};
+```
+
+**How it works.** Actions route errors to `onCatch` automatically. `c.run(fn, true)` wraps an
+inline handler so its error also lands in `onCatch` and is not re-thrown.
+
+**Gotchas.**
+- A plain helper next to `def` (`const reload = async () => {...}`) is not wrapped: put it in
+  `def.actions` or wrap its body in `c.run(...)`.
+- Build UI text from `err.code`, not `err.message`.
+
+**See also.** story [`ErrorBoundaryDemo.tsx`](../src/_stories/componentModel/ErrorBoundaryDemo.tsx).
+
+---
+
+## 8.3 Show a fallback when `view` throws
+
+**Task.** A broken component should show a placeholder instead of breaking the page.
+
+```tsx
+const def: ComponentDef<Struct> = {
+    useErrorBoundary: true, // default
+    fallbackView: () => <div role="alert">This widget failed to render.</div>,
+    view: () => { /* may throw */ },
+};
+```
+
+**How it works.** With `useErrorBoundary` (default `true`) the view is wrapped in an error
+boundary; a render error goes to `onCatch` and `fallbackView` (or a standard fallback) is shown.
+
+---
+
+## 8.4 Show a global error overlay
+
+**Task.** Collect every error in the app into one panel or toast.
+
+```ts
+msgBroker: {
+    subscribe: {
+        'APP.ERROR': {
+            in: { topic: '/.*/', callback: (msg) => { m.errors = [...m.errors, msg.payload]; } },
+        },
+    },
+},
+```
+
+**How it works.** Components send `APP.ERROR` with the system topic; `topic: '/.*/'` (a regex)
+receives every topic. Bus-level failures go to `MSGBUS.ERROR`.
+
+**Gotchas.**
+- Without the topic filter the subscriber does not receive these messages: topics match exactly by
+  default.
+
+**See also.** story [`ErrorOverlay.tsx`](../src/_stories/componentModel/ErrorOverlay.tsx),
+[`bootstrap.ts`](../src/_stories/componentModel/bootstrap.ts).
+
+---
+
+## 8.5 Read a component's errors
+
+**Task.** Show a small error badge on a component.
+
+```tsx
+children: {
+    badge: () => (m.$.errors.length ? <span title={String(m.$.errors.at(-1))}>!</span> : null),
+},
+```
+
+**How it works.** `m.$.errors` is the list of errors routed for this component.
+
+---
+
+## 8.6 Test a component with a real bus and fake services
+
+**Task.** Unit-test a component that calls an API over the bus, without HTTP.
+
+```tsx
+import { render, screen, waitFor } from '@testing-library/react';
+import { createMsgBus } from '@actdim/msgmesh/core';
+import { ComponentContextProvider } from '@actdim/dynstruct/componentModel/react/componentContext';
+
+it('shows loaded items', async () => {
+    const msgBus = createMsgBus<AppMsgStruct>();
+    const ac = new AbortController();
+    msgBus.provide({
+        channel: 'API.ITEMS.GETALL',
+        callback: () => [{ id: 1, name: 'First' }],
+        options: { abortSignal: ac.signal },
+    });
+
+    render(
+        <ComponentContextProvider value={{ msgBus }}>
+            <ItemsView />
+        </ComponentContextProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('First')).toBeInTheDocument());
+    ac.abort();
+});
+```
+
+**How it works.** The component only knows channels, so a fake provider on a real bus replaces the
+API client. A new bus per test keeps tests independent.
+
+**Gotchas.**
+- Bus delivery is asynchronous: use `waitFor` / `findBy*`, not synchronous assertions.
+- Assert messages a component sends by subscribing in the test: `msgBus.on({ channel: 'ITEM.SELECTED', callback: spy })`.
+- Add the dynstruct Vite plugin to the Vitest config to get readable component ids.
+
+**See also.** `tests/react/services.test.tsx`, `tests/react/msgbroker-and-communication.test.tsx`.
+
+---
+
+## 8.7 Test a service adapter without React
+
+**Task.** Check that my API client methods are reachable through the bus.
+
+```ts
+import { registerAdapters } from '@actdim/msgmesh/adapters';
+
+const msgBus = createMsgBus<AppMsgStruct>();
+registerAdapters(msgBus, adapters);
+const msg = await msgBus.request({ channel: 'API.TODO.GETITEMS', payloadFn: (fn) => fn([1], ['a']) });
+expect(msg.payload).toEqual([{ id: 1, name: 'a' }]);
+```
+
+---
+
+## 8.8 Drive a component from a test (actions and model)
+
+**Task.** Change state or call an action directly in a test.
+
+```tsx
+let instance: Component<CounterStruct> | undefined;
+const Host = toReact((p: ComponentParams<CounterStruct>) => (instance = useCounter(p)));
+
+render(<ComponentContextProvider value={{ msgBus }}><Host /></ComponentContextProvider>);
+act(() => { instance!.model.increment(); });
+expect(screen.getByRole('button')).toHaveTextContent('1');
+```
+
+**How it works.** The component instance is a plain object: tests can read `model`, call actions,
+or check `model.$.propState` after `await instance.validate()`.
+
+**See also.** `tests/react/params-semantics.test.tsx`, `tests/react/validation-and-forms.test.tsx`.
+
+---
+
+## Document: docs/topic--cookbook-forms-validation.md (Cookbook: Forms & Validation)
+
+# Cookbook: Forms & Validation
+
+Recipes for editable forms: field rules, error display, submit, server errors and reset.
+Part of the [Cookbook](topic--cookbook.md). The examples assume the usual skeleton
+(`let c` / `let m`, `useComponent`) and these imports:
+
+```ts
+import type { Component, ComponentDef, ComponentModel, ComponentParams, ComponentStruct } from '@actdim/dynstruct/componentModel/contracts';
+import { useComponent, toReact } from '@actdim/dynstruct/componentModel/react/hooks';
+import { prop, bindProp, bindField } from '@actdim/dynstruct/componentModel/core';
+```
+
+Rule of thumb: declare rules on the prop with `prop({ validator })`, never validate by hand in a
+submit handler.
+
+---
+
+## 3.1 Bind a native input to a model prop (`mapToEdit`)
+
+**Task.** I want an `<input>` / `<select>` that reads and writes `m.email` without writing
+`value` / `onChange` / `onBlur` by hand.
+
+```tsx
+type Struct = ComponentStruct<AppMsgStruct, { props: { email: string; country: string } }>;
+
+const def: ComponentDef<Struct> = {
+    props: { email: '', country: 'us' },
+    view: () => (
+        <form id={c.id}>
+            <input type="email" {...c.mapToEdit('email')} />
+            <select {...c.mapToEdit<HTMLSelectElement>('country')}>
+                <option value="us">US</option>
+                <option value="de">DE</option>
+            </select>
+        </form>
+    ),
+};
+```
+
+**How it works.** `c.mapToEdit(path)` returns `value`, `onChange` and `onBlur` (plus disabled /
+read-only state) for one model path. `onBlur` marks the path touched and runs its `onBlur` rule.
+Nested paths work: `c.mapToEdit('userInfo.email')`.
+
+**Gotchas.**
+- The generic argument types the element: `mapToEdit<HTMLSelectElement>(...)`.
+- The second argument excludes props you want to set yourself: `c.mapToEdit('email', ['onBlur'])`.
+
+**See also.** [Core Concepts](topic--02-core-concepts.md);
+story [`componentState/StateExample.tsx`](../src/_stories/componentModel/componentState/StateExample.tsx).
+
+---
+
+## 3.2 Add a field rule (required, format)
+
+**Task.** I want `email` to be required and well-formed, checked when the user leaves the field.
+
+```ts
+props: {
+    email: prop({
+        initialValue: '',
+        validator: {
+            onBlur: true,
+            validate: (v: string) =>
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v ?? '')
+                    ? undefined
+                    : { isValid: false, message: 'Invalid email' },
+        },
+    }),
+},
+```
+
+**How it works.** `validate(value, ctx)` returns `undefined` for valid or a
+`ValidationResult` (`{ isValid, message?, code?, params? }`). The flags choose when it runs:
+
+| Flag | Runs on |
+|---|---|
+| `onChange` (default unless `onSubmit` is the only flag) | every write to the path |
+| `onBlur` | `c.touch(path)`, `mapToEdit` blur, `bindField` blur |
+| `onSubmit` | full `c.validate()` only |
+| none of the above, called by hand | `c.validate(path)` |
+
+**Gotchas.**
+- `message` may be a function: `message: () => t('emailInvalid')`. It is evaluated on read, so it
+  follows a locale change.
+- A rule on a nested path is declared with a dotted key: `'userInfo.email': prop({ validator })`.
+- A throwing validator goes to `onCatch`, it does not crash the form.
+
+**See also.** `Validator`, `ValidationResult` in [API Reference](topic--05-api-reference.md).
+
+---
+
+## 3.3 Show the error under the field
+
+**Task.** I want a red message under the input, but only after the user has touched it.
+
+```tsx
+children: {
+    emailRow: () => {
+        const s = m.$.propState['email'] || {};
+        return (
+            <div>
+                <input type="email" {...c.mapToEdit('email')} aria-invalid={!!s.visibleError} />
+                {s.visibleError && <span role="alert">{s.visibleError}</span>}
+            </div>
+        );
+    },
+},
+view: () => <form><c.children.EmailRow /></form>,
+```
+
+**How it works.** `m.$.propState[path]` holds the per-field state: `validation` (last result),
+`error` (message regardless of touched), `visibleError` (message once touched), `touched`,
+`validating` (an async rule is running).
+
+**Gotchas.**
+- Render `visibleError`, not `error`: `error` is set from the first keystroke.
+- Use `|| {}`: the record exists only after the first validation of that path.
+- Putting the row in a `React.FC` child keeps re-renders local to that row.
+
+---
+
+## 3.4 Use a UI-kit field (`bindField`)
+
+**Task.** I use `@actdim/dynstruct-mui` (or another kit with `value` / `error` / `helperText` /
+`onBlur` props) and want all four wired to one model path.
+
+```tsx
+import { useTextField, type TextFieldStruct } from '@actdim/dynstruct-mui';
+
+type Struct = ComponentStruct<AppMsgStruct, {
+    props: { name: string };
+    children: { nameField: TextFieldStruct };
+}>;
+
+const def: ComponentDef<Struct> = {
+    props: {
+        name: prop({
+            initialValue: '',
+            validator: { onBlur: true, validate: (v: string) => (v.trim() ? undefined : { isValid: false, message: 'Required' }) },
+        }),
+    },
+    children: {
+        nameField: useTextField({
+            label: 'Name',
+            ...bindField(() => c, 'name', { hint: () => 'Shown while the value is valid' }),
+        }),
+    },
+    view: () => <c.children.NameField />,
+};
+```
+
+**How it works.** `bindField` returns `{ value, error, helperText, onBlur }`: `value` is a
+two-way binding, `error` follows `touched && isValid === false`, `helperText` shows
+`visibleError` or the hint, `onBlur` calls `c.touch(path)`.
+
+**Gotchas.**
+- Pass a lazy getter `() => c`. `c` is `undefined` while `def.children` is built, so
+  `bindField(c, ...)` fails.
+
+---
+
+## 3.5 Validate everything before submit
+
+**Task.** I want Submit to run all rules, show every error, and stop if anything is invalid.
+
+```ts
+actions: {
+    submit: async () => {
+        if (!(await c.validate())) {
+            return; // every validated field is now touched, errors are visible
+        }
+        await c.msgBus.request({ channel: 'API.USERS.CREATE', payloadFn: (fn) => fn(toPlain({ name: m.name, email: m.email })) });
+    },
+},
+```
+
+**How it works.** `c.validate()` runs every prop rule plus `onValidate` and resolves to `boolean`.
+It marks every validated path touched, so `visibleError` appears on all invalid fields at once.
+`m.$.isValid` follows the results. `c.validate('email')` checks one path.
+
+**Gotchas.**
+- Put submit in `def.actions`: errors route to `onCatch` and writes are batched.
+- Strip reactive proxies before handing data to an API client: `toPlain(...)` (the component bus
+  proxy `c.msgBus` already does this for the payload).
+
+---
+
+## 3.6 Cross-field rules
+
+**Task.** I want "Confirm email" to match "Email", or "End date" to be after "Start date".
+
+Per-field rule that reads another field (from the story):
+
+```ts
+confirmEmail: prop({
+    initialValue: '',
+    validator: {
+        onBlur: true,
+        validate: (v: string) => (v === m.email ? undefined : { isValid: false, message: () => 'Emails do not match' }),
+    },
+}),
+```
+
+Form-level rule with `onValidate` (runs during `c.validate()`, returns results per path):
+
+```ts
+events: {
+    onValidate: () => ({
+        endDate: m.endDate >= m.startDate ? undefined : { isValid: false, message: 'End is before start' },
+    }),
+},
+```
+
+**How it works.** Inside a `def` read the typed closure `m`. In a reusable rule factory use
+`ctx.model` (untyped) and `ctx.component`.
+
+**Gotchas.**
+- A per-field rule re-runs only when its own path changes. If the other field changes later, call
+  `c.validate('confirmEmail')` from `onChangeEmail`, or rely on `onValidate` at submit.
+
+---
+
+## 3.7 Async rule (server check)
+
+**Task.** I want to check that a user name is free while typing.
+
+```ts
+userName: prop({
+    initialValue: '',
+    validator: {
+        onBlur: true,
+        validate: async (v: string, ctx) => {
+            const msg = await ctx.component.msgBus.request({ channel: 'API.USERS.ISNAMEFREE', payloadFn: (fn) => fn(v) });
+            return msg.payload ? undefined : { isValid: false, message: 'Name is taken' };
+        },
+    },
+}),
+```
+
+**How it works.** `validate` may return a promise. While it runs `propState[path].validating` is
+`true`. An older async result never overwrites a newer one.
+
+**Gotchas.**
+- Prefer `onBlur` for server checks; `onChange` calls the server on every keystroke.
+- Show a spinner from `propState[path].validating`.
+
+---
+
+## 3.8 Disable the submit button and show a busy state
+
+**Task.** I want the button disabled while the form is invalid or a request is running.
+
+```tsx
+children: {
+    submitButton: useButton({
+        label: 'Save',
+        onClick: () => m.submit(),
+        disabled: bind(() => !m.$.isValid),
+        loading: bind(() => m.$.pendingRequestCount > 0),
+    }),
+},
+```
+
+**How it works.** `m.$.pendingRequestCount` counts in-flight `c.msgBus.request(...)` calls of this
+component. `m.$.isValid` follows the last validation results.
+
+**Gotchas.**
+- `m.$.isValid` starts `true` before any rule ran; if the button must start disabled, also check
+  your own "required" values.
+
+**See also.** [Services](topic--cookbook-services.md), recipe 6.5.
+
+---
+
+## 3.9 Put server errors into the form
+
+**Task.** The server rejected the request (`409 NAME_CONFLICT`) and I want the error under the
+field, cleared as soon as the user edits it.
+
+```ts
+import { HttpClientError } from '@actdim/dynstruct/net/httpClientError';
+
+actions: {
+    submit: async () => {
+        if (!(await c.validate())) { return; }
+        try {
+            await c.msgBus.request({ channel: 'API.GROUPS.CREATE', payloadFn: (fn) => fn({ name: m.name }) });
+        } catch (err) {
+            if (err instanceof HttpClientError && err.code === 'NAME_CONFLICT') {
+                c.setValidation({ name: { isValid: false, message: () => t('nameTaken'), code: err.code } });
+                return;
+            }
+            throw err; // anything else goes to onCatch
+        }
+    },
+},
+```
+
+**How it works.** `c.setValidation(results)` stores external results; each is marked touched (so
+it is visible) and cleared when its path changes.
+
+**Gotchas.**
+- Build UI text from `err.code` and `err.params`, never from `err.message` (server English plus
+  HTTP diagnostics).
+
+---
+
+## 3.10 Reset the form when a dialog opens
+
+**Task.** My edit dialog is reused; on each open I want fresh values and no leftover errors.
+
+```ts
+events: {
+    onChangeOpen: (open) => {
+        if (open) {
+            m.name = '';
+            m.email = '';
+            c.resetValidation();
+        }
+    },
+},
+```
+
+**How it works.** `c.resetValidation()` clears results and touched state of the whole component;
+`c.resetValidation('email')` clears one path.
+
+**Gotchas.**
+- `onChangeOpen` fires on writes through this component's model. If `open` is bound to a parent
+  prop, react with an effect instead (see [Data Flow](topic--cookbook-data-flow.md), recipe 2.8).
+
+---
+
+## 3.11 Manual error map (when rules do not fit)
+
+**Task.** The checks come from a wizard step or a third-party schema and I just want to show
+messages.
+
+```ts
+// Run the schema yourself, then hand the results to the form
+const issues = schema.safeParse(toPlain({ name: m.name, email: m.email }));
+if (!issues.success) {
+    const results = Object.fromEntries(
+        issues.error.issues.map((i) => [i.path.join('.'), { isValid: false, message: i.message }]),
+    );
+    c.setValidation(results as Parameters<typeof c.setValidation>[0]); // keys are model paths
+}
+```
+
+**How it works.** Everything still lands in `m.$.propState`, so the same error rendering
+(recipes 3.3 and 3.4) works.
+
+**Gotchas.**
+- Prefer `prop({ validator })` for anything field-shaped: it re-runs automatically, the manual
+  map does not.
+
+---
+
+## Document: docs/topic--cookbook-messaging.md (Cookbook: Messaging (MsgMesh))
+
+# Cookbook: Messaging (MsgMesh)
+
+Typed message bus recipes: declare channels, send, subscribe, request/response, scoping.
+Part of the [Cookbook](topic--cookbook.md).
+
+Two shapes of channel:
+- **event**: only `in` (`send` + subscribers);
+- **request/response**: `in` and `out` (`request` + one provider).
+
+Reference channels by their string value (`'APP.NAV.GOTO'`), not by exported `$...` constants.
+
+---
+
+## 5.1 Declare the app's bus (custom message struct)
+
+**Task.** I want my own typed channels next to the built-in `APP.*` ones.
+
+```ts
+import type { MsgBus, MsgStruct } from '@actdim/msgmesh/contracts';
+import { createMsgBus } from '@actdim/msgmesh/core';
+import type { KeysOf } from '@actdim/utico/typeCore';
+import type { BaseAppMsgStruct } from '@actdim/dynstruct/appDomain/appContracts';
+import type { ComponentMsgHeaders } from '@actdim/dynstruct/componentModel/contracts';
+
+export type TodoItem = { id: number; name: string };
+
+export type AppMsgStruct = BaseAppMsgStruct<AppRoutes> & MsgStruct<{
+    'TODO.ADD': { in: TodoItem; out: void };   // event (subscribers react to in or out)
+    'TODO.LIST': { in: void; out: TodoItem[] }; // request/response
+    'TODO.CLEAR': { in: void };                 // pure event
+}>;
+
+export type AppMsgChannels<T extends keyof AppMsgStruct | Array<keyof AppMsgStruct>> = KeysOf<AppMsgStruct, T>;
+export type AppMsgHeaders = ComponentMsgHeaders;
+export type AppMsgBus = MsgBus<AppMsgStruct, AppMsgHeaders>;
+
+export const appMsgBus = createMsgBus<AppMsgStruct, AppMsgHeaders>({
+    '*': { mandatoryProvider: true }, // a request with no provider fails instead of hanging
+});
+```
+
+**How it works.** `BaseAppMsgStruct` brings the standard `APP.*` channels (nav, store, config,
+error, notice). Channel structs can live in several files and be combined with `&`; dotted
+prefixes (`API.USERS.`, `TODO.`) keep them apart.
+
+**Gotchas.**
+- Use the same struct type in `ComponentStruct<AppMsgStruct, ...>` so `c.msgBus` is typed.
+
+**See also.** story [`CustomMsgStruct.ts`](../src/_stories/componentModel/customMsgStruct/CustomMsgStruct.ts),
+[`bootstrap.ts`](../src/_stories/componentModel/bootstrap.ts).
+
+---
+
+## 5.2 Declare what a component uses (`msgScope`)
+
+**Task.** I want the component's bus contract visible on its type.
+
+```ts
+type TodoListStruct = ComponentStruct<AppMsgStruct, {
+    props: { list: TodoItem[] };
+    msgScope: {
+        publish: AppMsgChannels<'TODO.LIST'>;                 // send / request
+        subscribe: AppMsgChannels<'TODO.ADD' | 'TODO.CLEAR'>; // on / msgBroker.subscribe
+        // provide: AppMsgChannels<'...'>;                    // msgBroker.provide
+    };
+}>;
+```
+
+**How it works.** `msgScope` narrows `c.msgBus` and `def.msgBroker` to the declared channels, so a
+wrong channel name or payload is a compile error.
+
+---
+
+## 5.3 Send an event
+
+**Task.** Tell everybody that an item was added.
+
+```ts
+actions: {
+    add: () => {
+        c.msgBus.send({ channel: 'TODO.ADD', payload: toPlain(m.item) });
+    },
+},
+```
+
+**How it works.** `send` publishes to the `in` group (the default group). The component proxy
+unwraps reactive proxies, sets `headers.sourceId = c.id`, and ties the call to the component
+lifetime.
+
+---
+
+## 5.4 Subscribe declaratively (`msgBroker.subscribe`)
+
+**Task.** Refresh my list when an item is added or the list is cleared.
+
+```ts
+msgBroker: {
+    subscribe: {
+        'TODO.ADD': { out: { callback: async () => { await m.refresh(); } } },
+        'TODO.CLEAR': { in: { callback: () => { m.list = []; } } },
+    },
+},
+```
+
+**How it works.** Handlers are registered on mount and removed on unmount. The key under the
+channel is the group: `in` receives the event itself; `out` receives the provider's response, that
+is, "after it was handled".
+
+**Gotchas.**
+- Subscribe to `out` when you need the state after the provider ran (the story re-reads the list on
+  `out` of `ADD-TODO-ITEM`).
+- Errors in subscriber callbacks go to `onCatch` and are re-thrown to an awaiting sender.
+
+**See also.** story [`TodoList.tsx`](../src/_stories/componentModel/customMsgStruct/TodoList.tsx).
+
+---
+
+## 5.5 Request / provide (RPC over the bus)
+
+**Task.** One component owns the todo list; others ask it for the list.
+
+```ts
+// provider
+msgBroker: {
+    provide: {
+        'TODO.LIST': { in: { callback: () => toPlain(m.items) } },
+    },
+},
+
+// consumer
+actions: {
+    refresh: async () => {
+        const msg = await c.msgBus.request({ channel: 'TODO.LIST' });
+        m.list = msg.payload;
+    },
+},
+```
+
+**How it works.** `request` sends to `in` and resolves with the provider's `out` message. Through
+`c.msgBus` the request counts in `m.$.pendingRequestCount`, routes rejections to `onCatch`, and is
+cancelled when the component unmounts.
+
+**Gotchas.**
+- The response is a message: read `msg.payload`.
+- Pass `options: { timeout: 10000 }` for slow providers.
+
+---
+
+## 5.6 Parent and child talk only inside their subtree
+
+**Task.** Two instances of the same container must not hear each other's children.
+
+```ts
+msgBroker: {
+    subscribe: {
+        'TEST-EVENT': {
+            in: { callback: (msg) => { m.text = msg.payload; }, componentFilter: ComponentMsgFilter.FromDescendants },
+        },
+    },
+    provide: {
+        'LOCAL-EVENT': {
+            in: { callback: (msgIn) => `Hi ${msgIn.payload} from ${c.id}`, componentFilter: ComponentMsgFilter.FromDescendants },
+        },
+    },
+},
+```
+
+**How it works.** `FromDescendants` accepts messages only from components below this one;
+`FromAncestors` only from components above. The filter uses `headers.sourceId`, which `c.msgBus`
+sets automatically.
+
+**See also.** story [`TestContainer.tsx`](../src/_stories/componentModel/TestContainer.tsx),
+[`TestChild.tsx`](../src/_stories/componentModel/TestChild.tsx).
+
+---
+
+## 5.7 Custom headers
+
+**Task.** Attach a priority (or correlation id) to messages.
+
+```ts
+export type CustomMsgHeaders = ComponentMsgHeaders & { priority: number };
+
+let c: Component<Struct, CustomMsgHeaders>;
+const def: ComponentDef<Struct, CustomMsgHeaders> = { /* ... */ };
+
+c.msgBus.send({ channel: 'TODO.ADD', payload: m.item, headers: { priority: m.priority } });
+// receiver: msg.headers.priority
+```
+
+**See also.** story [`TodoEdit.tsx`](../src/_stories/componentModel/customMsgStruct/TodoEdit.tsx).
+
+---
+
+## 5.8 Late subscribers get the last value (replay)
+
+**Task.** A component mounted later must still see the current selection.
+
+```ts
+export const appMsgBus = createMsgBus<AppMsgStruct, AppMsgHeaders>({
+    'APP.SELECTION.CHANGED': { replayBufferSize: 1, replayWindowTime: Infinity },
+});
+```
+
+**How it works.** The channel keeps the last N messages and delivers them to new subscribers.
+
+**See also.** msgmesh docs, "Advanced Patterns" (message replay).
+
+---
+
+## 5.9 Topics: one channel, many streams
+
+**Task.** Many file viewers listen on one channel, each only for its own file.
+
+```ts
+c.msgBus.send({ channel: 'FILE.CHANGED', topic: `file.${fileId}`, payload: info });
+
+msgBroker: {
+    subscribe: {
+        'FILE.CHANGED': { in: { topic: `file.${fileId}`, callback: (msg) => { m.info = msg.payload; } } },
+    },
+},
+```
+
+**How it works.** The topic is part of the message address; subscribers filter on it (wildcards
+follow the msgmesh rules; `'/.*/'` matches every topic).
+
+---
+
+## 5.10 Show a global notice (toast)
+
+**Task.** Show "Saved" from anywhere.
+
+```ts
+c.msgBus.send({ channel: 'APP.NOTICE', payload: { text: 'Saved', severity: 'success' } });
+```
+
+**How it works.** `APP.NOTICE` is a standard channel; a toast service mounted at the root provides
+it (in mempart: `services/ToastService.tsx`).
+
+---
+
+## 5.11 Use the bus from plain React code
+
+**Task.** A plain React component (not dynstruct) must listen to a channel.
+
+```tsx
+import { useComponentContext } from '@actdim/dynstruct/componentModel/react/componentContext';
+
+function Clock() {
+    const { msgBus } = useComponentContext();
+    const [tick, setTick] = React.useState(0);
+    React.useEffect(() => {
+        const ac = new AbortController();
+        msgBus.on({ channel: 'APP.TICK', callback: () => setTick((t) => t + 1), options: { abortSignal: ac.signal } });
+        return () => ac.abort(); // the raw bus has no automatic cleanup
+    }, [msgBus]);
+    return <span>{tick}</span>;
+}
+```
+
+**Gotchas.**
+- Only `c.msgBus` (the component proxy) cancels subscriptions on unmount. With the raw bus always
+  pass an `abortSignal` and abort it.
+
+---
+
+## 5.12 Use the bus outside React
+
+**Task.** A module-level service (worker bridge, websocket) publishes to the app.
+
+```ts
+socket.onmessage = (e) => {
+    appMsgBus.send({ channel: 'APP.NOTICE', payload: { text: e.data } });
+};
+
+const shutdown = new AbortController();
+appMsgBus.provide({ channel: 'TODO.LIST', callback: () => store.items, options: { abortSignal: shutdown.signal } });
+```
+
+**How it works.** The bus is a plain object; anything that imports it can send, subscribe or
+provide.
+
+---
+
+## Document: docs/topic--cookbook-services.md (Cookbook: Services & API Calls)
+
+# Cookbook: Services & API Calls
+
+Expose API clients and services on the bus and call them from components.
+Part of the [Cookbook](topic--cookbook.md).
+
+The idea: a service class is turned into typed bus channels by an adapter; components call
+`c.msgBus.request(...)` and never import the HTTP client directly.
+
+---
+
+## 6.1 Expose a service class as bus channels (adapters)
+
+**Task.** I have an API client class and want each method to be a typed channel.
+
+```ts
+import { ServiceProvider } from '@actdim/dynstruct/services/react/ServiceProvider';
+import {
+    type BaseServiceSuffix, getMsgChannelSelector, type MsgProviderAdapter,
+    type ToMsgChannelPrefix, type ToMsgStruct,
+} from '@actdim/msgmesh/adapters';
+
+export class TodoApiClient {
+    static readonly name = 'TodoApiClient' as const;
+    readonly name = 'TodoApiClient' as const;
+    getItems(ids: number[], names: string[]): Promise<Item[]> { /* ... */ }
+}
+
+type TodoApiPrefix = ToMsgChannelPrefix<typeof TodoApiClient.name, 'API', BaseServiceSuffix>; // 'API.TODO.'
+type TodoApiMsgStruct = ToMsgStruct<TodoApiClient, TodoApiPrefix>; // 'API.TODO.GETITEMS', ...
+
+export const services: Record<TodoApiPrefix, object> = { 'API.TODO.': new TodoApiClient() };
+
+const adapters = Object.values(services).map(
+    (service) => ({ service, channelSelector: getMsgChannelSelector(services) }) as MsgProviderAdapter,
+);
+
+export type AppMsgStruct = BaseAppMsgStruct & TodoApiMsgStruct;
+export const ApiServiceProvider = () => ServiceProvider({ adapters });
+```
+
+Mount `<ApiServiceProvider />` once near the root (inside the bus context).
+
+**How it works.** `ToMsgChannelPrefix` derives `API.TODO.` from the class name minus known
+suffixes (`Client`, `Api`, `Service`, `Fetcher`, `Controller`, `Loader`, `Repository`) and
+uppercases it; `ToMsgStruct` maps each method to a channel whose `in` is the
+argument tuple and `out` is the awaited return type. `ServiceProvider` registers providers on
+mount and removes them on unmount.
+
+**Gotchas.**
+- The third type argument of `ToMsgStruct` excludes methods that must not become channels
+  (helpers, base-class members).
+- The prefix needs a string literal type: pass `'TodoApiClient'` directly, or use a
+  `static readonly name = '...' as const` (a plain `Class.name` is typed `string`).
+- `ToMsgStruct`'s skip list affects types only; at runtime every method is registered.
+
+**See also.** story [`serviceCall/ApiServiceProvider.ts`](../src/_stories/componentModel/serviceCall/ApiServiceProvider.ts).
+
+---
+
+## 6.2 Call a service method
+
+**Task.** Call `getItems([1, 2], ['a', 'b'])` from a component.
+
+```ts
+// msgScope: { publish: AppMsgChannels<'API.TODO.GETITEMS'> }
+actions: {
+    load: async () => {
+        const msg = await c.msgBus.request({
+            channel: 'API.TODO.GETITEMS',
+            payloadFn: (fn) => fn([1, 2], ['a', 'b']), // typed like the method
+        });
+        m.items = msg.payload;
+    },
+},
+```
+
+**How it works.** `payloadFn` gets a function with the method's signature and builds the argument
+tuple, so arguments are type-checked by name and position. `payload: [[1, 2], ['a', 'b']]` is the
+equivalent raw form.
+
+**Gotchas.**
+- Even a method with one argument takes a tuple in raw form: `payload: [arg]`.
+
+**See also.** story [`ServiceCallExample.tsx`](../src/_stories/componentModel/serviceCall/ServiceCallExample.tsx).
+
+---
+
+## 6.3 Write an HTTP API client (`HttpClient`)
+
+**Task.** A typed client for my REST API with auth headers handled for me.
+
+```ts
+import { HttpClient } from '@actdim/dynstruct/net/httpClient';
+
+export class UsersApiClient extends HttpClient {
+    static readonly name = 'UsersApiClient' as const;
+    readonly name = 'UsersApiClient' as const;
+
+    getUser(id: string): Promise<User> {
+        return this.fetch({ url: `/api/users/${id}`, method: 'GET', useAuth: true });
+    }
+}
+
+export const services = { 'API.USERS.': new UsersApiClient({ msgBus: appMsgBus }) };
+```
+
+**How it works.** `this.fetch` performs the request; `useAuth: true` asks `SecurityService` (over
+`APP.SECURITY.AUTH.APPLY`) for the auth headers. Error statuses throw `HttpClientError`. Pending
+requests are aborted when the client is disposed.
+
+**Gotchas.**
+- Show UI text from `err.code` / `err.params`, never `err.message` (see
+  [Forms](topic--cookbook-forms-validation.md), recipe 3.9).
+- Generated clients (NSwag, Orval, Kubb) plug in the same way: wrap or extend them so each method
+  becomes a channel.
+
+**See also.** story [`securityService/SecureApiClient.ts`](../src/_stories/componentModel/securityService/SecureApiClient.ts).
+
+---
+
+## 6.4 Load data when the component appears
+
+**Task.** Fetch the list on mount.
+
+```ts
+events: {
+    onReady: async () => { await m.load(); },
+},
+```
+
+**How it works.** `onReady` maps to `useEffect` and is async-safe; a rejection goes to `onCatch`.
+The request is cancelled if the component unmounts first.
+
+---
+
+## 6.5 Show a loading indicator
+
+**Task.** Show a spinner while any request of this component is running.
+
+```tsx
+children: {
+    spinner: () => (m.$.pendingRequestCount > 0 ? <progress /> : null),
+},
+```
+
+**How it works.** Every `c.msgBus.request(...)` increments `m.$.pendingRequestCount` and
+decrements it when settled. No manual `loading` flag needed for the common case.
+
+**Gotchas.**
+- Requests made with the raw bus (not `c.msgBus`) are not counted.
+
+**See also.** story [`StateExample.tsx`](../src/_stories/componentModel/componentState/StateExample.tsx) (Busy State).
+
+---
+
+## 6.6 Search as you type (debounce + ignore stale responses)
+
+**Task.** Reload results when the query changes, but not on every keystroke, and never show an older
+response over a newer one.
+
+```ts
+let timer: ReturnType<typeof setTimeout> | null = null;
+let seq = 0;
+
+const def: ComponentDef<ImplStruct> = {
+    props: { query: '', users: [] },
+    actions: {
+        search: async () => {
+            const mySeq = ++seq;
+            const msg = await c.msgBus.request({ channel: 'API.ADMIN.GETUSERS', payloadFn: (fn) => fn({ q: m.query }) });
+            if (mySeq === seq) {
+                m.users = msg.payload; // only the latest request writes
+            }
+        },
+    },
+    events: {
+        onChangeQuery: () => {
+            if (timer) { clearTimeout(timer); }
+            timer = setTimeout(() => { timer = null; void m.search(); }, 300);
+        },
+        onDestroy: () => { if (timer) { clearTimeout(timer); } },
+    },
+};
+```
+
+**How it works.** The sequence number makes late responses harmless. For a cancelling variant pass
+an `AbortController` signal in the request `options` and abort the previous one.
+
+**See also.** webapp `features/admin/AdminUsersView.tsx`.
+
+---
+
+## 6.7 Implement a service as a component
+
+**Task.** A UI-less service (toasts, theme, layout) that owns state and answers on the bus.
+
+```tsx
+type ToastServiceStruct = ComponentStruct<AppMsgStruct, {
+    props: { items: Toast[] };
+    msgScope: { provide: AppMsgChannels<'APP.NOTICE'> };
+}>;
+
+const useToastService = (params: ComponentParams<ToastServiceStruct>) => {
+    let c: Component<ToastServiceStruct>;
+    let m: ComponentModel<ToastServiceStruct>;
+    const def: ComponentDef<ToastServiceStruct> = {
+        props: { items: [] },
+        msgBroker: {
+            provide: {
+                'APP.NOTICE': { in: { callback: (msg) => { m.items.push({ id: Date.now(), ...msg.payload }); } } },
+            },
+        },
+        view: () => <ToastStack items={m.items} />,
+    };
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
+};
+export const ToastService = toReact(useToastService);
+```
+
+Mount `<ToastService />` once near the root.
+
+**How it works.** The provider lives exactly as long as the component; state stays in the model.
+Built-in `NavService`, `SecurityService` and `StorageService` follow the same pattern.
+
+**See also.** `src/services/react/StorageService.tsx`; webapp `services/ToastService.tsx`.
+
+---
+
+## 6.8 Persist small values (`StorageService`)
+
+**Task.** Remember the last opened folder between sessions.
+
+```ts
+// root: <StorageService storeName="my-app" />
+
+await c.msgBus.request({ channel: 'APP.STORE.SET', payload: { key: 'lastFolder', value: m.folderId } });
+
+const msg = await c.msgBus.request({ channel: 'APP.STORE.GET', payload: { key: 'lastFolder' } });
+m.folderId = msg.payload?.data?.value as string;
+```
+
+**How it works.** The response is a `StoreItem` (`{ metadata?, data? }`); the stored value is in
+`data.value`. `useEncryption: true` encrypts the value. `APP.STORE.REMOVE` deletes a key.
+
+**See also.** story [`storageService/StorageServiceExample.tsx`](../src/_stories/componentModel/storageService/StorageServiceExample.tsx).
+
+---
+
+## 6.9 Read app configuration
+
+**Task.** Read the API base URL or feature flags at runtime.
+
+```ts
+const msg = await c.msgBus.request({ channel: 'APP.CONFIG.GET' });
+m.apiBase = msg.payload.baseApiUrl;
+
+msgBroker: {
+    subscribe: { 'APP.CONFIG.CHANGED': { in: { callback: (msg) => { m.apiBase = msg.payload.baseApiUrl; } } } },
+},
+```
+
+**How it works.** Some component near the root provides `APP.CONFIG.GET` and sends
+`APP.CONFIG.CHANGED`; everybody else reads config through the bus.
+
+**Gotchas.**
+- `BaseAppDomainConfig` has `id`, `baseUrl`, `baseApiUrl`, `apis`, `security`; extend it for your
+  own fields.
+
+---
+
+## Document: docs/topic--cookbook.md (Cookbook: Recipes for Common Tasks)
+
+# Cookbook: Recipes for Common Tasks
+
+Short, task-oriented recipes. Each one answers one "I want to ..." question with working code, a
+short explanation, the usual mistakes, and links to the reference pages and to the Storybook /
+demo source it was taken from.
+
+The reference pages ([Core Concepts](topic--02-core-concepts.md),
+[React Integration](topic--04-react-integration.md), [API Reference](topic--05-api-reference.md))
+explain how things work; the cookbook shows how to get a task done.
+
+## Sections
+
+| Page | What is inside |
+|---|---|
+| [Component Basics](topic--cookbook-components.md) | define a component, private internals, defaults vs params, lifecycle, ids, bus at the root, reactivity modes, React content in props, **the two kinds of `children`** |
+| [Data Flow & Bindings](topic--cookbook-data-flow.md) | parent to child, two-way binding, converters, child to parent over the bus, calling a child, reacting to changes, effects, computed props, external stores |
+| [Forms & Validation](topic--cookbook-forms-validation.md) | inputs, field rules, showing errors, UI-kit fields, submit, cross-field and async rules, server errors, reset |
+| [Composition, Lists & Dialogs](topic--cookbook-composition.md) | sections, child components, lists, conditional parts, dialogs, slots, big arrays, MUI kit |
+| [Messaging (MsgMesh)](topic--cookbook-messaging.md) | custom channels, `msgScope`, send, subscribe, request/provide, subtree scoping, headers, replay, topics, toasts, the bus outside dynstruct |
+| [Services & API Calls](topic--cookbook-services.md) | adapters, calling methods, `HttpClient`, loading state, search as you type, service components, storage, config |
+| [Navigation & Auth](topic--cookbook-auth-navigation.md) | typed routes, navigating, links, current location, sign-in/out, protected pages, built-in and custom auth |
+| [Errors & Testing](topic--cookbook-errors-testing.md) | where errors go, `onCatch`, fallback views, global error overlay, tests with a real bus |
+
+## I want to ...
+
+| Task | Recipe |
+|---|---|
+| create a component | [1.1](topic--cookbook-components.md#_1-1-define-a-component) |
+| hide internal state from callers | [1.2](topic--cookbook-components.md#_1-2-keep-internals-private-componentstructext) |
+| understand `c.children` vs `props.children` | [1.10](topic--cookbook-components.md#_1-10-two-kinds-of-children) |
+| pass a value from parent to child | [2.1](topic--cookbook-data-flow.md#_2-1-pass-a-value-down-parent-to-child-read-only) |
+| let a child edit the parent's value | [2.2](topic--cookbook-data-flow.md#_2-2-two-way-binding-bindprop) |
+| tell the parent that something happened in a child | [2.5](topic--cookbook-data-flow.md#_2-5-child-tells-the-parent-something-intent-over-the-bus) |
+| reload data when inputs change | [2.8](topic--cookbook-data-flow.md#_2-8-reload-when-inputs-change-effect) |
+| validate a field | [3.2](topic--cookbook-forms-validation.md#_3-2-add-a-field-rule-required-format) |
+| validate the whole form on submit | [3.5](topic--cookbook-forms-validation.md#_3-5-validate-everything-before-submit) |
+| show server errors under fields | [3.9](topic--cookbook-forms-validation.md#_3-9-put-server-errors-into-the-form) |
+| render a list of components | [4.3](topic--cookbook-composition.md#_4-3-render-a-list-of-child-components) |
+| open a dialog | [4.5](topic--cookbook-composition.md#_4-5-parent-controlled-dialog), [4.6](topic--cookbook-composition.md#_4-6-global-dialog-opened-over-the-bus) |
+| define my own bus channels | [5.1](topic--cookbook-messaging.md#_5-1-declare-the-app-s-bus-custom-message-struct) |
+| call an API | [6.1](topic--cookbook-services.md#_6-1-expose-a-service-class-as-bus-channels-adapters), [6.2](topic--cookbook-services.md#_6-2-call-a-service-method) |
+| show a loading indicator | [6.5](topic--cookbook-services.md#_6-5-show-a-loading-indicator) |
+| navigate to another page | [7.2](topic--cookbook-auth-navigation.md#_7-2-navigate-from-a-component) |
+| require a signed-in user | [7.6](topic--cookbook-auth-navigation.md#_7-6-protect-a-page) |
+| handle errors | [8.2](topic--cookbook-errors-testing.md#_8-2-handle-errors-in-one-place-oncatch) |
+| test a component | [8.6](topic--cookbook-errors-testing.md#_8-6-test-a-component-with-a-real-bus-and-fake-services) |
+
+## The skeleton every recipe assumes
+
+```tsx
+import type { Component, ComponentDef, ComponentModel, ComponentParams, ComponentStruct } from '@actdim/dynstruct/componentModel/contracts';
+import { toReact, useComponent } from '@actdim/dynstruct/componentModel/react/hooks';
+import { bind, bindProp, prop } from '@actdim/dynstruct/componentModel/core';
+
+type MyStruct = ComponentStruct<AppMsgStruct, {
+    props: { value: string };
+    actions: { clear: () => void };
+    children: { summary: React.FC };
+}>;
+
+export const useMy = (params: ComponentParams<MyStruct>): Component<MyStruct> => {
+    let c: Component<MyStruct>;
+    let m: ComponentModel<MyStruct>;
+
+    const def: ComponentDef<MyStruct> = {
+        props: { value: '' },                        // defaults only
+        actions: { clear: () => { m.value = ''; } }, // called as m.clear()
+        children: { summary: () => <span>{m.value.length} chars</span> },
+        view: () => (
+            <div id={c.id}>
+                <input {...c.mapToEdit('value')} />
+                <c.children.Summary />
+            </div>
+        ),
+    };
+
+    c = useComponent(def, params);
+    m = c.model;
+    return c;
+};
+
+export const My = toReact(useMy); // for the boundary with plain React only
+```
+
+`AppMsgStruct` is the app's bus type ([5.1](topic--cookbook-messaging.md#_5-1-declare-the-app-s-bus-custom-message-struct)).
+
+## Five rules that prevent most bugs
+
+1. **Lazy access in `def`.** `c` and `m` are `undefined` while `def` is built: pass
+   `bind(() => m.x)`, `bindProp(() => m, 'x')`, `bindField(() => c, 'x')`, never `m.x`.
+2. **Defaults in `def.props`, inputs through params.** Never read `params.x` in the
+   hook-constructor; a plain param is an initial value, a binding is live.
+3. **Children in `def.children`.** Render nested dynstruct components as `<c.children.Name />`,
+   not as JSX tags with props in `view`.
+4. **Bus instead of callback props.** Components tell each other things through typed channels
+   (`c.msgBus.send`, `msgBroker.subscribe`), not through `onSelect` / `onClose` props.
+5. **Logic in actions.** Put behavior in `def.actions` (errors routed, writes batched) and call
+   `m.action()` from the view.
+
+## Where the recipes come from
+
+- Storybook stories: `src/_stories/componentModel/` (run `pnpm storybook`).
+- Tests: `tests/react/`.
+- The demo portal: `demo/src/` ([Live Demo](https://actdim.github.io/dynstruct/demo/)).
+- The mempart webapp, a production app built on dynstruct.
 
 ---
 

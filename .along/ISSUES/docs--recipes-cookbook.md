@@ -6,7 +6,7 @@ type: docs
 status: in-progress
 priority: medium
 created: 2026-11-04
-updated: 2026-11-04
+updated: 2026-11-10
 agent: claude-code
 tags: [docs, cookbook, dx]
 milestone: v2.0.0

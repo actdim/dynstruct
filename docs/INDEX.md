@@ -29,6 +29,24 @@ flowchart TD
     INDEX --> T_05_API_REFERENCE
     T_ARCHITECTURE["01 Architecture"]
     INDEX --> T_ARCHITECTURE
+    T_COOKBOOK_AUTH_NAVIGATION["Cookbook: Navigation & Auth"]
+    INDEX --> T_COOKBOOK_AUTH_NAVIGATION
+    T_COOKBOOK_COMPONENTS["Cookbook: Component Basics"]
+    INDEX --> T_COOKBOOK_COMPONENTS
+    T_COOKBOOK_COMPOSITION["Cookbook: Composition, Lists & Dialogs"]
+    INDEX --> T_COOKBOOK_COMPOSITION
+    T_COOKBOOK_DATA_FLOW["Cookbook: Data Flow & Bindings"]
+    INDEX --> T_COOKBOOK_DATA_FLOW
+    T_COOKBOOK_ERRORS_TESTING["Cookbook: Errors & Testing"]
+    INDEX --> T_COOKBOOK_ERRORS_TESTING
+    T_COOKBOOK_FORMS_VALIDATION["Cookbook: Forms & Validation"]
+    INDEX --> T_COOKBOOK_FORMS_VALIDATION
+    T_COOKBOOK_MESSAGING["Cookbook: Messaging (MsgMesh)"]
+    INDEX --> T_COOKBOOK_MESSAGING
+    T_COOKBOOK_SERVICES["Cookbook: Services & API Calls"]
+    INDEX --> T_COOKBOOK_SERVICES
+    T_COOKBOOK["Cookbook: Recipes for Common Tasks"]
+    INDEX --> T_COOKBOOK
     T_DEMO_ARCHITECTURE["Demo: Architecture"]
     INDEX --> T_DEMO_ARCHITECTURE
     T_DEMO_DOMAIN_MODEL["Demo: Domain Model"]
@@ -47,11 +65,13 @@ flowchart TD
     T_01_OVERVIEW_AND_ADVANTAGES -.->|references| T_ARCHITECTURE
     T_02_CORE_CONCEPTS -.->|references| T_01_OVERVIEW_AND_ADVANTAGES
     T_02_CORE_CONCEPTS -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
+    T_02_CORE_CONCEPTS -.->|references| T_COOKBOOK
     T_02_CORE_CONCEPTS -.->|references| T_04_REACT_INTEGRATION
     T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING -.->|references| T_02_CORE_CONCEPTS
     T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING -.->|references| T_04_REACT_INTEGRATION
     T_04_REACT_INTEGRATION -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
     T_04_REACT_INTEGRATION -.->|references| T_05_API_REFERENCE
+    T_04_REACT_INTEGRATION -.->|references| T_COOKBOOK
     T_05_API_REFERENCE -.->|references| T_04_REACT_INTEGRATION
     T_ARCHITECTURE -.->|references| T_02_CORE_CONCEPTS
     T_ARCHITECTURE -.->|references| T_03__ARCHITECTURE____ARCHITECTURE_MD__AND_WIRING
@@ -60,6 +80,42 @@ flowchart TD
     T_ARCHITECTURE -.->|references| T_DOMAIN_MODEL
     T_ARCHITECTURE -.->|references| T_SETUP_AND_WORKFLOW
     T_ARCHITECTURE -.->|references| T_LICENSE
+    T_COOKBOOK_AUTH_NAVIGATION -.->|references| T_COOKBOOK
+    T_COOKBOOK_AUTH_NAVIGATION -.->|references| T_COOKBOOK_SERVICES
+    T_COOKBOOK_COMPONENTS -.->|references| T_COOKBOOK
+    T_COOKBOOK_COMPONENTS -.->|references| T_02_CORE_CONCEPTS
+    T_COOKBOOK_COMPONENTS -.->|references| T_COOKBOOK_COMPOSITION
+    T_COOKBOOK_COMPONENTS -.->|references| T_COOKBOOK_MESSAGING
+    T_COOKBOOK_COMPONENTS -.->|references| T_05_API_REFERENCE
+    T_COOKBOOK_COMPOSITION -.->|references| T_COOKBOOK
+    T_COOKBOOK_COMPOSITION -.->|references| T_COOKBOOK_COMPONENTS
+    T_COOKBOOK_COMPOSITION -.->|references| T_COOKBOOK_MESSAGING
+    T_COOKBOOK_DATA_FLOW -.->|references| T_COOKBOOK
+    T_COOKBOOK_DATA_FLOW -.->|references| T_02_CORE_CONCEPTS
+    T_COOKBOOK_DATA_FLOW -.->|references| T_COOKBOOK_MESSAGING
+    T_COOKBOOK_DATA_FLOW -.->|references| T_COOKBOOK_COMPONENTS
+    T_COOKBOOK_DATA_FLOW -.->|references| T_COOKBOOK_SERVICES
+    T_COOKBOOK_ERRORS_TESTING -.->|references| T_COOKBOOK
+    T_COOKBOOK_ERRORS_TESTING -.->|references| T_02_CORE_CONCEPTS
+    T_COOKBOOK_FORMS_VALIDATION -.->|references| T_COOKBOOK
+    T_COOKBOOK_FORMS_VALIDATION -.->|references| T_02_CORE_CONCEPTS
+    T_COOKBOOK_FORMS_VALIDATION -.->|references| T_05_API_REFERENCE
+    T_COOKBOOK_FORMS_VALIDATION -.->|references| T_COOKBOOK_SERVICES
+    T_COOKBOOK_FORMS_VALIDATION -.->|references| T_COOKBOOK_DATA_FLOW
+    T_COOKBOOK_MESSAGING -.->|references| T_COOKBOOK
+    T_COOKBOOK_SERVICES -.->|references| T_COOKBOOK
+    T_COOKBOOK_SERVICES -.->|references| T_COOKBOOK_FORMS_VALIDATION
+    T_COOKBOOK -.->|references| T_02_CORE_CONCEPTS
+    T_COOKBOOK -.->|references| T_04_REACT_INTEGRATION
+    T_COOKBOOK -.->|references| T_05_API_REFERENCE
+    T_COOKBOOK -.->|references| T_COOKBOOK_COMPONENTS
+    T_COOKBOOK -.->|references| T_COOKBOOK_DATA_FLOW
+    T_COOKBOOK -.->|references| T_COOKBOOK_FORMS_VALIDATION
+    T_COOKBOOK -.->|references| T_COOKBOOK_COMPOSITION
+    T_COOKBOOK -.->|references| T_COOKBOOK_MESSAGING
+    T_COOKBOOK -.->|references| T_COOKBOOK_SERVICES
+    T_COOKBOOK -.->|references| T_COOKBOOK_AUTH_NAVIGATION
+    T_COOKBOOK -.->|references| T_COOKBOOK_ERRORS_TESTING
     T_DEMO_ARCHITECTURE -.->|references| T_DEMO_DOMAIN_MODEL
     T_DEMO_ARCHITECTURE -.->|references| T_DEMO_SETUP_AND_WORKFLOW
     T_DEMO_DOMAIN_MODEL -.->|references| T_DEMO_ARCHITECTURE
@@ -92,6 +148,15 @@ flowchart TD
 - **[React Integration & Service Patterns](./topic--04-react-integration.md)** (topic) `04-react-integration`
 - **[API Reference & Development Guide](./topic--05-api-reference.md)** (topic) `05-api-reference`, `api`, `contracts`
 - **[01 Architecture](./topic--architecture.md)** (topic) `architecture`
+- **[Cookbook: Navigation & Auth](./topic--cookbook-auth-navigation.md)** (topic) `cookbook`, `navigation`, `auth`, `security`
+- **[Cookbook: Component Basics](./topic--cookbook-components.md)** (topic) `cookbook`, `components`, `children`
+- **[Cookbook: Composition, Lists & Dialogs](./topic--cookbook-composition.md)** (topic) `cookbook`, `composition`, `children`
+- **[Cookbook: Data Flow & Bindings](./topic--cookbook-data-flow.md)** (topic) `cookbook`, `bindings`, `data-flow`
+- **[Cookbook: Errors & Testing](./topic--cookbook-errors-testing.md)** (topic) `cookbook`, `errors`, `testing`
+- **[Cookbook: Forms & Validation](./topic--cookbook-forms-validation.md)** (topic) `cookbook`, `forms`, `validation`
+- **[Cookbook: Messaging (MsgMesh)](./topic--cookbook-messaging.md)** (topic) `cookbook`, `messaging`, `msgmesh`, `bus`
+- **[Cookbook: Services & API Calls](./topic--cookbook-services.md)** (topic) `cookbook`, `services`, `api`, `http`
+- **[Cookbook: Recipes for Common Tasks](./topic--cookbook.md)** (topic) `cookbook`, `recipes`, `how-to`
 - **[Demo: Architecture](./topic--demo-architecture.md)** (topic) `architecture`, `astro`, `islands`, `msgmesh`, `dynstruct`, `ssg`, `base-path`
 - **[Demo: Domain Model](./topic--demo-domain-model.md)** (topic) `domain-model`, `msgmesh`, `channels`, `contracts`, `catalog`, `routes`
 - **[Demo: Setup And Workflow](./topic--demo-setup-and-workflow.md)** (topic) `setup-and-workflow`, `build`, `test`, `e2e`, `github-pages`, `ci`, `monorepo`

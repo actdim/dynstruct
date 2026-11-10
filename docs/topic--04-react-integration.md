@@ -12,6 +12,8 @@ tags: [04-react-integration]
 
 [← Back to 03. Architecture & Wiring](./topic--03-architecture-and-wiring.md) | [Next: 05. API Reference →](./topic--05-api-reference.md)
 
+> Task-oriented recipes for services, navigation, auth and testing are in the [Cookbook](./topic--cookbook.md).
+
 ---
 
 ## React Integration Basics

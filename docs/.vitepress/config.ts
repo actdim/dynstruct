@@ -56,6 +56,7 @@ export default withMermaid(
         { text: 'Home', link: '/' },
         { text: 'Overview', link: '/topic--01-overview-and-advantages' },
         { text: 'Core Concepts', link: '/topic--02-core-concepts' },
+        { text: 'Cookbook', link: '/topic--cookbook' },
         { text: 'React Integration', link: '/topic--04-react-integration' },
         { text: 'API Reference', link: '/topic--05-api-reference' },
         { text: 'Live Demo', link: 'https://actdim.github.io/dynstruct/demo/' },
@@ -69,6 +70,20 @@ export default withMermaid(
           items: [
             { text: 'Knowledge Base Index', link: '/' },
             { text: 'Overview & Advantages', link: '/topic--01-overview-and-advantages' }
+          ]
+        },
+        {
+          text: 'Cookbook',
+          items: [
+            { text: 'All Recipes', link: '/topic--cookbook' },
+            { text: 'Component Basics', link: '/topic--cookbook-components' },
+            { text: 'Data Flow & Bindings', link: '/topic--cookbook-data-flow' },
+            { text: 'Forms & Validation', link: '/topic--cookbook-forms-validation' },
+            { text: 'Composition, Lists & Dialogs', link: '/topic--cookbook-composition' },
+            { text: 'Messaging (MsgMesh)', link: '/topic--cookbook-messaging' },
+            { text: 'Services & API Calls', link: '/topic--cookbook-services' },
+            { text: 'Navigation & Auth', link: '/topic--cookbook-auth-navigation' },
+            { text: 'Errors & Testing', link: '/topic--cookbook-errors-testing' }
           ]
         },
         {
