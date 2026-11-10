@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-- [ ] `(bug)` [docs-build-adr-tag](ISSUES/bug--docs-build-adr-tag.md)
+<!-- No active issues -->
 
 ## Backlog
 - [ ] `(bug)` [standalone-missing-peer-devdeps](ISSUES/bug--standalone-missing-peer-devdeps.md)
@@ -39,8 +39,8 @@
 
 ## Done (recent)
 - [x] `(docs)` [recipes-cookbook](ISSUES/done/docs--recipes-cookbook.md)
+- [x] `(bug)` [docs-build-adr-tag](ISSUES/done/bug--docs-build-adr-tag.md)
 - [x] `(task)` [adopt-dev-config](ISSUES/done/task--adopt-dev-config.md)
 - [x] `(feat)` [validation-ergonomics](ISSUES/done/feat--validation-ergonomics.md)
 - [x] `(task)` [demo-remove-mobx-mentions](ISSUES/done/task--demo-remove-mobx-mentions.md)
-- [x] `(docs)` [demo-live-links](ISSUES/done/docs--demo-live-links.md)
-<!-- 52 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 53 older completed issue(s) archived in .along/ISSUES/done/ -->

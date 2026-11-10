@@ -3,7 +3,8 @@ protocol: along
 protocol_version: "4.8.0"
 slug: docs-build-adr-tag
 type: bug
-status: in-progress
+status: done
+completed: 2026-11-10
 priority: medium
 created: 2026-11-10
 updated: 2026-11-10
