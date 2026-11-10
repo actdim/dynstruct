@@ -1,10 +1,9 @@
 # Active Issues
 
 ## Active
-<!-- No active issues -->
+- [ ] `(bug)` [docs-build-adr-tag](ISSUES/bug--docs-build-adr-tag.md)
 
 ## Backlog
-- [ ] `(bug)` [docs-build-adr-tag](ISSUES/bug--docs-build-adr-tag.md)
 - [ ] `(bug)` [standalone-missing-peer-devdeps](ISSUES/bug--standalone-missing-peer-devdeps.md)
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
 - [ ] `(debt)` [generic-struct-component-props](ISSUES/debt--generic-struct-component-props.md)

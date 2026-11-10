@@ -20,6 +20,24 @@ export default withMermaid(
 
     markdown: {
       config: (md) => {
+        // ADR copies in decisions/ are generated plain text (synced from .along/DECISIONS, which are
+        // immutable). Text like `<pkg>` there must not reach the Vue template compiler as an element.
+        const isDecisionPage = (env: { relativePath?: string } | undefined) =>
+          (env?.relativePath ?? '').replace(/\\/g, '/').startsWith('decisions/');
+        for (const rule of ['html_inline', 'html_block'] as const) {
+          const defaultHtml =
+            md.renderer.rules[rule] ||
+            function (tokens, idx) {
+              return tokens[idx].content;
+            };
+          md.renderer.rules[rule] = function (tokens, idx, options, env, self) {
+            if (isDecisionPage(env)) {
+              return md.utils.escapeHtml(tokens[idx].content);
+            }
+            return defaultHtml(tokens, idx, options, env, self);
+          };
+        }
+
         const defaultCodeInline =
           md.renderer.rules.code_inline ||
           function (tokens, idx, options, env, self) {
