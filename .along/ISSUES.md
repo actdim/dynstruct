@@ -1,7 +1,7 @@
 # Active Issues
 
 ## Active
-- [ ] `(docs)` [recipes-cookbook](ISSUES/docs--recipes-cookbook.md) - plan ready
+<!-- No active issues -->
 
 ## Backlog
 - [ ] `(bug)` [docs-build-adr-tag](ISSUES/bug--docs-build-adr-tag.md)
@@ -39,9 +39,9 @@
 - [ ] `(task)` [agent-native-metadata-and-contracts](ISSUES/task--agent-native-metadata-and-contracts.md)
 
 ## Done (recent)
+- [x] `(docs)` [recipes-cookbook](ISSUES/done/docs--recipes-cookbook.md)
 - [x] `(task)` [adopt-dev-config](ISSUES/done/task--adopt-dev-config.md)
 - [x] `(feat)` [validation-ergonomics](ISSUES/done/feat--validation-ergonomics.md)
 - [x] `(task)` [demo-remove-mobx-mentions](ISSUES/done/task--demo-remove-mobx-mentions.md)
 - [x] `(docs)` [demo-live-links](ISSUES/done/docs--demo-live-links.md)
-- [x] `(task)` [move-into-lib](ISSUES/done/task--move-into-lib.md)
-<!-- 51 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 52 older completed issue(s) archived in .along/ISSUES/done/ -->
