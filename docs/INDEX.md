@@ -53,7 +53,7 @@ flowchart TD
     INDEX --> T_DEMO_DOMAIN_MODEL
     T_DEMO_SETUP_AND_WORKFLOW["Demo: Setup And Workflow"]
     INDEX --> T_DEMO_SETUP_AND_WORKFLOW
-    T_DEPENDENCIES["Dependencies & Submodules AI Documentation and Rules"]
+    T_DEPENDENCIES["Dependencies & AI Documentation for @actdim/dynstruct"]
     INDEX --> T_DEPENDENCIES
     T_DOMAIN_MODEL["02 Domain Model"]
     INDEX --> T_DOMAIN_MODEL
@@ -160,7 +160,7 @@ flowchart TD
 - **[Demo: Architecture](./topic--demo-architecture.md)** (topic) `architecture`, `astro`, `islands`, `msgmesh`, `dynstruct`, `ssg`, `base-path`
 - **[Demo: Domain Model](./topic--demo-domain-model.md)** (topic) `domain-model`, `msgmesh`, `channels`, `contracts`, `catalog`, `routes`
 - **[Demo: Setup And Workflow](./topic--demo-setup-and-workflow.md)** (topic) `setup-and-workflow`, `build`, `test`, `e2e`, `github-pages`, `ci`, `monorepo`
-- **[Dependencies & Submodules AI Documentation and Rules](./topic--dependencies.md)** (topic) `dependencies`, `ai-context`, `submodules`, `vendor`, `rules`
+- **[Dependencies & AI Documentation for @actdim/dynstruct](./topic--dependencies.md)** (topic) `dependencies`, `subproject`, `ai-context`, `rules`
 - **[02 Domain Model](./topic--domain-model.md)** (topic) `domain-model`
 - **[License](./topic--license.md)** (license) `license`, `mit`
 - **[03 Setup And Workflow](./topic--setup-and-workflow.md)** (topic) `setup-and-workflow`
