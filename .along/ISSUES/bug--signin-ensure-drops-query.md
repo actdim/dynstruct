@@ -12,6 +12,7 @@ tags: [auth, navigation]
 milestone: v2.0.0
 blocked_by: []
 related: []
+plan_status: approved
 ---
 
 # Auth ensure on the sign-in page drops its query (devLogin=1)

@@ -4,7 +4,7 @@
 <!-- No active issues -->
 
 ## Backlog
-- [ ] `(bug)` [signin-ensure-drops-query](ISSUES/bug--signin-ensure-drops-query.md)
+- [ ] `(bug)` [signin-ensure-drops-query](ISSUES/bug--signin-ensure-drops-query.md) - plan approved
 - [ ] `(bug)` [standalone-missing-peer-devdeps](ISSUES/bug--standalone-missing-peer-devdeps.md)
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
 - [ ] `(debt)` [generic-struct-component-props](ISSUES/debt--generic-struct-component-props.md)
