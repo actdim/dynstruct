@@ -72,7 +72,7 @@ import { toReact, useComponent } from '@/componentModel/react/hooks';
 import { AsyncLock } from '@actdim/utico/asyncLock';
 import { HttpClient } from '@/net/httpClient';
 import { useComponentContext } from '@/componentModel/react/componentContext';
-import { resolveSignInCallbackUrl } from '@/appDomain/navigation';
+import { isSignInLocation, resolveSignInCallbackUrl } from '@/appDomain/navigation';
 
 type Struct = ComponentStruct<
     BaseAppMsgStruct,
@@ -229,15 +229,20 @@ export const useSecurityService = (params: ComponentParams<Struct>): Component<S
             throw new Error('Auth failed: login aborted');
         };
 
-        c.msgBus.send({
-            channel: $NAV_GOTO,
-            payload: {
-                path: m.domainConfig.routes.authSignInPage,
-                params: {
-                    callbackUrl: resolveSignInCallbackUrl(m.domainConfig.routes.authSignInPage, typeof window !== 'undefined' ? window.location : { pathname: '/', search: '', hash: '' }),
+        const location = typeof window !== 'undefined' ? window.location : { pathname: '/', search: '', hash: '' };
+        // Already on the sign-in page (a request on it got a 401): navigating again would replace the
+        // page's query (for example devLogin=1) with a bare callbackUrl. Stay and wait for its sign-in.
+        if (!isSignInLocation(m.domainConfig.routes.authSignInPage, location)) {
+            c.msgBus.send({
+                channel: $NAV_GOTO,
+                payload: {
+                    path: m.domainConfig.routes.authSignInPage,
+                    params: {
+                        callbackUrl: resolveSignInCallbackUrl(m.domainConfig.routes.authSignInPage, location),
+                    },
                 },
-            },
-        });
+            });
+        }
 
         await Promise.race([signIn(), signOut()]);
         return authInfo;

@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { resolveSignInCallbackUrl } from "@/appDomain/navigation";
+import fs from "fs";
+import path from "path";
+import { isSignInLocation, resolveSignInCallbackUrl } from "@/appDomain/navigation";
 
 const loc = (url: string) => {
     const u = new URL(url, "http://app.local");
@@ -33,5 +35,24 @@ describe("resolveSignInCallbackUrl", () => {
 
     it("does not treat a page whose path only starts with the sign-in path as sign-in", () => {
         expect(resolveSignInCallbackUrl("auth/sign-in", loc("/auth/sign-in-help"))).toBe("/auth/sign-in-help");
+    });
+});
+
+describe("isSignInLocation", () => {
+    it("is true on the sign-in page with any query (devLogin=1 kept by skipping the redirect)", () => {
+        expect(isSignInLocation("auth/sign-in", loc("/auth/sign-in?devLogin=1"))).toBe(true);
+        expect(isSignInLocation("/auth/sign-in", loc("/auth/sign-in/?devLogin=1&callbackUrl=%2Fexplorer"))).toBe(true);
+    });
+
+    it("is false on other pages, including ones that only start with the sign-in path", () => {
+        expect(isSignInLocation("auth/sign-in", loc("/explorer?devLogin=1"))).toBe(false);
+        expect(isSignInLocation("auth/sign-in", loc("/auth/sign-in-help"))).toBe(false);
+    });
+});
+
+describe("SecurityService ensureAuth on the sign-in page", () => {
+    it("does not navigate again when already on the sign-in page", () => {
+        const source = fs.readFileSync(path.resolve(process.cwd(), "src/services/react/SecurityService.tsx"), "utf-8");
+        expect(source).toMatch(/if \(!isSignInLocation\(m\.domainConfig\.routes\.authSignInPage, location\)\) \{\s*c\.msgBus\.send\(\{\s*channel: \$NAV_GOTO,/);
     });
 });

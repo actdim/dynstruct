@@ -181,7 +181,9 @@ events: {
 ```
 
 **How it works.** `ENSURE` returns `AuthInfo` when authenticated; otherwise it sends
-`APP.NAV.GOTO` to `routes.authSignInPage` with a `callbackUrl` of the current location.
+`APP.NAV.GOTO` to `routes.authSignInPage` with a `callbackUrl` of the current location. When the
+current location already is the sign-in page, it sends no `APP.NAV.GOTO` (the page keeps its query,
+for example `devLogin=1`) and only waits for the sign-in or sign-out.
 
 **Gotchas.**
 - `SecurityService` needs a security config: pass `domainConfig` or provide

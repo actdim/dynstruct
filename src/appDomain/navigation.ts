@@ -134,6 +134,15 @@ function trimSlashes(path: string) {
 }
 
 /**
+ * True when the location already is the sign-in page (leading and trailing slashes ignored). Used by
+ * `SecurityService` to skip a second redirect, which would replace the page's query (for example
+ * `devLogin=1`) with a bare `callbackUrl`.
+ */
+export function isSignInLocation(signInPath: string, location: { pathname: string }): boolean {
+    return trimSlashes(location.pathname) === trimSlashes(signInPath);
+}
+
+/**
  * Resolves the callbackUrl for a redirect to the sign-in page. When the current location already is the
  * sign-in page (another request asked for auth meanwhile), its own callbackUrl is kept instead of nesting
  * the sign-in URL into itself; already nested sign-in callbacks are unwrapped.
