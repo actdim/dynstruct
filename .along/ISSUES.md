@@ -4,7 +4,6 @@
 <!-- No active issues -->
 
 ## Backlog
-- [ ] `(bug)` [signin-ensure-drops-query](ISSUES/bug--signin-ensure-drops-query.md) - plan approved
 - [ ] `(bug)` [standalone-missing-peer-devdeps](ISSUES/bug--standalone-missing-peer-devdeps.md)
 - [ ] `(debt)` [async-to-generator-flow](ISSUES/debt--async-to-generator-flow.md)
 - [ ] `(debt)` [generic-struct-component-props](ISSUES/debt--generic-struct-component-props.md)
@@ -40,9 +39,9 @@
 - [ ] `(task)` [docs-static-publish](ISSUES/task--docs-static-publish.md)
 
 ## Done (recent)
+- [x] `(bug)` [signin-ensure-drops-query](ISSUES/done/bug--signin-ensure-drops-query.md)
 - [x] `(docs)` [recipes-cookbook](ISSUES/done/docs--recipes-cookbook.md)
 - [x] `(bug)` [docs-build-adr-tag](ISSUES/done/bug--docs-build-adr-tag.md)
 - [x] `(task)` [adopt-dev-config](ISSUES/done/task--adopt-dev-config.md)
 - [x] `(feat)` [validation-ergonomics](ISSUES/done/feat--validation-ergonomics.md)
-- [x] `(task)` [demo-remove-mobx-mentions](ISSUES/done/task--demo-remove-mobx-mentions.md)
-<!-- 53 older completed issue(s) archived in .along/ISSUES/done/ -->
+<!-- 54 older completed issue(s) archived in .along/ISSUES/done/ -->

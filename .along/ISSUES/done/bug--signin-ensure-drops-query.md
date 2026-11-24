@@ -3,10 +3,11 @@ protocol: along
 protocol_version: "4.8.1"
 slug: signin-ensure-drops-query
 type: bug
-status: open
+status: done
+completed: 2026-11-24
 priority: low
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-24
 agent: claude-code
 tags: [auth, navigation]
 milestone: v2.0.0
@@ -39,6 +40,20 @@ the sign-in page is lost.
 - REQ-3: A unit test MUST cover the ensure-on-sign-in-page case (`tests/signInCallbackUrl.test.ts` or a new one).
 
 ## Acceptance Criteria
-- [ ] Ensure on the sign-in page keeps `devLogin=1` (unit test)
-- [ ] Mempart: `/auth/sign-in?devLogin=1` signs in the seeded dev user without a click
-- [ ] Automated tests passing
+- [x] Ensure on the sign-in page keeps `devLogin=1` (unit test)
+- [x] Mempart: `/auth/sign-in?devLogin=1` signs in the seeded dev user without a click
+- [x] Automated tests passing
+
+## Notes
+- Step 0.3 baseline: `python .along/scripts/test.py` passed (`node` + `react` 22 files / 129 tests); `eslint` on `src/appDomain/navigation.ts`, `src/services/react/SecurityService.tsx`, `tests/signInCallbackUrl.test.ts` reported 0 errors, 29 warnings (no `-f unix` formatter in ESLint 9).
+- `location` in `SecurityService.tsx` did not clash with any enclosing identifier.
+
+## Verification
+- `pnpm exec vitest --config=vitest.node.config.ts --no-cache tests/signInCallbackUrl.test.ts`: 9 passed (6 existing + 3 new).
+- `pnpm run typecheck`: passed (0 errors).
+- `python .along/scripts/test.py`: passed (`node` + `react` 22 files / 129 tests).
+- `pnpm exec eslint src/appDomain/navigation.ts src/services/react/SecurityService.tsx tests/signInCallbackUrl.test.ts`: 0 errors, 29 warnings (unchanged from baseline).
+- `pnpm run build`: passed (`dist/` rebuilt).
+- Mempart browser check (on `http://localhost:5174` because port 5173 was occupied by another service):
+  - Signed out -> `http://localhost:5174/auth/sign-in?devLogin=1` (no click, 5s wait): `{"href":"http://localhost:5174/explorer?driveId=b1111111-1111-1111-1111-111111111111&path=%2F"}` (auto-login succeeded).
+  - Signed out -> `http://localhost:5174/explorer`: `{"href":"http://localhost:5174/auth/sign-in?callbackUrl=%2Fexplorer"}` (ensure redirect preserved).
